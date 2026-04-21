@@ -1,0 +1,1 @@
+{"name":"Local: 动态求连续区间和-线段树","url":"d:\\Study\\file_cpp\\lanqiao\\动态求连续区间和-线段树.cpp","tests":[{"id":1775562886964,"input":"10 5\n1 2 3 4 5 6 7 8 9 10\n1 1 5\n0 1 3\n0 4 8\n1 7 5\n0 4 8","output":"11\n30\n35"}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"d:\\Study\\file_cpp\\lanqiao\\动态求连续区间和-线段树.cpp","group":"local","local":true}

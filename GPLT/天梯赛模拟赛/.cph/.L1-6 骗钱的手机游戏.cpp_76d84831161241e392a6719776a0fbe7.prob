@@ -1,0 +1,1 @@
+{"name":"Local: L1-6 骗钱的手机游戏","url":"d:\\Study\\file_cpp\\GPLT\\天梯赛模拟赛\\L1-6 骗钱的手机游戏.cpp","tests":[{"id":1776429744708,"input":"1001 1002 900 899 799 700 601 501 400\n","output":"1 2 0 0 0 1 0 0 743"}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"d:\\Study\\file_cpp\\GPLT\\天梯赛模拟赛\\L1-6 骗钱的手机游戏.cpp","group":"local","local":true}

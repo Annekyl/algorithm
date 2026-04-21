@@ -1,0 +1,1 @@
+{"name":"Local: L1-5 出生年","url":"d:\\Study\\file_cpp\\GPLT\\天梯赛模拟赛\\L1-5 出生年.cpp","tests":[{"id":1776429463062,"input":"1988 4","output":"25 2013"},{"id":1776429470814,"input":"1 2","output":"0 0001"}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"d:\\Study\\file_cpp\\GPLT\\天梯赛模拟赛\\L1-5 出生年.cpp","group":"local","local":true}
