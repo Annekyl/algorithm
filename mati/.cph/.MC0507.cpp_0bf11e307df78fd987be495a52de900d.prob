@@ -1,0 +1,1 @@
+{"name":"Local: MC0507","url":"d:\\Study\\file_cpp\\mati\\MC0507.cpp","tests":[{"id":1777176457807,"input":"5 4\n1 0 1 0\n1 1 1 1\n0 0 1 0\n1 1 1 1\n0 0 0 0","output":"83"}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"d:\\Study\\file_cpp\\mati\\MC0507.cpp","group":"local","local":true}
