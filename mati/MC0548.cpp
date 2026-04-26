@@ -17,9 +17,12 @@ int n;
 
 void solve() {
     cin >> n;
-    pii a[n + 1];
+    int mn = 1e9 + 10;
     for (int i = 1; i <= n; i++) {
-        cin >> a[i].first >> a[i].second;
+        int x;
+        cin >> x;
+        mn = min(mn, x);
+        cout << mn << ' ';
     }
 }
 

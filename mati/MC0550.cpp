@@ -4,7 +4,7 @@
 #define endl '\n'
 
 using namespace std;
-
+    
 typedef long long ll;
 typedef pair<int, int> pii;
 typedef vector<int> vi;
@@ -17,10 +17,7 @@ int n;
 
 void solve() {
     cin >> n;
-    pii a[n + 1];
-    for (int i = 1; i <= n; i++) {
-        cin >> a[i].first >> a[i].second;
-    }
+    
 }
 
 signed main() {

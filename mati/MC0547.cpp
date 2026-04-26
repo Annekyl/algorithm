@@ -17,10 +17,14 @@ int n;
 
 void solve() {
     cin >> n;
-    pii a[n + 1];
-    for (int i = 1; i <= n; i++) {
-        cin >> a[i].first >> a[i].second;
+    int ans = 0;
+    for (int i = 0; i < n; i++) {
+        int x, y;
+        cin >> x >> y;
+        if (x <= y)
+            ans++;
     }
+    cout << ans << " " << n - ans << endl;
 }
 
 signed main() {

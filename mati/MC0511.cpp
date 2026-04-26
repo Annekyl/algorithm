@@ -17,10 +17,13 @@ int n;
 
 void solve() {
     cin >> n;
-    pii a[n + 1];
+    int a[n + 1];
+    set<int> st;
     for (int i = 1; i <= n; i++) {
-        cin >> a[i].first >> a[i].second;
+        cin >> a[i];
+        st.insert(a[i]);
     }
+    cout << st.size() << endl;
 }
 
 signed main() {
