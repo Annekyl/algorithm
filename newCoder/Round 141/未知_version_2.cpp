@@ -21,52 +21,49 @@ constexpr int N = 1e5 + 10;
 int n;
 
 void solve() {
+    // cout << 1e9 * 1e9 << endl;
     cin >> n;
     vector<int> a(n);
-    multiset<int> st;
+    unordered_map<int, int> mp;
     for (int i = 0; i < n; i++) {
         cin >> a[i];
-        st.insert(a[i]);
-    }
-    sort(a.begin(), a.end());
-    int mx = a[n - 1];
-    bool suc = false;
-    for (int i = 0; i < n; i++) {
-        if (i > 0 && a[i] == a[i - 1])
-            continue;
-        int res = a[i];
-        int p = 1;
-        if (a[i] == 1) {
-            if (st.count(1) >= 2) {
-                suc = true;
-                break;
-            }
-        } else {
-            while (res <= mx) {
-                if (st.find(p) != st.end() && st.find(res) != st.end()) {
-                    if (p == 1 && st.count(a[i]) >= 2) {
-                        suc = true;
-                        break;
-                    } else if (p == a[i] && st.count(a[i]) >= 2) {
-                        suc = true;
-                        break;
-                    }  else {
-                        suc = true;
-                        break;
-                    }
-                }
-                p++;
-                res *= a[i];
-            }
-        }
-        if (suc)
-            break;
+        mp[a[i]]++;
     }
 
-    if (suc)
+    // 存在大于等于2个1
+    if (mp.count(1) >= 2) {
         cout << "YES" << endl;
-    else
-        cout << "NO" << endl;
+        return;
+    }
+
+    // 存在一个1
+    if (mp.count(1) == 1) {
+        for (auto [x, cnt] : mp) {
+            if (cnt >= 2) {
+                cout << "YES" << endl;
+                return;
+            }
+        }
+    }
+
+    sort(a.begin(), a.end());
+    int mx = a[n - 1];
+    for (auto [x, cnt] : mp) {
+        if (x == 1)
+            continue;
+        int res = x * x;
+        int p = 2;
+        while (res <= mx) {
+            if (mp.count(res) > 0 && mp.count(p) > 0) {
+                cout << "YES" << endl;
+                return;
+            }
+            p++;
+            res *= x;
+        }
+    }
+
+    cout << "NO" << endl;
 }
 
 signed main() {
