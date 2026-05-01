@@ -61,47 +61,8 @@ void solve() {
             ans++;
     }
     cout << ans << " ";
-    if (ans == 0) {
-        cout << 0 << endl;
-        return;
-    }
-
-    priority_queue<pii, vector<pii>, greater<pii>> q[n + 1];
-    for (int i = 1; i <= n; i++) {
-        int f = get(i);
-        q[f].push({line[i], i});
-    }
-
-    int temp_line[n + 1];
-    for (int i = 1; i <= n; i++) {
-        temp_line[i] = line[i];
-    }
-
-    for (int i = 1; i <= n; i++) {
-        int f = get(i);
-        if (f == 1)
-            continue;
-
-        auto [fline, fid] = q[f].top();
-        q[f].pop();
-        auto [line1, id1] = q[1].top();
-        q[1].pop();
-        merge(1, f);
-        line[fid]++;
-        line[id1]++;
-        q[1].push({line[id1], id1});
-        q[1].push({line[fid], fid});
-        while (q[f].size()) {
-            auto [cnt, id] = q[f].top();
-            q[f].pop();
-            q[1].push({cnt, id});
-        }
-    }
-    ans = 0;
-    for (int i = 1; i <= n; i++) {
-        ans = max(ans, line[i] - temp_line[i]);
-    }
-    cout << ans << endl;
+    int cnt = (2 * ans + n - 1) / n;
+    cout << cnt << endl;
 }
 
 signed main() {

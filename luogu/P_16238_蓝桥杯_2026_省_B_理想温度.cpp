@@ -19,38 +19,45 @@ const int N = 1e5 + 10;
 int n;
 
 void solve() {
+    int n;
     cin >> n;
     int a[n + 1], b[n + 1], d[n + 1];
-    for (int i = 1; i <= n; i++) {
+    for (int i = 1; i <= n; i++)
         cin >> a[i];
-    }
-    for (int i = 1; i <= n; i++) {
+    for (int i = 1; i <= n; i++)
         cin >> b[i];
+    for (int i = 1; i <= n; i++)
         d[i] = a[i] - b[i];
+
+    int z = 0; // 一共的零的数量
+    for (int i = 1; i <= n; i++)
+        z += (d[i] == 0);
+
+    // 前缀零的数量
+    vector<int> pz(n + 1, 0);
+    for (int i = 1; i <= n; i++) {
+        pz[i] = pz[i - 1] + (d[i] == 0);
     }
-    int zero = 0;
+
+    map<int, vector<int>> mp;
     for (int i = 1; i <= n; i++) {
         if (d[i] == 0)
-            zero++;
+            continue;
+        mp[d[i]].push_back(i);
     }
-	// debug(zero);
 
-    int ans = 0;
-    for (int l = 1; l <= n; l++) {
-        for (int r = 1; r <= n; r++) {
-            map<int, int> mp;
-            int cnt = 0;
-            for (int i = l; i <= r; i++) {
-                if (d[i] == 0)
-                    zero++;
-                else
-                    mp[d[i]]++;
-            }
-            for (auto [num, c] : mp) {
-                ans = max(ans, c + zero - cnt);
-            }
+    int ans = z;
+    for (auto [num, arr] : mp) {
+        int g = 0 - 1 - pz[arr[0] - 1];
+        int f;
+        for (int i = 0; i < arr.size(); i++) {
+            f = i - pz[arr[i]];
+            ans = max(ans, f - g + z);
+            g = min(g, i - 1 - pz[arr[i] - 1]); // ⚠️维护g的最小值
         }
+        // ans = max(ans, f - g + z);
     }
+
     cout << ans << endl;
 }
 
