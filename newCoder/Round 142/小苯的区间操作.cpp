@@ -14,23 +14,17 @@ const int N = 1e5 + 10;
 void solve() {
     int n;
     cin >> n;
-    vi a(n);
-    for (int i = 0; i < n; i++) {
+    vi a(n + 2, 0);
+    for (int i = 1; i <= n; i++) {
         cin >> a[i];
     }
-    stack<int> stk;
-    for (int i = 0; i < n; i++) {
-        if (a[i] == 0) {
-            if (stk.size()) {
-                cout << "No" << endl;
-                return;
-            }
-        } else {
-            if (stk.empty() || a[i] > stk.top()) {
-                stk.push(a[i]);
-            }
+    for (int i = 1; i <= n; i++) {
+        if (a[i] > a[i - 1] && a[i] > a[i + 1]) {
+            cout << "No" << endl;
+            return;
         }
     }
+    cout << "Yes" << endl;
 }
 
 signed main() {
