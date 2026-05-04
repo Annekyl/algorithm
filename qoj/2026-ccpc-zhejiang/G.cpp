@@ -1,97 +1,108 @@
-#include <iostream>
-#include <vector>
+#include "bits/stdc++.h"
+
+#define int long long
+#define endl '\n'
+#define FOR(i, a, b) for (int i = (a); i <= (b); i++)
+#define REF(i, a, b) for (int i = (a); i >= (b); i--)
 
 using namespace std;
 
+typedef long long ll;
+typedef pair<int, int> pii;
+typedef vector<int> vi;
+typedef vector<bool> vb;
+
+constexpr int INF = 0x3f3f3f3f3f3f3f3f;
+constexpr int mod = 999991;
+constexpr int N = 1e5 + 10;
+
 void solve() {
-    long long a, b, n, s;
+    int a, b, n, s;
     cin >> a >> b >> n >> s;
+    if (a > b)
+        swap(a, b);
 
-    // 始终保持 a < b 方便后续分类讨论，集合 {a, b} 是无序的，可以直接交换
-    if (a > b) swap(a, b);
-
-    // 情况 1: s 不是 a 的倍数
+    // s不是a的倍数
     if (s % a != 0) {
-        cout << "YES\n";
-        for (int i = 0; i < n; ++i) cout << a << " ";
-        cout << "\n";
+        cout << "YES" << endl;
+        FOR(i, 1, n) cout << a << " ";
+        cout << endl;
         return;
     }
 
-    // 情况 2: s 不是 b 的倍数
+    // s不是b的倍数
     if (s % b != 0) {
-        cout << "YES\n";
-        for (int i = 0; i < n; ++i) cout << b << " ";
-        cout << "\n";
+        cout << "YES" << endl;
+        FOR(i, 1, n) cout << b << " ";
+        cout << endl;
         return;
     }
 
-    // 以下情况 s 既是 a 的倍数也是 b 的倍数
-    
-    // 特判: 如果 s 刚好等于最大的可用数字 b，那 b 绝对不能用
+    // s既是a的倍数也是b的倍数
     if (s == b) {
-        if (n < s / a) {
-            cout << "YES\n";
-            for (int i = 0; i < n; ++i) cout << a << " ";
-            cout << "\n";
+        if (n * a < b) {
+            cout << "YES" << endl;
+            FOR(i, 1, n) cout << a << ' ';
+            cout << endl;
         } else {
-            cout << "NO\n";
+            cout << "NO" << endl;
         }
         return;
     }
 
-    // 情况 3: b 不是 a 的倍数
-    // 循环块: (s/a - 1) 个 a, 然后 1 个 b
     if (b % a != 0) {
-        cout << "YES\n";
-        long long X = s / a;
-        for (int i = 0; i < n; ++i) {
-            if (i % X < X - 1) cout << a << " ";
-            else cout << b << " ";
+        // b不是a的倍数，构造循环块
+        cout << "YES" << endl;
+        int sz = s / a;
+        int cnt = 0;
+        FOR(i, 1, n) {
+            if (cnt < sz - 1) {
+                cout << a << " ";
+            } else {
+                cout << b << ' ';
+            }
+            cnt = (cnt + 1) % sz;
         }
-        cout << "\n";
+        cout << endl;
         return;
-    }
-
-    // 情况 4: b 是 a 的倍数，令 b = m * a
-    long long m = b / a;
-    
-    // 死局情况: m == 2
-    if (m == 2) {
-        if (n < s / a) {
-            cout << "YES\n";
-            for (int i = 0; i < n; ++i) cout << a << " ";
-            cout << "\n";
+    } else {
+        // b是a的倍数
+        // 倍数为2，判断长度是否过长
+        if (b == a * 2) {
+            int sz = s / a;
+            if (n >= sz) {
+                cout << "NO" << endl;
+            } else {
+                cout << "YES" << endl;
+                FOR(i, 1, n) cout << a << " ";
+                cout << endl;
+            }
         } else {
-            cout << "NO\n";
+            // 构造循环块
+            cout << "YES" << endl;
+            int sz = s / b;
+            int cnt = 0;
+            FOR(i, 1, n) {
+                if (cnt < sz - 1) {
+                    cout << b << " ";
+                } else {
+                    cout << a << ' ';
+                }
+                cnt = (cnt + 1) % sz;
+            }
+            cout << endl;
         }
-        return;
-    }
-
-    // 绝处逢生: m >= 3
-    // 循环块: 1 个 a，然后 (s/b - 1) 个 b
-    if (m >= 3) {
-        cout << "YES\n";
-        long long Y = s / b;
-        for (int i = 0; i < n; ++i) {
-            if (i % Y == 0) cout << a << " ";
-            else cout << b << " ";
-        }
-        cout << "\n";
-        return;
     }
 }
 
-int main() {
-    // 优化 I/O 速度，应对大规模读写
-    ios_base::sync_with_stdio(false);
-    cin.tie(NULL);
-    
-    int t;
-    if (cin >> t) {
-        while (t--) {
-            solve();
-        }
+signed main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int t = 1;
+    cin >> t;
+    while (t--) {
+        solve();
     }
     return 0;
 }
