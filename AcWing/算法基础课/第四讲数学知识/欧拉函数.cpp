@@ -1,0 +1,51 @@
+#include "bits/stdc++.h"
+
+#define int long long
+#define FOR(i, a, b) for (int i = (a); i <= (b); i++)
+#define REF(i, a, b) for (int i = (a); i >= (b); i--)
+
+using namespace std;
+
+typedef long long ll;
+typedef pair<int, int> pii;
+typedef vector<int> vi;
+typedef vector<bool> vb;
+
+constexpr int INF = 0x3f3f3f3f3f3f3f3f;
+constexpr int mod = 999991;
+constexpr int N = 110;
+
+int n;
+
+void solve() {
+    cin >> n;
+    while (n--) {
+        int x;
+        cin >> x;
+        int ans = x;
+        FOR(i, 2, x / i) {
+            if (x % i == 0) {
+                ans = ans * (i - 1) / i;
+                while (x % i == 0)
+                    x /= i;
+            }
+        }
+
+        if (x > 1) {
+            ans = ans * (x - 1) / x;
+        }
+        cout << ans << endl;
+    }
+}
+
+signed main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int t = 1;
+    // cin>>t;
+    while (t--) {
+        solve();
+    }
+    return 0;
+}
