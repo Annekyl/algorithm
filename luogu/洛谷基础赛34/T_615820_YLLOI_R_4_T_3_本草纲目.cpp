@@ -22,8 +22,30 @@ int n, x;
 
 void solve() {
     cin >> n >> x;
-    int p = log2(n);
-    cout << p << endl;
+    if (x == 1) {
+        if ((n & (n - 1)) == 0) {
+            cout << "Yes" << endl;
+        } else {
+            cout << "No" << endl;
+        }
+        return;
+    }
+    int s = 0;
+    int temp = n;
+    while (temp) {
+        s += (temp % x);
+        temp /= x;
+    }
+    for (int i = 0; i <= 31; i++) {
+        int k = 1 << i;
+        if (k >= s && k <= n) {
+            if (n % (x - 1) == k % (x - 1)) {
+                cout << "Yes" << endl;
+                return;
+            }
+        }
+    }
+    cout << "No" << endl;
 }
 
 signed main() {
