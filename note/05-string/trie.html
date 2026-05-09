@@ -34,7 +34,7 @@
       <li><a href="#01-trie">3. 01-Trie</a></li>
       <li><a href="#max-xor">4. 最大异或对</a></li>
       <li><a href="#template">5. 完整C++模板</a></li>
-      <li><a href="#problems">6. 经典题目</a></li>
+      <li><a href="#practice">6. 例题与练习</a></li>
     </ul>
   </div>
 
@@ -551,63 +551,105 @@ cout &lt;&lt; ans &lt;&lt; endl;</pre>
 };</pre>
   </div>
 
-  <!-- Section 6: 经典题目 -->
-  <div class="section" id="problems">
-    <h2>6. 经典题目</h2>
+  <!-- Section 6: 例题与练习 -->
+  <div class="section" id="practice">
+    <h2>6. 例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P2580" target="_blank">P2580 于是他错误的点名开始了</a>
-      </div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2580" target="_blank">P2580 - 于是他错误的点名开始了</a></div>
       <p>标准 Trie 模板题。插入所有学生姓名，然后处理点名查询，判断是否正确、重复或不存在。</p>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3879" target="_blank">P3879 - [TJOI2010] 阅读理解</a></div>
+      <p>Trie 模板题。对文章中的单词建立 Trie，查询哪些行包含指定单词。</p>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
+
+    <h3>练习题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4551" target="_blank">P4551 - 最长异或路径</a></div>
+      <p>树上异或路径问题。先 DFS 预处理每个节点到根的异或路径值，然后在 01-Trie 中求最大异或对。</p>
+      <span class="tag tag-base">01-Trie</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/706/problem/D" target="_blank">CF 706D - Vasiliy's Multiset</a></div>
+      <p>动态维护一个多重集，支持插入、删除和查询与给定数的最大异或值。使用 01-Trie 维护。</p>
+      <span class="tag tag-base">01-Trie</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4735" target="_blank">P4735 - 最大异或和</a></div>
+      <p>可持久化 01-Trie 的经典应用。维护前缀异或和数组，支持在某个区间内查询与给定数的最大异或值。</p>
+      <span class="tag tag-base">可持久化01-Trie</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2922" target="_blank">P2922 - [USACO08DEC] Secret Message G</a></div>
+      <p>统计以某个二进制串为前缀的消息数量。在 01-Trie 上维护计数信息。</p>
+      <span class="tag tag-base">Trie</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/282/problem/E" target="_blank">CF 282E - Sausage Maximization</a></div>
+      <p>在数组的前缀和后缀中各选一个不相交的子数组，使异或和最大。01-Trie + 前后缀分解。</p>
+      <span class="tag tag-base">01-Trie</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3294" target="_blank">P3294 - [SCOI2016] 背单词</a></div>
+      <p>在 Trie 上做贪心排序。将所有单词插入 Trie，通过后缀关系优化遍历顺序。</p>
+      <span class="tag tag-base">Trie+贪心</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/665/problem/E" target="_blank">CF 665E - Beautiful Subarrays</a></div>
+      <p>统计异或和不小于 k 的子数组个数。用 01-Trie 维护前缀异或和，贪心统计。</p>
+      <span class="tag tag-base">01-Trie</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4407" target="_blank">P4407 - [JSOI2009] 电子字典</a></div>
+      <p>在 Trie 上支持模糊查找（增删改字符）。对每个查询在 Trie 上搜索所有可能的编辑距离为 1 的变体。</p>
+      <span class="tag tag-base">Trie</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3812" target="_blank">P3812 - [模板] 线性基</a></div>
+      <p>虽然主要是线性基模板题，但 01-Trie 也可以用于求解最大异或和子集问题。</p>
+      <span class="tag tag-base">01-Trie</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3065" target="_blank">P3065 - [USACO12OPEN] First! G</a></div>
+      <p>在 Trie 上做拓扑排序。判断哪些单词可以通过某种字母顺序成为字典序最小的前缀。</p>
+      <span class="tag tag-base">Trie+拓扑排序</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4097" target="_blank">P4097 - [HEOI2013] Segment</a></div>
+      <p>李超线段树 + 01-Trie 的综合应用。</p>
+      <span class="tag tag-base">01-Trie</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1481" target="_blank">P1481 - 魔族密码</a></div>
+      <p>统计有多少个字符串是其他字符串的前缀。用 Trie 计数，统计每个节点被多少字符串经过。</p>
+      <span class="tag tag-base">Trie</span>
       <span class="tag tag-easy">简单</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P4551" target="_blank">P4551 最长异或路径</a>
-      </div>
-      <p>树上异或路径问题。先 DFS 预处理每个节点到根的异或路径值，然后在 01-Trie 中求最大异或对。</p>
-      <span class="tag tag-mid">中等</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P3812" target="_blank">P3812 [模板] 线性基</a>
-      </div>
-      <p>虽然主要是线性基模板题，但 01-Trie 也可以用于求解最大异或和子集问题。</p>
-      <span class="tag tag-mid">中等</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P4735" target="_blank">P4735 最大异或和</a>
-      </div>
-      <p>可持久化 01-Trie 的经典应用。维护前缀异或和数组，支持在某个区间内查询与给定数的最大异或值。</p>
-      <span class="tag tag-hard">困难</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P4097" target="_blank">P4097 [HEOI2013] Segment</a>
-      </div>
-      <p>李超线段树 + 01-Trie 的综合应用。</p>
-      <span class="tag tag-hard">困难</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">
-        <a href="https://codeforces.com/contest/706/problem/D" target="_blank">CF 706D Vasiliy's Multiset</a>
-      </div>
-      <p>动态维护一个多重集，支持插入、删除和查询与给定数的最大异或值。使用 01-Trie 维护。</p>
-      <span class="tag tag-mid">中等</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">
-        <a href="https://codeforces.com/contest/282/problem/E" target="_blank">CF 282E Sausage Maximization</a>
-      </div>
-      <p>在数组的前缀和后缀中各选一个不相交的子数组，使异或和最大。01-Trie + 前后缀分解。</p>
+      <div class="problem-title"><a href="https://codeforces.com/contest/455/problem/B" target="_blank">CF 455B - A Lot of Games</a></div>
+      <p>在 Trie 上做博弈论 DP。两个人轮流在 Trie 上走，判断先手/后手的胜负态。</p>
+      <span class="tag tag-base">Trie+博弈</span>
       <span class="tag tag-hard">困难</span>
     </div>
   </div>

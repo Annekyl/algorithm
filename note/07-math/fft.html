@@ -34,7 +34,7 @@
       <li><a href="#ntt">NTT (数论变换)</a></li>
       <li><a href="#butterfly">蝴蝶运算与迭代实现</a></li>
       <li><a href="#template">C++ 完整模板</a></li>
-      <li><a href="#problems">经典问题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -412,62 +412,90 @@
 }</code></pre>
   </div>
 
-  <!-- ===== 经典问题 ===== -->
-  <div class="section" id="problems">
-    <h2>经典问题</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P3803 - 多项式乘法 (FFT)</div>
-      <p>给定两个多项式的系数，求它们的乘积。</p>
-      <p><strong>思路</strong>：FFT 模板题。注意结果四舍五入取整。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3803" target="_blank">P3803 - 多项式乘法 (FFT)</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4238" target="_blank">P4238 - 多项式求逆</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-mid">中等</span>
     </div>
 
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P1919 - 高精度乘法 (FFT)</div>
-      <p>两个大整数相乘，位数可达 10^6。</p>
-      <p><strong>思路</strong>：将每一位作为多项式系数，FFT 乘法后处理进位。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1919" target="_blank">P1919 - 高精度乘法 FFT</a></div>
+      <span class="tag tag-base">FFT 应用</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3723" target="_blank">P3723 - 礼物</a></div>
+      <span class="tag tag-base">循环卷积</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4721" target="_blank">P4721 - 分治 FFT</a></div>
+      <span class="tag tag-base">CDQ + NTT</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/632/E" target="_blank">CF 632E - Thief in a Shop</a></div>
+      <span class="tag tag-base">NTT + DP</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5205" target="_blank">P5205 - 多项式开根</a></div>
+      <span class="tag tag-base">多项式运算</span>
+      <span class="tag tag-hard">困难</span>
     </div>
 
+    <h3>变种题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P3723 - 礼物</div>
-      <p>两组数列，可以循环移位并对其中一个加常数，最小化差的平方和。</p>
-      <p><strong>思路</strong>：展开式子后，循环卷积部分用 FFT 加速。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5437" target="_blank">P5437 - 子集卷积</a></div>
+      <span class="tag tag-base">子集卷积</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/993/E" target="_blank">CF 993E - Nikita and Order Statistic</a></div>
+      <span class="tag tag-base">FFT 计数</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5293" target="_blank">P5293 - 分治 NTT</a></div>
+      <span class="tag tag-base">分治 + NTT</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1054/H" target="_blank">CF 1054H - Epic Convolution</a></div>
+      <span class="tag tag-base">NTT 应用</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5394" target="_blank">P5394 - 多项式指数</a></div>
+      <span class="tag tag-base">多项式运算</span>
+      <span class="tag tag-hard">困难</span>
     </div>
 
+    <h3>扩展题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P4238 - 多项式求逆</div>
-      <p>给定多项式 A(x)，求 B(x) 使得 A(x)*B(x) = 1 (mod x^n)。</p>
-      <p><strong>思路</strong>：倍增法 + NTT，每次将精度翻倍。O(n log n)。</p>
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1218/E" target="_blank">CF 1218E - Product Tuples</a></div>
+      <span class="tag tag-base">NTT + 组合</span>
+      <span class="tag tag-hard">困难</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">洛谷 P4721 - 分治 FFT</div>
-      <p>给定 g[1..n-1] 和 f[0]=1，f[i] = sum(f[j]*g[i-j])，求 f[]。</p>
-      <p><strong>思路</strong>：分治 FFT (CDQ 分治 + NTT)，O(n log^2 n)。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4556" target="_blank">P4556 - 雨天的尾巴</a></div>
+      <span class="tag tag-base">线段树合并</span>
+      <span class="tag tag-hard">困难</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">SPOJ MAXMATCH - Maximum Matching</div>
-      <p>给定只含 abc 的字符串，问两个相同长度字符串的最大匹配数（不同位置算不同匹配）。</p>
-      <p><strong>思路</strong>：分别对 a/b/c 字符用 FFT 做自相关，求和后取最大值。</p>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">洛谷 P4556 - 雨天的尾巴</div>
-      <p>树上操作 + 线段树合并。</p>
-      <p><strong>思路</strong>：涉及卷积运算时用 FFT/NTT 加速。</p>
-    </div>
-
-    <div class="box box-hard">
-      <div class="box-title">FFT/NTT 进阶应用</div>
-      <ul>
-        <li><strong>多项式求逆</strong>：倍增 + NTT，O(n log n)</li>
-        <li><strong>多项式开根</strong>：倍增 + NTT + 求逆，O(n log n)</li>
-        <li><strong>多项式对数/指数</strong>：利用导数和积分，O(n log n)</li>
-        <li><strong>多项式快速幂</strong>：取对数 -> 乘 k -> 取指数，O(n log n)</li>
-        <li><strong>分治 FFT</strong>：CDQ 分治 + NTT，解决递推卷积问题</li>
-        <li><strong>子集卷积</strong>：高维前缀和 + 逐位卷积</li>
-      </ul>
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1310/B" target="_blank">CF 1310B - Double Elimination</a></div>
+      <span class="tag tag-base">NTT + DP</span>
+      <span class="tag tag-hard">困难</span>
     </div>
   </div>
 

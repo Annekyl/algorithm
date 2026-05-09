@@ -35,7 +35,7 @@
       <li><a href="#modified">带修莫队</a></li>
       <li><a href="#rollback">回滚莫队</a></li>
       <li><a href="#template">完整模板</a></li>
-      <li><a href="#problems">经典例题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -627,68 +627,95 @@
 }</code></pre>
   </div>
 
-  <!-- ============================== -->
-  <!-- Section 6: 经典例题 -->
-  <!-- ============================== -->
-  <div class="section" id="problems">
-    <h2>经典例题</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P1972 - [SDOI2009] HH的项链</div>
-      <p>经典莫队题：求区间内不同数字的个数。也可以用树状数组离线做，但莫队更直观。</p>
-      <span class="tag tag-mid">普通莫队</span>
-      <span class="tag tag-base">区间计数</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">洛谷 P2709 - 小B的询问</div>
-      <p>求区间内每种数字出现次数的平方和。用莫队维护 cnt 和 sum of cnt^2。</p>
-      <span class="tag tag-mid">普通莫队</span>
-      <span class="tag tag-base">计数</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">洛谷 P1903 - [国家集训队] 数颜色 / 维护队列</div>
-      <p>带修莫队经典题：区间不同颜色数 + 单点修改颜色。</p>
-      <span class="tag tag-hard">带修莫队</span>
-      <span class="tag tag-base">三维莫队</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">洛谷 P5906 - 【模板】回滚莫队</div>
-      <p>回滚莫队模板题：求区间内元素最大出现次数。</p>
-      <span class="tag tag-mid">回滚莫队</span>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1494" target="_blank">P1494 - 小 Z 的袜子</a></div>
       <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">SPOJ DQUERY - D-query</div>
-      <p>区间不同元素个数，莫队经典题。也是 HH 的项链的简化版。</p>
-      <span class="tag tag-easy">普通莫队</span>
-      <span class="tag tag-base">入门</span>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2709" target="_blank">P2709 - 小B的询问</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
 
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">Codeforces 86D - Powerful array</div>
-      <p>求区间内每种数字出现次数的平方乘以该数字的值之和。莫队维护即可。</p>
-      <span class="tag tag-mid">普通莫队</span>
-      <span class="tag tag-base">计数</span>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1972" target="_blank">P1972 - HH的项链</a></div>
+      <span class="tag tag-base">普通莫队</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/86/D" target="_blank">CF 86D - Powerful array</a></div>
+      <span class="tag tag-base">普通莫队</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5906" target="_blank">P5906 - 回滚莫队模板</a></div>
+      <span class="tag tag-base">回滚莫队</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1903" target="_blank">P1903 - 数颜色</a></div>
+      <span class="tag tag-base">带修莫队</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3674" target="_blank">P3674 - 小清新人渣的本愿</a></div>
+      <span class="tag tag-base">莫队 + bitset</span>
+      <span class="tag tag-hard">困难</span>
     </div>
 
-    <div class="box box-info">
-      <div class="box-title">莫队与其他算法的对比</div>
-      <p>1. <strong>树状数组/线段树</strong>：在线，O(q log n)，适合单点修改+区间查询<br>
-         2. <strong>莫队</strong>：离线，O((n+q) sqrt(n))，适合复杂区间统计<br>
-         3. <strong>分块</strong>：在线/离线均可，O(n sqrt(n))，适合需要修改的区间问题<br>
-         选择依据：是否强制在线、操作类型、常数大小</p>
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3709" target="_blank">P3709 - 大爷的字符串</a></div>
+      <span class="tag tag-base">普通莫队</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/617/E" target="_blank">CF 617E - XOR and Favorite Number</a></div>
+      <span class="tag tag-base">异或莫队</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4887" target="_blank">P4887 - 天天爱跑步</a></div>
+      <span class="tag tag-base">树上莫队</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1462/F" target="_blank">CF 1462F - The Treasure of The Segments</a></div>
+      <span class="tag tag-base">莫队 + 计数</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5072" target="_blank">P5072 - Ynoi2015</a></div>
+      <span class="tag tag-base">莫队 + 分块</span>
+      <span class="tag tag-hard">困难</span>
     </div>
 
-    <div class="box box-hard">
-      <div class="box-title">莫队的优化技巧</div>
-      <p>1. <strong>奇偶性优化</strong>：蛇形走位减少右指针回退<br>
-         2. <strong>值域离散化</strong>：当值域很大时先离散化<br>
-         3. <strong>块大小微调</strong>：实际比赛中块大小可以适当调大（如 500~700）以减少常数<br>
-         4. <strong>预处理</strong>：某些操作可以预处理前缀信息辅助莫队</p>
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1093/F" target="_blank">CF 1093F - Vasya and Array</a></div>
+      <span class="tag tag-base">莫队 + DP</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4879" target="_blank">P4879 - ycz 的神题</a></div>
+      <span class="tag tag-base">莫队 + 平衡树</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/940/F" target="_blank">CF 940F - Machine Learning</a></div>
+      <span class="tag tag-base">带修莫队</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4898" target="_blank">P4898 - TTY 的求助</a></div>
+      <span class="tag tag-base">莫队 + 哈希</span>
+      <span class="tag tag-hard">困难</span>
     </div>
   </div>
 

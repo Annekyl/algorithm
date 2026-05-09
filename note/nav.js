@@ -14,12 +14,15 @@
   backBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> 返回目录';
   document.body.appendChild(backBtn);
 
-  // ===== 2. Sidebar TOC (right side) =====
+  // ===== 2. Sidebar TOC (right side, collapsible) =====
   const headings = document.querySelectorAll('.section h2, .section h3, .section-title');
   if (headings.length > 1) {
     const sidebar = document.createElement('nav');
     sidebar.className = 'sidebar-toc';
-    sidebar.innerHTML = '<div class="sidebar-toc-title">目录</div><ul class="sidebar-toc-list"></ul>';
+    sidebar.innerHTML = `
+      <div class="sidebar-toc-title">目录</div>
+      <ul class="sidebar-toc-list"></ul>
+    `;
     const list = sidebar.querySelector('.sidebar-toc-list');
 
     headings.forEach((h, i) => {
@@ -35,6 +38,32 @@
     });
 
     document.body.appendChild(sidebar);
+
+    // Toggle button — fixed at right edge, separate from sidebar
+    const toggle = document.createElement('button');
+    toggle.className = 'sidebar-toggle';
+    toggle.title = '收起/展开目录';
+    toggle.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+    document.body.appendChild(toggle);
+
+    const sidebarStateKey = 'algo-notes-sidebar-collapsed';
+    const saved = localStorage.getItem(sidebarStateKey);
+    const startCollapsed = saved === null ? true : saved === 'true';
+    if (startCollapsed) sidebar.classList.add('collapsed');
+
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sidebar.classList.toggle('collapsed');
+      localStorage.setItem(sidebarStateKey, sidebar.classList.contains('collapsed'));
+    });
+
+    // Click outside sidebar (but not on toggle) to collapse
+    document.addEventListener('click', (e) => {
+      if (!sidebar.classList.contains('collapsed') && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+        sidebar.classList.add('collapsed');
+        localStorage.setItem(sidebarStateKey, 'true');
+      }
+    });
 
     const links = sidebar.querySelectorAll('.sidebar-toc-link');
     const offsetMap = Array.from(headings);
@@ -56,6 +85,9 @@
         e.preventDefault();
         const target = document.querySelector(link.getAttribute('href'));
         if (target) window.scrollTo({ top: target.offsetTop - 20, behavior: 'smooth' });
+        // Auto-collapse on link click (mobile-friendlier)
+        sidebar.classList.add('collapsed');
+        localStorage.setItem(sidebarStateKey, 'true');
       });
     });
   }

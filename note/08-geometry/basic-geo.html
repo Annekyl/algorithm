@@ -37,7 +37,7 @@
       <li><a href="#point-to-line">点到直线距离</a></li>
       <li><a href="#polygon-area">多边形面积</a></li>
       <li><a href="#template">完整模板</a></li>
-      <li><a href="#problems">经典例题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -478,50 +478,90 @@
 }</code></pre>
   </div>
 
-  <!-- ============================== -->
-  <!-- Section 8: 经典例题 -->
-  <!-- ============================== -->
-  <div class="section" id="problems">
-    <h2>经典例题</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">POJ 2318 - TOYS</div>
-      <p>给定一个矩形区域和若干隔板，求每个子区域内的玩具数量。使用叉积判断点在直线的哪一侧，配合二分查找。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1354" target="_blank">P1354 - 房间最短路问题</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1452" target="_blank">P1452 - Beauty Contest</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <h3>练习题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1331" target="_blank">P1331 - 海战</a></div>
       <span class="tag tag-base">叉积</span>
-      <span class="tag tag-mid">二分</span>
+      <span class="tag tag-easy">简单</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">POJ 3304 - Segments</div>
-      <p>判断是否存在一条直线与所有给定线段相交。枚举所有端点对作为候选直线方向，验证每条线段是否与之相交。</p>
-      <span class="tag tag-base">线段相交</span>
-      <span class="tag tag-mid">枚举</span>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1183" target="_blank">P1183 - 多边形面积</a></div>
+      <span class="tag tag-base">叉积</span>
+      <span class="tag tag-easy">简单</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">POJ 1265 - Area</div>
-      <p>给定格点多边形，求其面积、内部格点数和边界格点数。使用 Pick 定理：<code>S = I + B/2 - 1</code>。</p>
-      <span class="tag tag-base">多边形面积</span>
-      <span class="tag tag-math">Pick定理</span>
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/993/A" target="_blank">CF 993A - Two Squares</a></div>
+      <span class="tag tag-base">几何判定</span>
+      <span class="tag tag-mid">中等</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">HDU 1086 - Line Segments Intersection</div>
-      <p>统计 n 条线段中相交的对数。直接 O(n^2) 枚举所有线段对，使用跨立实验判断。</p>
-      <span class="tag tag-easy">线段相交</span>
-      <span class="tag tag-base">枚举</span>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2385" target="_blank">P2385 - 凸多边形</a></div>
+      <span class="tag tag-base">点与多边形</span>
+      <span class="tag tag-mid">中等</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">洛谷 P1331 - 海战</div>
-      <p>在网格图中判断船只形状是否合法（矩形）。可以用叉积思想辅助判断，或直接检查 2x2 子矩阵。</p>
-      <span class="tag tag-easy">基础几何</span>
-      <span class="tag tag-base">网格</span>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1429" target="_blank">P1429 - 平面最近点对</a></div>
+      <span class="tag tag-base">分治</span>
+      <span class="tag tag-mid">中等</span>
     </div>
 
-    <div class="box box-tip">
-      <div class="box-title">Pick 定理</div>
-      <p>对于顶点都在格点上的简单多边形，面积 <code>S</code>、内部格点数 <code>I</code>、边界格点数 <code>B</code> 满足：<code>S = I + B/2 - 1</code>。边界格点数可以通过计算每条边上 gcd(dx, dy) 得到。</p>
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1648" target="_blank">P1648 - 距离</a></div>
+      <span class="tag tag-base">距离计算</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/166/B" target="_blank">CF 166B - Polygon</a></div>
+      <span class="tag tag-base">多边形</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2742" target="_blank">P2742 - 模板题 凸包</a></div>
+      <span class="tag tag-base">凸包</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1036/E" target="_blank">CF 1036E - Covered Points</a></div>
+      <span class="tag tag-base">线段交点</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4680" target="_blank">P4680 - 计算几何</a></div>
+      <span class="tag tag-base">Pick 定理</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/814/E" target="_blank">CF 814E - An unavoidable detour for home</a></div>
+      <span class="tag tag-base">几何 + DP</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4676" target="_blank">P4676 - 山水封印</a></div>
+      <span class="tag tag-base">半平面交</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/975/E" target="_blank">CF 975E - Hagia's Tree</a></div>
+      <span class="tag tag-base">几何 + 旋转</span>
+      <span class="tag tag-hard">困难</span>
     </div>
   </div>
 

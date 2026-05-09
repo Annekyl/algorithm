@@ -34,6 +34,7 @@
       <li><a href="#hierholzer">Hierholzer 算法</a></li>
       <li><a href="#template">C++ 完整模板</a></li>
       <li><a href="#problems">经典问题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -375,55 +376,101 @@ vector&lt;<span class="ty">int</span>&gt; path;
 }</code></pre>
   </div>
 
-  <!-- ===== 经典问题 ===== -->
-  <div class="section" id="problems">
-    <h2>经典问题</h2>
+  <!-- ===== 例题与练习 ===== -->
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P1341" target="_blank">P1341 无序字母对</a>
-      </div>
-      <p>将字母对拼成序列，使得相邻字母对的衔接字符相同。转化为在无向图上找字典序最小的欧拉路径。注意起点的选取要取字典序最小的奇度数节点。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P7771" target="_blank">P7771 【模板】欧拉路径</a></div>
+      <span class="tag tag-base">模板</span><span class="tag tag-easy">入门</span>
+      <p>判定有向图是否存在欧拉路径并输出。需要找出入度条件满足的起点，用 Hierholzer 算法求路径。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1341" target="_blank">P1341 无序字母对</a></div>
+      <span class="tag tag-base">模板</span><span class="tag tag-mid">中等</span>
+      <p>将字母对拼成序列，使得相邻字母对的衔接字符相同。转化为无向图上找字典序最小的欧拉路径。</p>
     </div>
 
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P2731" target="_blank">P2731 [USACO3.3] 骑马修栅栏 Riding the Fences</a>
-      </div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2731" target="_blank">P2731 [USACO3.3] 骑马修栅栏 Riding the Fences</a></div>
+      <span class="tag tag-mid">中等</span>
       <p>经典的欧拉路径模板题。给定多重图，找一条经过所有边恰好一次的路径。需要输出字典序最小的解。</p>
     </div>
-
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P1637" target="_blank">P1637 三元上升子序列</a>
-      </div>
-      <p>虽然不是直接的欧拉路径题，但可以借鉴图论建模思想。实际是树状数组/归并排序题。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P6066" target="_blank">P6066 [USACO05JAN] Watchcow S</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>有向图欧拉回路。每条边需要正向经过一次，反向经过一次。转化为双向有向图上的欧拉回路问题。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P11279" target="_blank">P11279 欧拉回路</a></div>
+      <span class="tag tag-base">模板</span><span class="tag tag-mid">中等</span>
+      <p>判定有向图/无向图是否存在欧拉回路，并输出回路。综合模板题，需注意无向图的边标记。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1147" target="_blank">P1147 连续自然数和</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>虽然不是欧拉回路题，但与图论建模思维相通。找出所有连续自然数段使其和为 M，需要分析奇偶性和因子。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P6628" target="_blank">P6628 [省选联考 2020 B 卷] 丁香之路</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>欧拉回路 + 最短路。在图上求经过指定边集的最短回路，需要先补边使图满足欧拉回路条件。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3644" target="_blank">P3644 [APIO2015] 八邻旁之桥</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>将点对通过桥连接使图存在欧拉回路，需要综合运用图论和贪心。</p>
     </div>
 
+    <h3>变种题</h3>
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P6066" target="_blank">P6066 [USACO05JAN] Watchcow S</a>
-      </div>
-      <p>有向图欧拉回路。每条边需要正向经过一次，反向经过一次。转化为无向图或双向有向图上的欧拉回路问题。</p>
+      <div class="problem-title"><a href="https://codeforces.com/contest/723/problem/E" target="_blank">CF 723E One-Way Reform</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>将无向图的边定向，使得出度等于入度的节点最多。利用欧拉回路性质：在回路上定向，所有节点出度等于入度。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/508/problem/D" target="_blank">CF 508D Tanya and Password</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>将长度为 3 的字符串拼接成序列使得相邻字符串有 2 字符重叠。转化为有向图欧拉路径问题，节点为 2 字符组合。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/86/problem/E" target="_blank">CF 86E Elven Cyberwand</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>构造特殊的有向图使其存在欧拉回路。需要理解 de Bruijn 序列与欧拉回路的关系。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2788" target="_blank">P2788 数学 1（math）</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>将数字看作节点，相邻数字拼接为边，构造欧拉路径。需要分析图的连通性和度数条件。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1726" target="_blank">P1726 上白泽慧音</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>混合图上的欧拉回路问题变种。需要判断有向图中添加最少反向边使其存在欧拉回路。</p>
     </div>
 
+    <h3>扩展题</h3>
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P11279" target="_blank">P11279 欧拉回路</a>
-      </div>
-      <p>判定有向图/无向图是否存在欧拉回路，并输出回路。综合模板题。</p>
+      <div class="problem-title"><a href="https://codeforces.com/contest/1152/problem/E" target="_blank">CF 1152E Neko and Flashback</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>构造满足条件的排列，转化为在多重图上找欧拉路径。需要离散化和线段树维护最小值。</p>
     </div>
-
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://codeforces.com/contest/723/problem/E" target="_blank">CF 723E One-Way Reform</a>
-      </div>
-      <p>将无向图的边定向，使得出度等于入度的节点最多。利用欧拉回路的性质：在欧拉回路上定向，所有节点出度等于入度。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4445" target="_blank">P4445 [AHOI2018初中组] 铺设道路</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>虽然不是欧拉路径题，但考察类似的图论建模能力。贪心 + 差分思想。</p>
     </div>
-
-    <div class="box box-hard">
-      <div class="box-title">进阶：混合图欧拉回路</div>
-      <p>如果图中既有有向边又有无向边，判断是否存在欧拉回路需要用<strong>网络流</strong>。将无向边先任意定向，然后通过调整流量使每个节点的入度等于出度。这属于较高难度的综合题。</p>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/36/problem/D" target="_blank">CF 36D Lessons</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>棋盘上走遍所有格子的博弈问题，可转化为欧拉路径判定。需要分析棋盘的连通性和度数。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/1368/problem/E" target="_blank">CF 1368E Ski Accidents</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>DAG 上删除最少节点破坏所有长度为 4 的路径，与欧拉路径思想相关但更偏构造。</p>
     </div>
   </div>
 

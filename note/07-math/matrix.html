@@ -33,7 +33,7 @@
       <li><a href="#fast-pow">矩阵快速幂</a></li>
       <li><a href="#applications">应用</a></li>
       <li><a href="#template">C++ 完整模板</a></li>
-      <li><a href="#problems">经典问题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -298,58 +298,90 @@
 }</code></pre>
   </div>
 
-  <!-- ===== 经典问题 ===== -->
-  <div class="section" id="problems">
-    <h2>经典问题</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P1939 - 矩阵加速（数列）</div>
-      <p>已知 a[1]=a[2]=a[3]=1, a[n]=a[n-1]+a[n-3]，求 a[n] % MOD。n 可达 2*10^9。</p>
-      <p><strong>思路</strong>：构造 3x3 转移矩阵，用矩阵快速幂加速。时间复杂度 O(27 * log n)。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3390" target="_blank">P3390 - 矩阵快速幂模板</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">洛谷 P1962 - Fibonacci 数列</div>
-      <p>求 F(n) % (10^9+7)，n 可达 2*10^9。</p>
-      <p><strong>思路</strong>：经典 2x2 矩阵快速幂，O(8 * log n)。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1939" target="_blank">P1939 - 矩阵加速（数列）</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
 
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P1349 - 广义 Fibonacci 数列</div>
-      <p>给定 f(1)=f(2)=1, f(n)=p*f(n-1)+q*f(n-2)，求 f(n) % MOD。</p>
-      <p><strong>思路</strong>：转移矩阵第一行为 [p, q]，第二行为 [1, 0]。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1962" target="_blank">P1962 - Fibonacci 数列</a></div>
+      <span class="tag tag-base">矩阵快速幂</span>
+      <span class="tag tag-easy">简单</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">HDU 1757 - A Simple Math Problem</div>
-      <p>给定 k 和 m，f(x) = a_0*f(x-1) + a_1*f(x-2) + ... + a_9*f(x-10)，其中 a_i 给定。f(0)~f(9) = 0~9。当 x < k 时 f(x)=x，否则 f(x) = sum(a_i * f(x-i-1))，求 f(m) % mod。</p>
-      <p><strong>思路</strong>：10x10 矩阵快速幂。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1349" target="_blank">P1349 - 广义 Fibonacci 数列</a></div>
+      <span class="tag tag-base">矩阵快速幂</span>
+      <span class="tag tag-mid">中等</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">Codeforces 166E - Tetrahedron</div>
-      <p>蚂蚁在正四面体的四个顶点上，每秒等概率走到相邻顶点。求 n 秒后回到起点的概率。</p>
-      <p><strong>思路</strong>：4x4 转移矩阵，矩阵快速幂求方案数，再除以 3^n。</p>
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/166/E" target="_blank">CF 166E - Tetrahedron</a></div>
+      <span class="tag tag-base">转移矩阵</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4783" target="_blank">P4783 - 矩阵求逆</a></div>
+      <span class="tag tag-base">矩阵运算</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3758" target="_blank">P3758 - 可爱的可达性</a></div>
+      <span class="tag tag-base">邻接矩阵</span>
+      <span class="tag tag-mid">中等</span>
     </div>
 
-    <div class="box box-tip">
-      <div class="box-title">解题技巧总结</div>
-      <ul>
-        <li>看到线性递推 + 大 n，立刻想到矩阵快速幂</li>
-        <li>转移矩阵的构造是核心：将状态间的转移关系填入矩阵</li>
-        <li>如果递推有常数项（如 f(n) = 2*f(n-1) + 1），增加一个恒为 1 的维度</li>
-        <li>矩阵大小决定了每次乘法的常数，尽量缩小矩阵维度</li>
-      </ul>
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3200" target="_blank">P3200 - 矩阵快速幂优化 DP</a></div>
+      <span class="tag tag-base">矩阵 + DP</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/821/E" target="_blank">CF 821E - Okabe and El Psy Kongroo</a></div>
+      <span class="tag tag-base">矩阵分段</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4967" target="_blank">P4967 - 黑暗打击</a></div>
+      <span class="tag tag-base">矩阵 + 期望</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1182/E" target="_blank">CF 1182E - Product Oriented Recurrence</a></div>
+      <span class="tag tag-base">矩阵 + 数论</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2886" target="_blank">P2886 - Cow Relays G</a></div>
+      <span class="tag tag-base">矩阵 + 图论</span>
+      <span class="tag tag-mid">中等</span>
     </div>
 
-    <div class="box box-info">
-      <div class="box-title">常见转移矩阵模板</div>
-      <ul>
-        <li><strong>Fibonacci</strong>：2x2 矩阵 [[1,1],[1,0]]</li>
-        <li><strong>等比数列求和</strong>：2x2 矩阵 [[r,0],[1,1]]，状态为 (S_n, 1)</li>
-        <li><strong>带常数项递推</strong>：增加一列 [1]，矩阵维度 +1</li>
-        <li><strong>路径计数</strong>：邻接矩阵的幂</li>
-      </ul>
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1622/F" target="_blank">CF 1622F - Quadrilateral</a></div>
+      <span class="tag tag-base">矩阵 + 计数</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5343" target="_blank">P5343 - 矩阵树定理</a></div>
+      <span class="tag tag-base">矩阵行列式</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/450/B" target="_blank">CF 450B - Jzzhu and Sequences</a></div>
+      <span class="tag tag-base">矩阵快速幂</span>
+      <span class="tag tag-easy">简单</span>
     </div>
   </div>
 

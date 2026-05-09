@@ -37,7 +37,7 @@
       <li><a href="#pruning">剪枝策略 — 可行性 / 最优性 / 重复性 / 搜索顺序</a></li>
       <li><a href="#euler">DFS 序 — 树的欧拉序</a></li>
       <li><a href="#dfstree">DFS 树 — 树边 / 回边 / 前向边 / 横叉边</a></li>
-      <li><a href="#problems">经典例题汇总</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -721,154 +721,87 @@
     </div>
   </div>
 
-  <!-- ============================================================ -->
-  <!-- 7. 经典例题汇总 -->
-  <!-- ============================================================ -->
-  <div class="section" id="problems">
-    <h2>7. 经典例题汇总</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
-    <h3>7.1 迷宫问题</h3>
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P1605 迷宫</div>
-      <p>给定一个 N*M 的迷宫，其中有些格子可以走（0），有些不能走（1）。求从起点到终点的路径数。</p>
-      <p><strong>思路：</strong>经典 DFS + 回溯，每到一个格子标记为已走，四个方向搜索，回溯时恢复标记。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1706" target="_blank">洛谷 P1706 全排列问题</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
-
-    <pre><code><span class="cm">// 迷宫路径计数</span>
-<span class="ty">int</span> n, m, sx, sy, ex, ey, ans = <span class="num">0</span>;
-<span class="ty">bool</span> grid[N][N], vis[N][N];
-<span class="kw">const</span> <span class="ty">int</span> dx[] = {<span class="num">-1</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span>};
-<span class="kw">const</span> <span class="ty">int</span> dy[] = {<span class="num">0</span>, <span class="num">0</span>, <span class="num">-1</span>, <span class="num">1</span>};
-
-<span class="ty">void</span> <span class="fn">dfs_maze</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
-    <span class="kw">if</span> (x == ex &amp;&amp; y == ey) {
-        ans++;
-        <span class="kw">return</span>;
-    }
-    <span class="kw">for</span> (<span class="ty">int</span> d = <span class="num">0</span>; d &lt; <span class="num">4</span>; d++) {
-        <span class="ty">int</span> nx = x + dx[d], ny = y + dy[d];
-        <span class="kw">if</span> (nx >= <span class="num">1</span> &amp;&amp; nx &lt;= n &amp;&amp; ny >= <span class="num">1</span> &amp;&amp; ny &lt;= m
-            &amp;&amp; !vis[nx][ny] &amp;&amp; grid[nx][ny]) {
-            vis[nx][ny] = <span class="kw">true</span>;
-            <span class="fn">dfs_maze</span>(nx, ny);
-            vis[nx][ny] = <span class="kw">false</span>;  <span class="cm">// 回溯</span>
-        }
-    }
-}</code></pre>
-
-    <h3>7.2 全排列生成</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P1706 全排列问题</div>
-      <p>输出自然数 1 到 n 的所有全排列。</p>
-      <p><strong>思路：</strong>DFS 逐位确定排列中的数字，用 visited 数组标记已使用的数字。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1605" target="_blank">洛谷 P1605 迷宫</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
 
-    <pre><code><span class="cm">// 全排列生成</span>
-<span class="ty">int</span> n, path[N];
-<span class="ty">bool</span> used[N];
-
-<span class="ty">void</span> <span class="fn">dfs_perm</span>(<span class="ty">int</span> depth) {
-    <span class="kw">if</span> (depth == n + <span class="num">1</span>) {
-        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
-            <span class="fn">printf</span>(<span class="str">"%5d"</span>, path[i]);
-        <span class="fn">printf</span>(<span class="str">"\n"</span>);
-        <span class="kw">return</span>;
-    }
-    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
-        <span class="kw">if</span> (!used[i]) {
-            used[i] = <span class="kw">true</span>;
-            path[depth] = i;
-            <span class="fn">dfs_perm</span>(depth + <span class="num">1</span>);
-            used[i] = <span class="kw">false</span>;
-        }
-    }
-}</code></pre>
-
-    <h3>7.3 连通块计数经典题</h3>
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P1596 Lake Counting</div>
-      <p>有一个大小为 N*M 的园子，雨后积起了水。八连通的积水被认为是连接在一起的。求园子里一共有多少水洼。</p>
-      <p><strong>思路：</strong>八方向 Flood Fill，每找到一个未访问的 'W' 就 DFS 标记整个水洼。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1219" target="_blank">洛谷 P1219 八皇后</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1019" target="_blank">洛谷 P1019 单词接龙</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1596" target="_blank">洛谷 P1596 [USACO06OCT] Lake Counting</a></div>
+      <span class="tag tag-easy">入门</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1141" target="_blank">洛谷 P1141 01迷宫</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1330" target="_blank">洛谷 P1330 封锁阳光大学</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1443" target="_blank">洛谷 P1443 马的遍历</a></div>
+      <span class="tag tag-easy">入门</span>
     </div>
 
-    <pre><code><span class="cm">// 八连通 Flood Fill</span>
-<span class="kw">const</span> <span class="ty">int</span> dx8[] = {<span class="num">-1</span>,<span class="num">-1</span>,<span class="num">-1</span>,<span class="num">0</span>,<span class="num">0</span>,<span class="num">1</span>,<span class="num">1</span>,<span class="num">1</span>};
-<span class="kw">const</span> <span class="ty">int</span> dy8[] = {<span class="num">-1</span>,<span class="num">0</span>,<span class="num">1</span>,<span class="num">-1</span>,<span class="num">1</span>,<span class="num">-1</span>,<span class="num">0</span>,<span class="num">1</span>};
-
-<span class="ty">void</span> <span class="fn">dfs_lake</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
-    vis[x][y] = <span class="kw">true</span>;
-    <span class="kw">for</span> (<span class="ty">int</span> d = <span class="num">0</span>; d &lt; <span class="num">8</span>; d++) {
-        <span class="ty">int</span> nx = x + dx8[d], ny = y + dy8[d];
-        <span class="kw">if</span> (nx >= <span class="num">0</span> &amp;&amp; nx &lt; n &amp;&amp; ny >= <span class="num">0</span> &amp;&amp; ny &lt; m
-            &amp;&amp; !vis[nx][ny] &amp;&amp; grid[nx][ny] == <span class="str">'W'</span>) {
-            <span class="fn">dfs_lake</span>(nx, ny);
-        }
-    }
-}</code></pre>
-
-    <h3>7.4 更多推荐题目</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>题目</th>
-            <th>难度</th>
-            <th>知识点</th>
-            <th>说明</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>洛谷 P1219 八皇后</td>
-            <td><span class="tag tag-mid">中等</span></td>
-            <td>DFS + 剪枝</td>
-            <td>N 皇后问题，回溯经典</td>
-          </tr>
-          <tr>
-            <td>洛谷 P1141 01 迷宫</td>
-            <td><span class="tag tag-mid">中等</span></td>
-            <td>DFS + 连通块 + 记忆化</td>
-            <td>求每个格子可达的格子数</td>
-          </tr>
-          <tr>
-            <td>洛谷 P1330 封锁阳光大学</td>
-            <td><span class="tag tag-mid">中等</span></td>
-            <td>DFS 染色 / 二分图判定</td>
-            <td>DFS 在图染色中的应用</td>
-          </tr>
-          <tr>
-            <td>洛谷 P3388 割点</td>
-            <td><span class="tag tag-hard">困难</span></td>
-            <td>DFS 树 + Tarjan</td>
-            <td>求图中所有割点</td>
-          </tr>
-          <tr>
-            <td>洛谷 P3387 缩点</td>
-            <td><span class="tag tag-hard">困难</span></td>
-            <td>DFS + Tarjan SCC</td>
-            <td>强连通分量缩点</td>
-          </tr>
-          <tr>
-            <td>洛谷 P2812 校园网络</td>
-            <td><span class="tag tag-hard">困难</span></td>
-            <td>DFS + SCC + 缩点</td>
-            <td>强连通分量应用</td>
-          </tr>
-          <tr>
-            <td>洛谷 P1433 吃奶酪</td>
-            <td><span class="tag tag-mid">中等</span></td>
-            <td>DFS + 最优性剪枝</td>
-            <td>类 TSP 问题</td>
-          </tr>
-          <tr>
-            <td>LeetCode 695 岛屿最大面积</td>
-            <td><span class="tag tag-easy">简单</span></td>
-            <td>Flood Fill</td>
-            <td>二维网格连通块</td>
-          </tr>
-        </tbody>
-      </table>
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/115/A" target="_blank">CF 115A Party</a></div>
+      <span class="tag tag-mid">中等</span>
     </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1433" target="_blank">洛谷 P1433 吃奶酪</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3388" target="_blank">洛谷 P3388 【模板】割点</a></div>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3387" target="_blank">洛谷 P3387 【模板】缩点</a></div>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2812" target="_blank">洛谷 P2812 校园网络</a></div>
+      <span class="tag tag-hard">困难</span>
+    </div>
+
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P10447" target="_blank">洛谷 P10447 子集和问题</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1120" target="_blank">洛谷 P1120 小木棍</a></div>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1092" target="_blank">洛谷 P1092 虫食算</a></div>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1462" target="_blank">洛谷 P1462 通往奥格瑞玛的道路</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
   </div>
 
   <!-- ============================================================ -->

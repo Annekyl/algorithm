@@ -35,6 +35,7 @@
       <li><a href="#applications">LCA 的应用</a></li>
       <li><a href="#template">C++ 完整模板</a></li>
       <li><a href="#problems">经典问题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -357,50 +358,106 @@ diff[l] -= w;
 };</code></pre>
   </div>
 
-  <!-- ===== 经典问题 ===== -->
-  <div class="section" id="problems">
-    <h2>经典问题</h2>
+  <!-- ===== 例题与练习 ===== -->
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P3379" target="_blank">P3379 【模板】最近公共祖先（LCA）</a>
-      </div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3379" target="_blank">P3379 【模板】最近公共祖先（LCA）</a></div>
+      <span class="tag tag-base">模板</span><span class="tag tag-easy">入门</span>
       <p>LCA 基础模板题，给定一棵树和多组查询，求每组的 LCA。可用倍增法或 Tarjan 离线算法。</p>
     </div>
-
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P3398" target="_blank">P3398 仓鼠找 sugar</a>
-      </div>
-      <p>判断树上两条路径是否相交。关键结论：路径 (a,b) 和 (c,d) 相交，当且仅当 <code>LCA(a,b)</code> 在路径 (c,d) 上，或 <code>LCA(c,d)</code> 在路径 (a,b) 上。</p>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P2680" target="_blank">P2680 运输计划</a>
-      </div>
-      <p>二分答案 + 树上差分 + LCA。需要将一条边的权值改为 0，使所有路径的最大值最小。经典综合题。</p>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P1967" target="_blank">P1967 货车运输</a>
-      </div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1967" target="_blank">P1967 货车运输</a></div>
+      <span class="tag tag-base">模板</span><span class="tag tag-mid">中等</span>
       <p>最大生成树 + LCA 求路径最小值。先建最大生成树，再用倍增法维护路径上的最小边权。</p>
     </div>
 
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P4281" target="_blank">P4281 [AHOI2008] 紧急集合 / 聚会</a>
-      </div>
-      <p>三点 LCA 问题。三个点到某个汇合点的距离之和最小，汇合点为三个 LCA 中深度最大的那个。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3398" target="_blank">P3398 仓鼠找 sugar</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>判断树上两条路径是否相交。关键结论：路径 (a,b) 和 (c,d) 相交当且仅当 LCA(a,b) 在路径 (c,d) 上或 LCA(c,d) 在路径 (a,b) 上。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3128" target="_blank">P3128 [USACO15DEC] Max Flow P</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>树上差分 + LCA 模板应用。对多条路径上的节点打标记，求最大标记次数。每次在 u→v 路径上 +1，用差分 + 子树累加实现。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4281" target="_blank">P4281 [AHOI2008] 紧急集合 / 聚会</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>三点 LCA 问题。三个点到某个汇合点的距离之和最小，汇合点为三个两两 LCA 中深度最大的那个。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2680" target="_blank">P2680 运输计划</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>二分答案 + 树上差分 + LCA。需要将一条边的权值改为 0，使所有路径的最大值最小。经典综合题。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3258" target="_blank">P3258 [JLOI2014] 松鼠的新家</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>树上差分 + LCA。按给定顺序访问节点，对相邻节点间路径上的所有节点 +1，最后还原统计。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5836" target="_blank">P5836 [USACO19DEC] Milk Visits G</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>树上路径查询，判断路径上是否存在指定颜色的节点。可用 LCA + 并查集或树链剖分。</p>
     </div>
 
+    <h3>变种题</h3>
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://codeforces.com/contest/609/problem/E" target="_blank">CF 609E Minimum spanning tree for each edge</a>
-      </div>
-      <p>对每条边，求包含该边的最小生成树权值。结合 Kruskal 和 LCA 求路径最大边权。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1600" target="_blank">P1600 [NOIP2016 提高组] 天天爱跑步</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>树上差分 + LCA 综合难题。每条路径上的观察员在特定深度能看到选手，需要分别讨论上行和下行路径。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/208/problem/E" target="_blank">CF 208E Blood Cousins</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>给定多组查询 (v, p)，求 v 的第 p 个祖先的所有后代中深度与 v 相同的节点数。离线 + 启发式合并或 DFS 序 + 二分。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/609/problem/E" target="_blank">CF 609E Minimum spanning tree for each edge</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>对每条边求包含该边的最小生成树权值。结合 Kruskal 和倍增 LCA 求路径最大边权。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/500/problem/E" target="_blank">CF 500E New Year Domino</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>区间覆盖 + 贪心 + 倍增。将多米诺骨牌倒塌问题转化为区间覆盖，用倍增跳过已覆盖区间求代价。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4103" target="_blank">P4103 [HEOI2014] 大工程</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>虚树 + LCA。在树上选定 k 个关键点建虚树，求关键点两两之间的距离和、最大值、最小值。</p>
+    </div>
+
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2420" target="_blank">P2420 让我们异或吧</a></div>
+      <span class="tag tag-easy">入门</span>
+      <p>树上路径异或和。预处理根到每个节点的异或和，利用 LCA 性质 O(1) 求路径异或和。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3320" target="_blank">P3320 [SDOI2015] 寻宝游戏</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>动态维护虚树周长。每次插入/删除关键点，用 set 维护 DFS 序相邻点对的 LCA 距离和。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/293/problem/E" target="_blank">CF 293E Close Vertices</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>点分治 + 树状数组。统计树上距离不超过 l 且边权和不超过 w 的点对数量。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3806" target="_blank">P3806 【模板】点分治 1</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>点分治模板题。统计树上距离恰好为 k 的点对是否存在。点分治的核心框架练习。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4556" target="_blank">P4556 [Vani有约会] 雨天的尾巴 /【模板】线段树合并</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>树上差分 + 线段树合并。对路径上所有节点添加/删除某种物资，最后求每个节点收到最多的物资种类。</p>
     </div>
   </div>
 

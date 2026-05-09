@@ -37,7 +37,7 @@
       <li><a href="#chess">4. 棋盘覆盖问题</a></li>
       <li><a href="#partition">5. 集合划分问题</a></li>
       <li><a href="#hamilton">6. 哈密顿路径计数</a></li>
-      <li><a href="#practice">7. 经典题目推荐</a></li>
+      <li><a href="#practice">例题与练习</a></li>
       <li><a href="#summary">8. 总结与技巧</a></li>
     </ul>
   </div>
@@ -620,68 +620,68 @@ dist 矩阵:
     </div>
   </div>
 
-  <!-- ==================== 7. 经典题目 ==================== -->
+  <!-- ==================== 7. 例题与练习 ==================== -->
   <div class="section" id="practice">
-    <h2>7. 经典题目推荐</h2>
+    <h2>例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">POJ 3311 - Hie with the Pie</div>
-      <p>TSP 变体。n+1 个点（n &le; 10），从 0 出发，经过 1~n 各点恰好一次，回到 0。可以用 Floyd 预处理两点间最短路，然后状压 DP。注意可以多次经过某些点。</p>
-      <span class="tag tag-mid">中等</span>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1896" target="_blank">洛谷 P1896 [SCOI2005] 互不侵犯</a></div>
+      <span class="tag tag-base">模板</span><span class="tag tag-easy">入门</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2704" target="_blank">洛谷 P2704 [NOI2001] 炮兵阵地</a></div>
+      <span class="tag tag-base">模板</span><span class="tag tag-easy">入门</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3052" target="_blank">洛谷 P3052 [USACO12MAR] Cows in a Skyscraper G</a></div>
+      <span class="tag tag-base">模板</span><span class="tag tag-easy">入门</span>
     </div>
 
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">AcWing 91. 最短 Hamilton 路径</div>
-      <p>标准 TSP 问题。给定 n 个点的完全图（n &le; 20），求从 0 到 n-1 经过每个点恰好一次的最短路径长度。</p>
-      <span class="tag tag-mid">中等</span>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1433" target="_blank">洛谷 P1433 吃奶酪</a></div>
+      <span class="tag tag-mid">提高</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/11/problem/D" target="_blank">CF 11D A Simple Task</a></div>
+      <span class="tag tag-mid">提高</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5911" target="_blank">洛谷 P5911 [POI2004] PRZ</a></div>
+      <span class="tag tag-mid">提高</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2157" target="_blank">洛谷 P2157 [SDOI2009] 学校食堂</a></div>
+      <span class="tag tag-mid">提高</span>
     </div>
 
+    <h3>变种题</h3>
     <div class="problem">
-      <div class="problem-title">POJ 2411 - Mondriaan's Dream</div>
-      <p>经典棋盘覆盖问题。n &times; m 棋盘用 1&times;2 骨牌覆盖，求方案数。轮廓线 DP 入门题。</p>
-      <span class="tag tag-mid">中等</span>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3694" target="_blank">洛谷 P3694 邦邦的大合唱站队</a></div>
+      <span class="tag tag-mid">提高</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/12/problem/E" target="_blank">CF 12E Start of the season</a></div>
+      <span class="tag tag-mid">提高</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3959" target="_blank">洛谷 P3959 [NOIP2017] 宝藏</a></div>
+      <span class="tag tag-mid">提高</span>
     </div>
 
+    <h3>扩展题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P1896 - 互不侵犯</div>
-      <p>在 n &times; n 棋盘上放置国王，使得它们互不攻击（相邻 8 个格子不能有其他国王）。状压 DP，逐行转移。</p>
-      <span class="tag tag-mid">中等</span>
+      <div class="problem-title"><a href="https://codeforces.com/contest/1155/problem/E" target="_blank">CF 1155E Guess the Root</a></div>
+      <span class="tag tag-hard">省选</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">AcWing 1064. 小国王</div>
-      <p>在 n &times; n 棋盘上放 k 个国王，使得它们互不攻击。需要额外记录已放置数量的维度。dp[i][j][mask] 表示前 i 行放置了 j 个国王、当前行状态为 mask 的方案数。</p>
-      <span class="tag tag-mid">中等</span>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2167" target="_blank">洛谷 P2167 [SDOI2008] Bill的挑战</a></div>
+      <span class="tag tag-hard">省选</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">SPOJ SHOPPING - Shopping</div>
-      <p>TSP 变体。在地图上从起点出发，访问所有商店后回到起点，求最短距离。需要 BFS 预处理商店间的距离。</p>
-      <span class="tag tag-mid">中等</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">LeetCode 691 - Stickers to Spell Word</div>
-      <p>给定若干贴纸（字符串），拼出目标字符串的最少贴纸数。将目标字符串的字符集合用 mask 表示，状压 DP。</p>
-      <span class="tag tag-hard">困难</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">Codeforces 11D - A Simple Task</div>
-      <p>给定无向图（n &le; 19），求图中简单环的数量。dp[mask][v] 表示从环的最小编号点出发，经过 mask 中的点，当前在 v 的路径数。要求 mask 中编号最小的点作为环的起点，避免重复计数。</p>
-      <span class="tag tag-hard">困难</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">洛谷 P2704 - 炮兵阵地</div>
-      <p>在 n &times; m 地图上放置炮兵，使得互不攻击（横纵各两格内不能有其他炮兵），求最多放置数量。状压 DP，需要记录前两行的状态。dp[i][mask][preMask] 滚动数组优化空间。</p>
-      <span class="tag tag-hard">困难</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">POJ 1185 - 炮兵阵地</div>
-      <p>同洛谷 P2704，经典三维状压 DP 题。n &times; m 矩阵（n &le; 100, m &le; 10），放置炮兵使得互不攻击。逐行转移，需要记录当前行和上一行的状态。由于 m &le; 10，合法状态数远小于 2<sup>10</sup>，可以预处理优化。</p>
-      <span class="tag tag-hard">困难</span>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5365" target="_blank">洛谷 P5365 [JSOI2013] 快乐的 JYY</a></div>
+      <span class="tag tag-hard">省选</span>
     </div>
   </div>
 

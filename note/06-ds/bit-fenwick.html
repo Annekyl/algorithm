@@ -37,7 +37,7 @@
     <li><a href="#sec3">三、区间修改 + 区间查询</a></li>
     <li><a href="#sec4">四、求逆序对</a></li>
     <li><a href="#sec5">五、二维树状数组</a></li>
-    <li><a href="#sec6">六、综合例题与练习</a></li>
+    <li><a href="#practice">例题与练习</a></li>
   </ul>
 </div>
 
@@ -583,84 +583,92 @@ c[1] c[2]
   </div>
 </div>
 
-<!-- ============================================================ -->
-<!-- 第六节：综合例题与练习 -->
-<!-- ============================================================ -->
-<div class="section" id="sec6">
-  <h2>六、综合例题与练习</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
-  <h3>6.1 模板题</h3>
-  <div class="problem">
-    <div class="problem-title">洛谷 P3374 【模板】树状数组 1</div>
-    <p>单点修改 + 区间查询。直接使用基本树状数组模板。</p>
-  </div>
+    <h3>模板题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3374" target="_blank">Luogu P3374 - 【模板】树状数组 1</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3368" target="_blank">Luogu P3368 - 【模板】树状数组 2</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
 
-  <div class="problem">
-    <div class="problem-title">洛谷 P3368 【模板】树状数组 2</div>
-    <p>区间修改 + 单点查询。使用差分树状数组（只需一个 BIT 维护差分数组）。</p>
-  </div>
+    <h3>练习题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1908" target="_blank">Luogu P1908 - 逆序对</a></div>
+      <span class="tag tag-mid">树状数组+离散化</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1966" target="_blank">Luogu P1966 - 火柴排队</a></div>
+      <span class="tag tag-mid">贪心+逆序对</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3372" target="_blank">Luogu P3372 - 【模板】线段树 1</a></div>
+      <span class="tag tag-mid">双BIT区间修改</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/296/E" target="_blank">CF 296E - Yura and Developers</a></div>
+      <span class="tag tag-mid">树状数组+分治</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2163" target="_blank">Luogu P2163 - [SHOI2007] 园丁的烦恼</a></div>
+      <span class="tag tag-mid">二维偏序+离线</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
 
-  <div class="problem">
-    <div class="problem-title">洛谷 P3372 【模板】线段树 1</div>
-    <p>区间修改 + 区间查询。可以用两个树状数组的方案替代线段树。</p>
-  </div>
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4054" target="_blank">Luogu P4054 - [JSOI2009] 计数问题</a></div>
+      <span class="tag tag-mid">二维树状数组</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2345" target="_blank">Luogu P2345 - [USACO04OPEN] Mooomoo</a></div>
+      <span class="tag tag-hard">树状数组+贪心</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3960" target="_blank">Luogu P3960 - 列队</a></div>
+      <span class="tag tag-hard">动态开点BIT</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2341" target="_blank">Luogu P2341 - [HAOI2006] 受欢迎的牛</a></div>
+      <span class="tag tag-mid">树状数组+拓扑排序</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
 
-  <h3>6.2 逆序对相关</h3>
-  <div class="problem">
-    <div class="problem-title">洛谷 P1908 逆序对</div>
-    <p>经典逆序对问题，使用树状数组 + 离散化在 O(n log n) 内解决。</p>
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/19/D" target="_blank">CF 19D - Points</a></div>
+      <span class="tag tag-hard">BIT+set+二分</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3388" target="_blank">Luogu P3388 - 【模板】割点（割顶）</a></div>
+      <span class="tag tag-mid">树状数组辅助</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1972" target="_blank">Luogu P1972 - [SDOI2009] HH的项链</a></div>
+      <span class="tag tag-hard">离线+树状数组</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/61/E" target="_blank">CF 61E - Enemy is weak</a></div>
+      <span class="tag tag-mid">逆序对+三元组</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
   </div>
-
-  <div class="problem">
-    <div class="problem-title">AcWing 788. 逆序对的数量</div>
-    <p>求逆序对数量，可用归并排序或树状数组。注意用 long long 防溢出。</p>
-  </div>
-
-  <h3>6.3 综合应用</h3>
-  <div class="problem">
-    <div class="problem-title">洛谷 P1966 火柴排队</div>
-    <p>贪心 + 逆序对。将问题转化为求排列的逆序对数。</p>
-  </div>
-
-  <div class="problem">
-    <div class="problem-title">洛谷 P2163 [SHOI2007] 园丁的烦恼</div>
-    <p>二维偏序问题，使用树状数组 + 离线处理。</p>
-  </div>
-
-  <div class="problem">
-    <div class="problem-title">洛谷 P2345 [USACO04OPEN] Mooomoo</div>
-    <p>树状数组维护区间信息，结合贪心策略。</p>
-  </div>
-
-  <h3>6.4 推荐练习清单</h3>
-  <div class="table-wrap">
-    <table>
-      <tr><th>题目</th><th>知识点</th><th>难度</th></tr>
-      <tr><td>洛谷 P3374 树状数组 1</td><td>单点修改 + 区间查询</td><td><span class="tag tag-easy">简单</span></td></tr>
-      <tr><td>洛谷 P3368 树状数组 2</td><td>区间修改 + 单点查询</td><td><span class="tag tag-easy">简单</span></td></tr>
-      <tr><td>洛谷 P1908 逆序对</td><td>树状数组 + 离散化</td><td><span class="tag tag-mid">中等</span></td></tr>
-      <tr><td>洛谷 P1966 火柴排队</td><td>贪心 + 逆序对</td><td><span class="tag tag-mid">中等</span></td></tr>
-      <tr><td>洛谷 P2163 园丁的烦恼</td><td>二维偏序 + 离线</td><td><span class="tag tag-mid">中等</span></td></tr>
-      <tr><td>洛谷 P3372 线段树 1</td><td>区间修改 + 区间查询（BIT版）</td><td><span class="tag tag-mid">中等</span></td></tr>
-      <tr><td>洛谷 P2345 Mooomoo</td><td>树状数组 + 贪心</td><td><span class="tag tag-hard">困难</span></td></tr>
-      <tr><td>洛谷 P4054 [JSOI2009] 计数问题</td><td>二维树状数组</td><td><span class="tag tag-mid">中等</span></td></tr>
-    </table>
-  </div>
-
-  <div class="box box-tip">
-    <div class="box-title">总结</div>
-    <p>树状数组是竞赛中最常用的数据结构之一，核心要点：</p>
-    <ul>
-      <li><strong>lowbit</strong> 是树状数组的灵魂，<code>x &amp; (-x)</code> 必须牢记</li>
-      <li>基本操作：单点修改 O(log n)、前缀查询 O(log n)</li>
-      <li>通过<strong>差分</strong>可以扩展到区间修改 + 单点查询</li>
-      <li>通过<strong>两个 BIT</strong> 可以实现区间修改 + 区间查询</li>
-      <li><strong>逆序对</strong>是树状数组的经典应用，配合离散化处理大值域</li>
-      <li>二维树状数组是一维的自然推广，支持子矩阵操作</li>
-      <li>与线段树相比，树状数组代码更短、常数更小，但功能相对有限</li>
-    </ul>
-  </div>
-</div>
 
 </div> <!-- end container -->
 

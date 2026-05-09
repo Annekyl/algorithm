@@ -38,7 +38,7 @@
       <li><a href="#queen8">经典问题 — 八皇后 IDA* 求解</a></li>
       <li><a href="#template">完整 C++ 模板</a></li>
       <li><a href="#complexity">复杂度分析</a></li>
-      <li><a href="#problems">经典例题汇总</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -629,53 +629,83 @@
     </div>
   </div>
 
-  <!-- ============================================================ -->
-  <!-- 8. 经典例题汇总 -->
-  <!-- ============================================================ -->
-  <div class="section" id="problems">
-    <h2>8. 经典例题汇总</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">POJ 1077 - <a href="https://vjudge.net/problem/POJ-1077" target="_blank">Eight (八数码问题)</a></div>
-      <p>3&times;3 的网格中有 1~8 和一个空格，求从初始状态到目标状态的最少移动步数。</p>
-      <p><strong>思路：</strong>IDA* + Manhattan 距离启发。状态空间约 9!/2 &asymp; 18 万，IDA* 秒出。也可用 BFS + 状态压缩。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2324" target="_blank">洛谷 P2324 [SCOI2005] 骑士精神</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1379" target="_blank">洛谷 P1379 八数码难题</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-mid">中等</span>
     </div>
 
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">UVa 10181 - <a href="https://vjudge.net/problem/UVA-10181" target="_blank">15-Puzzle Problem</a></div>
-      <p>经典的 15 数字华容道问题，IDA* 的标志性题目。</p>
-      <p><strong>思路：</strong>IDA* + Manhattan 距离 + 避免反向移动。注意剪枝条件的正确性。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1120" target="_blank">洛谷 P1120 小木棍</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1092" target="_blank">洛谷 P1092 虫食算</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1219" target="_blank">洛谷 P1219 八皇后</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1019" target="_blank">洛谷 P1019 单词接龙</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2210" target="_blank">洛谷 P2210 Haywire</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1378" target="_blank">洛谷 P1378 油滴扩展</a></div>
+      <span class="tag tag-mid">中等</span>
     </div>
 
+    <h3>变种题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P1379 - <a href="https://www.luogu.com.cn/problem/P1379" target="_blank">八数码难题</a></div>
-      <p>中文 OJ 上的八数码问题，求最少步数。</p>
-      <p><strong>思路：</strong>BFS + 康托展开判重，或 IDA* + Manhattan 距离。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1784" target="_blank">洛谷 P1784 数独</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1105/C" target="_blank">CF 1105C Ayoub and Lost Array</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1433" target="_blank">洛谷 P1433 吃奶酪</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2392" target="_blank">洛谷 P2392 kkksc03考前临时抱佛脚</a></div>
+      <span class="tag tag-mid">中等</span>
     </div>
 
+    <h3>扩展题</h3>
     <div class="problem">
-      <div class="problem-title">UVa 10085 - <a href="https://vjudge.net/problem/UVA-10085" target="_blank">The Most Distant State</a></div>
-      <p>八数码问题的变体，求离初始状态最远的状态及路径。</p>
-      <p><strong>思路：</strong>BFS 或 IDS 枚举所有可达状态，取最远者。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P10447" target="_blank">洛谷 P10447 子集和问题</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1118" target="_blank">洛谷 P1118 [USACO06FEB] Backward Digit Sums</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1462/E2" target="_blank">CF 1462E2 Close Tuples (hard version)</a></div>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1605" target="_blank">洛谷 P1605 迷宫</a></div>
+      <span class="tag tag-easy">入门</span>
     </div>
 
-    <div class="problem">
-      <div class="problem-title">SPOJ NQUEEN - <a href="https://www.spoj.com/problems/NQUEEN/" target="_blank">Yet Another N-Queen Problem</a></div>
-      <p>N 皇后问题的优化求解。</p>
-      <p><strong>思路：</strong>回溯法 + 位运算剪枝，也可用 IDA* 框架优化。</p>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">POJ 3050 - <a href="https://vjudge.net/problem/POJ-3050" target="_blank">Hopscotch</a></div>
-      <p>5&times;5 网格中从任意位置出发走 6 步，每步收集一个数字，求所有不同 6 位数的个数。</p>
-      <p><strong>思路：</strong>IDS 暴力枚举所有 6 步路径，用 set 去重。</p>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">LeetCode 773 - <a href="https://leetcode.cn/problems/sliding-puzzle/" target="_blank">Sliding Puzzle (滑动谜题)</a></div>
-      <p>2&times;3 的滑动谜题，求最少移动次数。</p>
-      <p><strong>思路：</strong>BFS（状态空间小），或 IDA* + Manhattan 距离。</p>
-    </div>
   </div>
 
 </div>

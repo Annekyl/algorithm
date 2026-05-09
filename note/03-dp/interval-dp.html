@@ -39,6 +39,7 @@
     <li><a href="#burst-balloons">5. 戳气球 - 逆向思维</a></li>
     <li><a href="#circular">6. 环形区间 DP - 断环成链</a></li>
     <li><a href="#summary">7. 总结与对比</a></li>
+    <li><a href="#practice">例题与练习</a></li>
   </ul>
 </div>
 
@@ -845,75 +846,72 @@ dp[l][r] = <span class="fn">max</span>( dp[l][k] + dp[k][r] + val[l]*val[k]*val[
     <div class="step"><strong>输出答案：</strong>dp[1][n] 或 dp[0][n+1] 等</div>
   </div>
 
-  <h3>经典题目推荐</h3>
-  <div class="table-wrap">
-    <table>
-      <tr>
-        <th>题目</th>
-        <th>来源</th>
-        <th>难度</th>
-        <th>模型</th>
-      </tr>
-      <tr>
-        <td>P1880 石子合并</td>
-        <td>洛谷</td>
-        <td><span class="tag tag-mid">中等</span></td>
-        <td>环形石子合并</td>
-      </tr>
-      <tr>
-        <td>P1005 矩阵取数游戏</td>
-        <td>洛谷</td>
-        <td><span class="tag tag-hard">困难</span></td>
-        <td>区间 DP + 高精度</td>
-      </tr>
-      <tr>
-        <td>P4170 涂色</td>
-        <td>洛谷</td>
-        <td><span class="tag tag-mid">中等</span></td>
-        <td>括号匹配类</td>
-      </tr>
-      <tr>
-        <td>LeetCode 312 Burst Balloons</td>
-        <td>力扣</td>
-        <td><span class="tag tag-hard">困难</span></td>
-        <td>逆向区间 DP</td>
-      </tr>
-      <tr>
-        <td>LeetCode 516 Longest Palindromic Subseq</td>
-        <td>力扣</td>
-        <td><span class="tag tag-mid">中等</span></td>
-        <td>区间 DP</td>
-      </tr>
-      <tr>
-        <td>LeetCode 1000 Min Cost to Merge Stones</td>
-        <td>力扣</td>
-        <td><span class="tag tag-hard">困难</span></td>
-        <td>石子合并变体</td>
-      </tr>
-      <tr>
-        <td>LeetCode 1246 Palindrome Removal</td>
-        <td>力扣</td>
-        <td><span class="tag tag-hard">困难</span></td>
-        <td>区间 DP</td>
-      </tr>
-      <tr>
-        <td>UVa 10003 Cutting Sticks</td>
-        <td>UVa</td>
-        <td><span class="tag tag-mid">中等</span></td>
-        <td>切割木棍</td>
-      </tr>
-      <tr>
-        <td>UVa 1626 Brackets Sequence</td>
-        <td>UVa</td>
-        <td><span class="tag tag-hard">困难</span></td>
-        <td>括号匹配 + 输出方案</td>
-      </tr>
-    </table>
-  </div>
-
   <div class="box box-info">
     <div class="box-title">一句话总结</div>
     <p>区间 DP = <strong>枚举区间长度</strong> + <strong>枚举左右端点</strong> + <strong>枚举分割点</strong>。框架固定，关键在于正确识别 cost 函数和状态的开闭区间。</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 例题与练习 -->
+<!-- ============================================================ -->
+<div class="section" id="practice">
+  <h2>例题与练习</h2>
+
+  <h3>模板题</h3>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1880" target="_blank">洛谷 P1880 [NOI1995] 石子合并</a></div>
+    <span class="tag tag-base">模板</span><span class="tag tag-easy">入门</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4170" target="_blank">洛谷 P4170 [CQOI2007] 涂色</a></div>
+    <span class="tag tag-base">模板</span><span class="tag tag-easy">入门</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1005" target="_blank">洛谷 P1005 矩阵取数游戏</a></div>
+    <span class="tag tag-base">模板</span><span class="tag tag-mid">提高</span>
+  </div>
+
+  <h3>练习题</h3>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1063" target="_blank">洛谷 P1063 [NOIP2006] 能量项链</a></div>
+    <span class="tag tag-mid">提高</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://codeforces.com/contest/1132/problem/F" target="_blank">CF 1132F Clear the String</a></div>
+    <span class="tag tag-mid">提高</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4302" target="_blank">洛谷 P4302 [SHOI2003] 字符串折叠</a></div>
+    <span class="tag tag-mid">提高</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3146" target="_blank">洛谷 P3146 [USACO16OPEN] 248</a></div>
+    <span class="tag tag-mid">提高</span>
+  </div>
+
+  <h3>变种题</h3>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1220" target="_blank">洛谷 P1220 关路灯</a></div>
+    <span class="tag tag-mid">提高</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3205" target="_blank">洛谷 P3205 [HNOI2010] 合唱队</a></div>
+    <span class="tag tag-mid">提高</span>
+  </div>
+
+  <h3>扩展题</h3>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2434" target="_blank">洛谷 P2434 [SDOI2005] 区间</a></div>
+    <span class="tag tag-hard">省选</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://codeforces.com/contest/1312/problem/E" target="_blank">CF 1312E Array Shrinking</a></div>
+    <span class="tag tag-hard">省选</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4506" target="_blank">洛谷 P4506 [ZJOI2018] 历史</a></div>
+    <span class="tag tag-hard">省选</span>
   </div>
 </div>
 

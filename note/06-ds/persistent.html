@@ -37,7 +37,7 @@
     <li><a href="#sec3">三、主席树（可持久化线段树）</a></li>
     <li><a href="#sec4">四、可持久化并查集（简介）</a></li>
     <li><a href="#sec5">五、综合应用与经典题目</a></li>
-    <li><a href="#sec6">六、完整模板与复杂度总结</a></li>
+    <li><a href="#practice">例题与练习</a></li>
   </ul>
 </div>
 
@@ -415,165 +415,87 @@
   </div>
 </div>
 
-<!-- ============================================================ -->
-<!-- 第六节：完整模板与复杂度总结 -->
-<!-- ============================================================ -->
-<div class="section" id="sec6">
-  <h2>六、完整模板与复杂度总结</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
-  <h3>6.1 主席树通用模板</h3>
-  <pre><code><span class="kw">struct</span> <span class="ty">PersistentSegTree</span> {
-    <span class="kw">struct</span> <span class="ty">Node</span> {
-        <span class="ty">int</span> ls, rs, cnt;
-    };
+    <h3>模板题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3919" target="_blank">Luogu P3919 - 【模板】可持久化数组</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3834" target="_blank">Luogu P3834 - 【模板】可持久化线段树 2</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
 
-    <span class="ty">int</span> n;                   <span class="cm">// 离散化后的值域大小</span>
-    <span class="ty">int</span> cnt;                 <span class="cm">// 节点计数器</span>
-    vector&lt;<span class="ty">Node</span>&gt; tr;         <span class="cm">// 所有节点</span>
-    vector&lt;<span class="ty">int</span>&gt; root;        <span class="cm">// 版本根数组</span>
+    <h3>练习题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2617" target="_blank">Luogu P2617 - Dynamic Rankings</a></div>
+      <span class="tag tag-hard">主席树+树状数组</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3567" target="_blank">Luogu P3567 - [POI2014] KUR-Couriers</a></div>
+      <span class="tag tag-mid">主席树变体</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4137" target="_blank">Luogu P4137 - Rmq Problem / mex</a></div>
+      <span class="tag tag-mid">可持久化权值线段树</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/893/F" target="_blank">CF 893F - Subtree Minimum Query</a></div>
+      <span class="tag tag-mid">可持久化线段树+DFS序</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2468" target="_blank">Luogu P2468 - [SDOI2010] 粟粟的书架</a></div>
+      <span class="tag tag-hard">主席树+前缀和</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
 
-    <span class="fn">PersistentSegTree</span>(<span class="ty">int</span> maxVer, <span class="ty">int</span> maxVal)
-        : cnt(<span class="num">0</span>), n(maxVal) {
-        tr.resize(maxVer * <span class="num">40</span>);
-        root.resize(maxVer);
-    }
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2839" target="_blank">Luogu P2839 - [国家集训队] middle</a></div>
+      <span class="tag tag-hard">主席树+二分</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3168" target="_blank">Luogu P3168 - [CQOI2015] 任务查询系统</a></div>
+      <span class="tag tag-mid">可持久化线段树+差分</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3302" target="_blank">Luogu P3302 - [SDOI2013] 森林</a></div>
+      <span class="tag tag-hard">主席树+并查集+LCT</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3293" target="_blank">Luogu P3293 - [SCOI2016] 美味</a></div>
+      <span class="tag tag-hard">可持久化Trie+贪心</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
 
-    <span class="ty">int</span> <span class="fn">_build</span>(<span class="ty">int</span> lo, <span class="ty">int</span> hi) {
-        <span class="ty">int</span> p = ++cnt;
-        tr[p].cnt = <span class="num">0</span>;
-        <span class="kw">if</span> (lo == hi) <span class="kw">return</span> p;
-        <span class="ty">int</span> mid = (lo + hi) &gt;&gt; <span class="num">1</span>;
-        tr[p].ls = <span class="fn">_build</span>(lo, mid);
-        tr[p].rs = <span class="fn">_build</span>(mid + <span class="num">1</span>, hi);
-        <span class="kw">return</span> p;
-    }
-
-    <span class="ty">int</span> <span class="fn">_update</span>(<span class="ty">int</span> prev, <span class="ty">int</span> lo, <span class="ty">int</span> hi, <span class="ty">int</span> pos) {
-        <span class="ty">int</span> p = ++cnt;
-        tr[p] = tr[prev];
-        tr[p].cnt++;
-        <span class="kw">if</span> (lo == hi) <span class="kw">return</span> p;
-        <span class="ty">int</span> mid = (lo + hi) &gt;&gt; <span class="num">1</span>;
-        <span class="kw">if</span> (pos &lt;= mid)
-            tr[p].ls = <span class="fn">_update</span>(tr[prev].ls, lo, mid, pos);
-        <span class="kw">else</span>
-            tr[p].rs = <span class="fn">_update</span>(tr[prev].rs, mid + <span class="num">1</span>, hi, pos);
-        <span class="kw">return</span> p;
-    }
-
-    <span class="ty">int</span> <span class="fn">_kth</span>(<span class="ty">int</span> u, <span class="ty">int</span> v, <span class="ty">int</span> lo, <span class="ty">int</span> hi, <span class="ty">int</span> k) {
-        <span class="kw">if</span> (lo == hi) <span class="kw">return</span> lo;
-        <span class="ty">int</span> mid = (lo + hi) &gt;&gt; <span class="num">1</span>;
-        <span class="ty">int</span> cnt = tr[tr[v].ls].cnt - tr[tr[u].ls].cnt;
-        <span class="kw">if</span> (k &lt;= cnt)
-            <span class="kw">return</span> <span class="fn">_kth</span>(tr[u].ls, tr[v].ls, lo, mid, k);
-        <span class="kw">else</span>
-            <span class="kw">return</span> <span class="fn">_kth</span>(tr[u].rs, tr[v].rs, mid + <span class="num">1</span>, hi, k - cnt);
-    }
-
-    <span class="cm">// 对外接口</span>
-    <span class="ty">void</span> <span class="fn">build</span>()                   { root[<span class="num">0</span>] = <span class="fn">_build</span>(<span class="num">1</span>, n); }
-    <span class="ty">void</span> <span class="fn">insert</span>(<span class="ty">int</span> ver, <span class="ty">int</span> pos) { root[ver] = <span class="fn">_update</span>(root[ver - <span class="num">1</span>], <span class="num">1</span>, n, pos); }
-    <span class="ty">int</span>  <span class="fn">kth</span>(<span class="ty">int</span> l, <span class="ty">int</span> r, <span class="ty">int</span> k)  { <span class="kw">return</span> <span class="fn">_kth</span>(root[l - <span class="num">1</span>], root[r], <span class="num">1</span>, n, k); }
-};</code></pre>
-
-  <h3>6.2 复杂度分析</h3>
-  <div class="table-wrap">
-    <table>
-      <tr>
-        <th>操作</th>
-        <th>时间复杂度</th>
-        <th>空间复杂度</th>
-      </tr>
-      <tr>
-        <td>离散化</td>
-        <td>O(n log n)</td>
-        <td>O(n)</td>
-      </tr>
-      <tr>
-        <td>建空树</td>
-        <td>O(m)  &nbsp;（m = 离散化后值域大小）</td>
-        <td>O(m)</td>
-      </tr>
-      <tr>
-        <td>插入一个元素（新建版本）</td>
-        <td>O(log m)</td>
-        <td>O(log m)</td>
-      </tr>
-      <tr>
-        <td>构建全部 n 个版本</td>
-        <td>O(n log m)</td>
-        <td>O(n log m)</td>
-      </tr>
-      <tr>
-        <td>区间第 k 小查询</td>
-        <td>O(log m)</td>
-        <td>O(1)</td>
-      </tr>
-      <tr>
-        <td><strong>总体</strong></td>
-        <td><strong>O((n+m) log n)</strong></td>
-        <td><strong>O(n log n)</strong></td>
-      </tr>
-    </table>
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4735" target="_blank">Luogu P4735 - 最大异或和</a></div>
+      <span class="tag tag-mid">可持久化Trie</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/786/C" target="_blank">CF 786C - Till I Collapse</a></div>
+      <span class="tag tag-hard">可持久化线段树+分治</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4587" target="_blank">Luogu P4587 - [FJOI2016] 神秘数</a></div>
+      <span class="tag tag-hard">主席树+贪心</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
   </div>
-
-  <div class="complexity">
-    <span class="label">预处理：</span>
-    <span class="value">O(n log n)</span>
-  </div>
-  <div class="complexity">
-    <span class="label">单次查询：</span>
-    <span class="value">O(log n)</span>
-  </div>
-  <div class="complexity">
-    <span class="label">空间总量：</span>
-    <span class="value">O(n log n)</span>
-  </div>
-
-  <h3>6.3 常见坑点与优化</h3>
-  <div class="box box-warn">
-    <div class="box-title">常见错误</div>
-    <ul>
-      <li><strong>空间开小了</strong>：主席树节点数约为 <code>n * ceil(log2(n)) + 5*n</code>，一般开 <code>40*n</code> 即可</li>
-      <li><strong>离散化后忘记映射</strong>：查询答案时要反向映射回原值</li>
-      <li><strong>版本编号混淆</strong>：<code>root[i]</code> 对应前 <code>i</code> 个元素，查询 <code>[l,r]</code> 时用 <code>root[l-1]</code> 和 <code>root[r]</code></li>
-      <li><strong>建空树时 cnt 初始值</strong>：<code>cnt</code> 从 0 开始，<code>++cnt</code> 分配新节点</li>
-    </ul>
-  </div>
-
-  <div class="box box-tip">
-    <div class="box-title">空间优化技巧</div>
-    <p>如果值域很大但实际元素不多（稀疏值域），离散化是必须的。对于动态开点的主席树，可以用 <code>vector</code> 代替数组，避免预估空间大小。</p>
-  </div>
-
-  <h3>6.4 推荐练习题</h3>
-
-  <div class="problem">
-    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3834" target="_blank">Luogu P3834 - 【模板】可持久化线段树 2</a></div>
-    <p>静态区间第 k 小，主席树入门必做。</p>
-  </div>
-
-  <div class="problem">
-    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3919" target="_blank">Luogu P3919 - 【模板】可持久化数组</a></div>
-    <p>可持久化数组模板题，单点修改 + 历史版本查询。</p>
-  </div>
-
-  <div class="problem">
-    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2617" target="_blank">Luogu P2617 - Dynamic Rankings</a></div>
-    <p>带修改的区间第 k 小，需要主席树 + 树状数组，难度较高。</p>
-  </div>
-
-  <div class="problem">
-    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3567" target="_blank">Luogu P3567 - [POI2014] KUR-Couriers</a></div>
-    <p>区间内出现次数超过一半的元素，主席树变体应用。</p>
-  </div>
-
-  <div class="problem">
-    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4137" target="_blank">Luogu P4137 - Rmq Problem / mex</a></div>
-    <p>区间 mex 问题，可持久化权值线段树应用。</p>
-  </div>
-</div>
 
 </div><!-- /.container -->
 

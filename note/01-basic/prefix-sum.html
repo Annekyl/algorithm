@@ -37,7 +37,7 @@
     <li><a href="#sec3">三、一维差分</a></li>
     <li><a href="#sec4">四、二维差分</a></li>
     <li><a href="#sec5">五、前缀和与差分的关系</a></li>
-    <li><a href="#sec6">六、综合例题与练习</a></li>
+    <li><a href="#practice">六、例题与练习</a></li>
   </ul>
 </div>
 
@@ -641,118 +641,92 @@ b[r <span class="op">+</span> <span class="num">1</span>] <span class="op">-=</s
 </div>
 
 <!-- ============================================================ -->
-<!-- 第六节：综合例题与练习 -->
+<!-- 第六节：例题与练习 -->
 <!-- ============================================================ -->
-<div class="section" id="sec6">
-  <h2>六、综合例题与练习</h2>
+<div class="section" id="practice">
+  <h2>例题与练习</h2>
 
-  <h3>6.1 一维前缀和例题</h3>
+  <h3>模板题</h3>
   <div class="problem">
-    <div class="problem-title">洛谷 P1115 最大子段和</div>
-    <p>给定 n 个整数，求连续子段的最大和。利用前缀和思想，<code>max(S[r] - min(S[0..r-1]))</code>，O(n) 解决。</p>
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1115" target="_blank">Luogu P1115 - 最大子段和</a></div>
+    <span class="tag tag-base">模板</span>
+    <span class="tag tag-easy">入门</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3397" target="_blank">Luogu P3397 - 地毯</a></div>
+    <span class="tag tag-base">模板</span>
+    <span class="tag tag-easy">入门</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1387" target="_blank">Luogu P1387 - 最大正方形</a></div>
+    <span class="tag tag-base">模板</span>
+    <span class="tag tag-mid">中等</span>
   </div>
 
+  <h3>练习题</h3>
   <div class="problem">
-    <div class="problem-title">洛谷 P1955 程序自动分析</div>
-    <p>涉及离散化 + 并查集，但数据范围较小时可用前缀和预处理等值关系。</p>
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2004" target="_blank">Luogu P2004 - 旅行指南</a></div>
+    <span class="tag tag-mid">中等</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://codeforces.com/problemset/problem/276/C" target="_blank">CF 276C - Little Girl and Maximum Sum</a></div>
+    <span class="tag tag-mid">中等</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2671" target="_blank">Luogu P2671 - 求和</a></div>
+    <span class="tag tag-mid">中等</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3406" target="_blank">Luogu P3406 - 海底高铁</a></div>
+    <span class="tag tag-mid">中等</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2280" target="_blank">Luogu P2280 - 激光炸弹</a></div>
+    <span class="tag tag-mid">中等</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1719" target="_blank">Luogu P1719 - 最大加权矩形</a></div>
+    <span class="tag tag-mid">中等</span>
   </div>
 
+  <h3>变种题</h3>
   <div class="problem">
-    <div class="problem-title">AcWing 795. 前缀和</div>
-    <p>一维前缀和模板题：输入 n 个数和 m 次查询，每次查询区间 [l, r] 的和。</p>
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3958" target="_blank">Luogu P3958 - NOIP2017 奶酪</a></div>
+    <span class="tag tag-mid">中等</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1108" target="_blank">Luogu P1108 - 低价购买</a></div>
+    <span class="tag tag-mid">中等</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1398/C" target="_blank">CF 1398C - Good Subarrays</a></div>
+    <span class="tag tag-mid">中等</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1208/B" target="_blank">CF 1208B - Uniqueness</a></div>
+    <span class="tag tag-mid">中等</span>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5057" target="_blank">Luogu P5057 - 简单题（差分异或）</a></div>
+    <span class="tag tag-mid">中等</span>
   </div>
 
-  <h3>6.2 二维前缀和例题</h3>
+  <h3>扩展题</h3>
   <div class="problem">
-    <div class="problem-title">AcWing 99. 子矩阵的和</div>
-    <p>二维前缀和模板题。</p>
+    <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1555/E" target="_blank">CF 1555E - Boring Segments</a></div>
+    <span class="tag tag-hard">困难</span>
   </div>
-
   <div class="problem">
-    <div class="problem-title">洛谷 P1387 最大正方形</div>
-    <p>在一个 n*m 的 01 矩阵中，找全为 1 的最大正方形。可以结合二维前缀和 + 二分答案在 O(nm log(min(n,m))) 内解决，也可以用 O(nm) 的 DP 方法。</p>
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4552" target="_blank">Luogu P4552 - IncDec Sequence</a></div>
+    <span class="tag tag-mid">中等</span>
   </div>
-
-  <h3>6.3 差分例题</h3>
   <div class="problem">
-    <div class="problem-title">AcWing 797. 差分</div>
-    <p>一维差分模板题：m 次区间加值操作后输出最终数组。</p>
+    <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1644/E" target="_blank">CF 1644E - Expand the Path</a></div>
+    <span class="tag tag-hard">困难</span>
   </div>
-
   <div class="problem">
-    <div class="problem-title">AcWing 798. 差分矩阵</div>
-    <p>二维差分模板题：m 次子矩阵加值操作后输出最终矩阵。</p>
-  </div>
-
-  <div class="problem">
-    <div class="problem-title">洛谷 P3397 地毯</div>
-    <p>在 n*n 的地面上铺地毯，每次在子矩阵上 +1，最后输出每个位置被铺了几层。典型的二维差分应用。</p>
-  </div>
-
-  <h3>6.4 综合应用例题</h3>
-  <div class="problem">
-    <div class="problem-title">洛谷 P2004 旅行指南</div>
-    <p>二维前缀和 + 枚举。在矩阵中找最优子矩阵，利用前缀和快速计算子矩阵的权值和。</p>
-  </div>
-
-  <div class="problem">
-    <div class="problem-title">Codeforces 276C Little Girl and Maximum Sum</div>
-    <p>给定数组和多个查询区间，为每个位置分配值使得所有查询区间的和的总和最大。使用差分统计每个位置被查询的次数，然后贪心分配。</p>
-  </div>
-
-  <pre><code><span class="cm">// CF 276C 核心思路</span>
-<span class="pp">#include</span> <span class="str">&lt;iostream&gt;</span>
-<span class="pp">#include</span> <span class="str">&lt;algorithm&gt;</span>
-<span class="pp">#include</span> <span class="str">&lt;vector&gt;</span>
-<span class="kw">using</span> <span class="kw">namespace</span> std;
-
-<span class="ty">int</span> <span class="fn">main</span>() {
-    <span class="ty">int</span> n, q;
-    cin <span class="op">&gt;&gt;</span> n <span class="op">&gt;&gt;</span> q;
-
-    <span class="ty">vector</span><span class="op">&lt;</span><span class="ty">long long</span><span class="op">&gt;</span> a(n <span class="op">+</span> <span class="num">1</span>), diff(n <span class="op">+</span> <span class="num">2</span>, <span class="num">0</span>);
-    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>)
-        cin <span class="op">&gt;&gt;</span> a[i];
-
-    <span class="cm">// 用差分统计每个位置被查询的次数</span>
-    <span class="kw">while</span> (q<span class="op">--</span>) {
-        <span class="ty">int</span> l, r;
-        cin <span class="op">&gt;&gt;</span> l <span class="op">&gt;&gt;</span> r;
-        diff[l]<span class="op">++</span>;
-        diff[r <span class="op">+</span> <span class="num">1</span>]<span class="op">--</span>;
-    }
-
-    <span class="cm">// 前缀和得到每个位置的查询频率</span>
-    <span class="ty">vector</span><span class="op">&lt;</span><span class="ty">long long</span><span class="op">&gt;</span> freq(n <span class="op">+</span> <span class="num">1</span>);
-    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>)
-        freq[i] <span class="op">=</span> freq[i<span class="op">-</span><span class="num">1</span>] <span class="op">+</span> diff[i];
-
-    <span class="cm">// 贪心：查询频率高的位置放大的值</span>
-    <span class="fn">sort</span>(a.<span class="fn">begin</span>() <span class="op">+</span> <span class="num">1</span>, a.<span class="fn">end</span>());
-    <span class="fn">sort</span>(freq.<span class="fn">begin</span>() <span class="op">+</span> <span class="num">1</span>, freq.<span class="fn">end</span>());
-
-    <span class="ty">long long</span> ans <span class="op">=</span> <span class="num">0</span>;
-    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>)
-        ans <span class="op">+=</span> a[i] <span class="op">*</span> freq[i];
-    cout <span class="op">&lt;&lt;</span> ans <span class="op">&lt;&lt;</span> endl;
-    <span class="kw">return</span> <span class="num">0</span>;
-}</code></pre>
-
-  <h3>6.5 推荐练习清单</h3>
-  <div class="table-wrap">
-    <table>
-      <tr><th>题目</th><th>知识点</th><th>难度</th></tr>
-      <tr><td>AcWing 795 前缀和</td><td>一维前缀和</td><td><span class="tag tag-easy">简单</span></td></tr>
-      <tr><td>AcWing 796 子矩阵的和</td><td>二维前缀和</td><td><span class="tag tag-easy">简单</span></td></tr>
-      <tr><td>AcWing 797 差分</td><td>一维差分</td><td><span class="tag tag-easy">简单</span></td></tr>
-      <tr><td>AcWing 798 差分矩阵</td><td>二维差分</td><td><span class="tag tag-mid">中等</span></td></tr>
-      <tr><td>洛谷 P1115 最大子段和</td><td>前缀和思想</td><td><span class="tag tag-easy">简单</span></td></tr>
-      <tr><td>洛谷 P1387 最大正方形</td><td>二维前缀和 + DP</td><td><span class="tag tag-mid">中等</span></td></tr>
-      <tr><td>洛谷 P3397 地毯</td><td>二维差分</td><td><span class="tag tag-easy">简单</span></td></tr>
-      <tr><td>CF 276C Little Girl and Maximum Sum</td><td>差分 + 贪心</td><td><span class="tag tag-mid">中等</span></td></tr>
-      <tr><td>洛谷 P2671 求和</td><td>前缀和 + 分类讨论</td><td><span class="tag tag-mid">中等</span></td></tr>
-      <tr><td>洛谷 P3406 海底高铁</td><td>差分 + 前缀和</td><td><span class="tag tag-mid">中等</span></td></tr>
-    </table>
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1966" target="_blank">Luogu P1966 - NOIP2013 火柴排队</a></div>
+    <span class="tag tag-hard">困难</span>
   </div>
 
   <div class="box box-tip">

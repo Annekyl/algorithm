@@ -36,7 +36,7 @@
       <li><a href="#bs-answer">二分答案</a></li>
       <li><a href="#variants">常见变体</a></li>
       <li><a href="#complexity">复杂度总结</a></li>
-      <li><a href="#problems">经典例题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
       <li><a href="#tips">易错点与技巧</a></li>
     </ul>
   </div>
@@ -771,87 +771,93 @@
   </div>
 
   <!-- ============================== -->
-  <!-- Section 7: Classic Problems -->
+  <!-- Section 7: Practice Problems -->
   <!-- ============================== -->
-  <div class="section" id="problems">
-    <h2>经典例题</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
-    <h3>例题 1: 求 sqrt(x)（LeetCode 69）</h3>
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">Sqrt(x)</div>
-      <p>给定一个非负整数 x，计算 x 的算术平方根的整数部分（只保留整数部分，小数部分直接舍去）。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2249" target="_blank">Luogu P2249 - 【深基13.例1】查找</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
-    <pre><code><span class="cm">// 整数二分: 找最大的 m 使得 m*m &lt;= x</span>
-<span class="ty">int</span> <span class="fn">mySqrt</span>(<span class="ty">int</span> x) {
-    <span class="kw">if</span> (x &lt; <span class="num">2</span>) <span class="kw">return</span> x;
-    <span class="ty">int</span> l = <span class="num">1</span>, r = x / <span class="num">2</span>; <span class="cm">// sqrt(x) &lt;= x/2 (当 x &gt;= 4)</span>
-    <span class="kw">while</span> (l &lt;= r) {
-        <span class="ty">long long</span> mid = l + (r - l) / <span class="num">2</span>; <span class="cm">// 用 long long 防溢出</span>
-        <span class="kw">if</span> (mid * mid &lt;= x)
-            l = mid + <span class="num">1</span>;
-        <span class="kw">else</span>
-            r = mid - <span class="num">1</span>;
-    }
-    <span class="kw">return</span> r; <span class="cm">// r 是最大的满足 m*m &lt;= x 的值</span>
-}</code><span class="lang-label">C++</span></pre>
-
-    <h3>例题 2: 猜数字大小（LeetCode 374）</h3>
     <div class="problem">
-      <div class="problem-title">Guess Number Higher or Lower</div>
-      <p>猜一个 1~n 之间的数字。API <code>guess(num)</code> 返回 -1（猜大了）、1（猜小了）、0（猜对了）。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1873" target="_blank">Luogu P1873 - 砍树</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
-    <pre><code><span class="ty">int</span> <span class="fn">guessNumber</span>(<span class="ty">int</span> n) {
-    <span class="ty">int</span> l = <span class="num">1</span>, r = n;
-    <span class="kw">while</span> (l &lt;= r) {
-        <span class="ty">int</span> mid = l + (r - l) / <span class="num">2</span>;
-        <span class="ty">int</span> res = <span class="fn">guess</span>(mid);
-        <span class="kw">if</span> (res == <span class="num">0</span>) <span class="kw">return</span> mid;
-        <span class="kw">else if</span> (res == -<span class="num">1</span>) r = mid - <span class="num">1</span>;
-        <span class="kw">else</span> l = mid + <span class="num">1</span>;
-    }
-    <span class="kw">return</span> -<span class="num">1</span>;
-}</code><span class="lang-label">C++</span></pre>
-
-    <h3>例题 3: 在排序数组中查找元素的第一个和最后一个位置（LeetCode 34）</h3>
     <div class="problem">
-      <div class="problem-title">Find First and Last Position of Element in Sorted Array</div>
-      <p>给定一个按照升序排列的整数数组 nums 和一个目标值 target，找出给定目标值在数组中的开始位置和结束位置。如果不存在，返回 [-1, -1]。要求时间复杂度 O(log n)。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1102" target="_blank">Luogu P1102 - A-B 数对</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
-    <pre><code><span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">searchRange</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; nums, <span class="ty">int</span> target) {
-    <span class="kw">auto</span> lo = <span class="fn">lower_bound</span>(nums.<span class="fn">begin</span>(), nums.<span class="fn">end</span>(), target);
-    <span class="kw">auto</span> hi = <span class="fn">upper_bound</span>(nums.<span class="fn">begin</span>(), nums.<span class="fn">end</span>(), target);
-    <span class="kw">if</span> (lo == hi) <span class="kw">return</span> {-<span class="num">1</span>, -<span class="num">1</span>}; <span class="cm">// 不存在</span>
-    <span class="kw">return</span> {(<span class="ty">int</span>)(lo - nums.<span class="fn">begin</span>()), (<span class="ty">int</span>)(hi - nums.<span class="fn">begin</span>() - <span class="num">1</span>)};
-}</code><span class="lang-label">C++</span></pre>
 
-    <h3>例题 4: 求解不等式的最小整数解</h3>
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">求满足 n * log2(n) &gt;= k 的最小正整数 n</div>
-      <p>这是算法竞赛中常见的「二分答案 + 函数单调性」问题。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1824" target="_blank">Luogu P1824 - 进击的奶牛</a></div>
+      <span class="tag tag-mid">中等</span>
     </div>
-    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
-<span class="kw">using namespace</span> std;
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2678" target="_blank">Luogu P2678 - 跳石头</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1182" target="_blank">Luogu P1182 - 数列分段 Section II</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3853" target="_blank">Luogu P3853 - TJOI2007 路标设置</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1083" target="_blank">Luogu P1083 - NOIP2012 借教室</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1090" target="_blank">Luogu P1090 - NOIP2004 合并果子</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
 
-<span class="ty">int</span> <span class="fn">main</span>() {
-    <span class="ty">long long</span> k;
-    cin &gt;&gt; k;
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1314" target="_blank">Luogu P1314 - NOIP2011 聪明的质监员</a></div>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1163" target="_blank">Luogu P1163 - 银行贷款</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1902" target="_blank">Luogu P1902 - 刺杀大使</a></div>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1208/B" target="_blank">CF 1208B - Uniqueness</a></div>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1486/B" target="_blank">CF 1486B - Eastern Exhibition</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
 
-    <span class="cm">// 二分答案: 求最小的 n 使得 n*log2(n) &gt;= k</span>
-    <span class="ty">long long</span> l = <span class="num">1</span>, r = <span class="num">2e18</span>, ans = r;
-    <span class="kw">while</span> (l &lt;= r) {
-        <span class="ty">long long</span> mid = l + (r - l) / <span class="num">2</span>;
-        <span class="cm">// 计算 mid * log2(mid)，用 long double 防精度丢失</span>
-        <span class="ty">long double</span> val = (<span class="ty">long double</span>)mid * <span class="fn">log2</span>((<span class="ty">long double</span>)mid);
-        <span class="kw">if</span> (val &gt;= k) {
-            ans = mid;
-            r = mid - <span class="num">1</span>;
-        } <span class="kw">else</span> {
-            l = mid + <span class="num">1</span>;
-        }
-    }
-    cout &lt;&lt; ans &lt;&lt; endl;
-    <span class="kw">return</span> <span class="num">0</span>;
-}</code><span class="lang-label">C++</span></pre>
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1462" target="_blank">Luogu P1462 - 通往奥格瑞玛的道路</a></div>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4343" target="_blank">Luogu P4343 - 自动刷题机</a></div>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1475/E" target="_blank">CF 1475E - Advertising Agency</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1612/C" target="_blank">CF 1612C - Chat Ban</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
   </div>
 
   <!-- ============================== -->

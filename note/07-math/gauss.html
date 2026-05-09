@@ -34,7 +34,7 @@
       <li><a href="#xor-gauss">异或方程组 (GF(2))</a></li>
       <li><a href="#applications">应用</a></li>
       <li><a href="#template">C++ 完整模板</a></li>
-      <li><a href="#problems">经典问题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -349,61 +349,90 @@
 }</code></pre>
   </div>
 
-  <!-- ===== 经典问题 ===== -->
-  <div class="section" id="problems">
-    <h2>经典问题</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P3389 - 高斯消元</div>
-      <p>模板题：给定 n 元线性方程组，求解或判断无解。</p>
-      <p><strong>思路</strong>：浮点高斯消元 + 部分主元选取。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3389" target="_blank">P3389 - 高斯消元模板</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2455" target="_blank">P2455 - 高斯消元 (无穷解/无解)</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-mid">中等</span>
     </div>
 
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P2455 - 高斯消元</div>
-      <p>模板题：需要处理无穷多解和无解的情况。</p>
-      <p><strong>思路</strong>：消元后检查矛盾行和自由变量。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4035" target="_blank">P4035 - 球形空间产生器</a></div>
+      <span class="tag tag-base">高斯消元</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2962" target="_blank">P2962 - Lights</a></div>
+      <span class="tag tag-base">GF(2) 消元</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4783" target="_blank">P4783 - 矩阵求逆</a></div>
+      <span class="tag tag-base">高斯约当</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1100/F" target="_blank">CF 1100F - Ivan and Burgers</a></div>
+      <span class="tag tag-base">线性基</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4111" target="_blank">P4111 - 小 Y 的方格纸</a></div>
+      <span class="tag tag-base">期望 + 消元</span>
+      <span class="tag tag-hard">困难</span>
     </div>
 
+    <h3>变种题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P4035 - 球形空间产生器</div>
-      <p>给定 n+1 个 n 维空间中的点，它们在同一个 n 维球面上，求球心坐标。</p>
-      <p><strong>思路</strong>：设球心为 (x1, ..., xn)，利用 |P - O|^2 = R^2 建立方程，相邻两式相减消去 R^2，得到线性方程组。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3265" target="_blank">P3265 - 修正高斯消元</a></div>
+      <span class="tag tag-base">浮点消元</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/173/E" target="_blank">CF 173E - GF(2) Linear Equations</a></div>
+      <span class="tag tag-base">GF(2) 消元</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5175" target="_blank">P5175 - 数列</a></div>
+      <span class="tag tag-base">矩阵消元</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1102/F" target="_blank">CF 1102F - Elongated Matrix</a></div>
+      <span class="tag tag-base">线性方程组</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3232" target="_blank">P3232 - 游走</a></div>
+      <span class="tag tag-base">期望 + 消元</span>
+      <span class="tag tag-hard">困难</span>
     </div>
 
+    <h3>扩展题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P2962 - Lights</div>
-      <p>开关灯问题：n 盏灯和 n 个开关，每个开关控制若干盏灯，求最少操作次数使所有灯关闭。</p>
-      <p><strong>思路</strong>：GF(2) 上的高斯消元 + 枚举自由变量取最优解。bitset 优化。</p>
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1200/F" target="_blank">CF 1200F - Graph Travel</a></div>
+      <span class="tag tag-base">消元 + 图论</span>
+      <span class="tag tag-hard">困难</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">POJ 1222 - EXTENDED LIGHTS OUT</div>
-      <p>5x6 的灯阵，翻转一盏灯会影响上下左右和自身。求使所有灯关闭的操作方案。</p>
-      <p><strong>思路</strong>：30 个 0/1 变量，30 个方程，GF(2) 高斯消元。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P6025" target="_blank">P6025 - 线性基</a></div>
+      <span class="tag tag-base">线性基</span>
+      <span class="tag tag-mid">中等</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">洛谷 P4111 - 小 Y 的方格纸</div>
-      <p>期望值 + 高斯消元。</p>
-      <p><strong>思路</strong>：建立期望方程组，高斯消元求解。</p>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">洛谷 P4783 - 矩阵求逆</div>
-      <p>给定 n x n 矩阵，求逆矩阵（模 10^9+7）。</p>
-      <p><strong>思路</strong>：对增广矩阵 [A | I] 做高斯约当消元，化为 [I | A^(-1)]。</p>
-    </div>
-
-    <div class="box box-tip">
-      <div class="box-title">高斯消元解题技巧</div>
-      <ul>
-        <li>看到"线性方程组"或"多个约束条件的线性关系"，考虑高斯消元</li>
-        <li>期望/概率 DP 中，如果状态转移形成环，需要高斯消元</li>
-        <li>GF(2) 上的问题考虑 bitset 优化</li>
-        <li>浮点消元注意精度，模意义下消元注意逆元</li>
-        <li>n 较大时 (n > 500) 考虑复杂度是否可接受</li>
-      </ul>
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/963/D" target="_blank">CF 963D - Frequency of String</a></div>
+      <span class="tag tag-base">消元 + 字符串</span>
+      <span class="tag tag-hard">困难</span>
     </div>
   </div>
 

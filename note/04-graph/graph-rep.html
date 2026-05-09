@@ -34,7 +34,7 @@
       <li><a href="#linked-forward-star">链式前向星</a></li>
       <li><a href="#comparison">对比表格</a></li>
       <li><a href="#template">C++ 完整模板</a></li>
-      <li><a href="#problems">经典问题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -544,50 +544,104 @@
     </div>
   </div>
 
-  <!-- ===== 经典问题 ===== -->
-  <div class="section" id="problems">
-    <h2>经典问题</h2>
+  <!-- ===== 例题与练习 ===== -->
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P5318" target="_blank">P5318 查找文献</a>
-      </div>
-      <p>图的遍历基础题。分别用 DFS 和 BFS 遍历图，注意邻接表中邻居节点需要排序以保证字典序。练习邻接表的基本操作。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5318" target="_blank">P5318 查找文献</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+      <p>图的遍历基础题。分别用 DFS 和 BFS 遍历图，注意邻接表中邻居节点需要排序以保证字典序。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3916" target="_blank">P3916 图的遍历</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+      <p>反向建图后 DFS，求每个点能到达的编号最大的节点。练习邻接表与反向图思维。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1341" target="_blank">P1341 无序字母对</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-mid">中等</span>
+      <p>用邻接矩阵或邻接表建图，配合欧拉路径算法求解。练习图的存储与度数分析。</p>
     </div>
 
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P4779" target="_blank">P4779 【模板】单源最短路径（标准版）</a>
-      </div>
-      <p>Dijkstra 模板题。推荐用邻接表或链式前向星存储，配合优先队列。练习带权图的存储和遍历。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1807" target="_blank">P1807 最长路</a></div>
+      <span class="tag tag-easy">入门</span>
+      <p>DAG 上求最长路。练习邻接表建图与拓扑排序后 DP。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2872" target="_blank">P2872 [USACO07NOV] Building Roads S</a></div>
+      <span class="tag tag-easy">入门</span>
+      <p>完全图上的最小生成树。节点数 1000，可以用邻接矩阵存储所有边的距离。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1536" target="_blank">P1536 村村通</a></div>
+      <span class="tag tag-easy">入门</span>
+      <p>求最少添加几条边使图连通。用邻接表建图后并查集或 DFS 计数连通分量。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1141" target="_blank">P1141 01 迷宫</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>网格图 BFS/DFS，练习邻接表或直接在二维数组上遍历。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1162" target="_blank">P1162 填涂颜色</a></div>
+      <span class="tag tag-easy">入门</span>
+      <p>网格图 BFS 从边界出发标记。练习图遍历的基本操作。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3956" target="_blank">P3956 棋盘</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>网格图建模，带权边表示变色代价。练习链式前向星或邻接表建图。</p>
     </div>
 
+    <h3>变种题</h3>
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P3371" target="_blank">P3371 【模板】单源最短路径（弱化版）</a>
-      </div>
-      <p>SPFA 或 Dijkstra 均可。节点数较大，不能用邻接矩阵。练习邻接表的使用。</p>
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/20/C" target="_blank">CF 20C - Dijkstra?</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>Dijkstra 模板题，用邻接表存储带权图，配合优先队列求最短路并还原路径。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5905" target="_blank">P5905 Johnson 全源最短路</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>Johnson 算法模板题，需用邻接表存储，配合势函数重赋权。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4779" target="_blank">P4779 【模板】单源最短路径（标准版）</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>Dijkstra 模板题。推荐用邻接表或链式前向星存储，配合优先队列。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3376" target="_blank">P3376 【模板】网络最大流</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>Dinic 最大流模板题。必须用链式前向星，因为需要通过 i^1 快速找到反向边。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1330" target="_blank">P1330 封锁阳光大学</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>二分图判定与染色。练习邻接表建图与 BFS/DFS 染色法。</p>
     </div>
 
+    <h3>扩展题</h3>
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P3366" target="_blank">P3366 【模板】最小生成树</a>
-      </div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3366" target="_blank">P3366 【模板】最小生成树</a></div>
+      <span class="tag tag-hard">困难</span>
       <p>Kruskal 或 Prim 算法。Kruskal 需要遍历所有边，用边数组更方便；Prim 用邻接表更高效。</p>
     </div>
-
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P3376" target="_blank">P3376 【模板】网络最大流</a>
-      </div>
-      <p>Dinic 最大流模板题。必须用链式前向星，因为需要通过 <code>i ^ 1</code> 快速找到反向边。这是链式前向星的经典应用场景。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3371" target="_blank">P3371 【模板】单源最短路径（弱化版）</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>SPFA 或 Dijkstra 均可。节点数较大，不能用邻接矩阵，练习邻接表的使用。</p>
     </div>
-
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P2872" target="_blank">P2872 [USACO07NOV] Building Roads S</a>
-      </div>
-      <p>完全图上的最小生成树。节点数 1000，可以用邻接矩阵存储所有边的距离。</p>
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/25/D" target="_blank">CF 25D - Roads not only in Berland</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>并查集 + 图的存储，删边加边使图变成树。练习对图结构的灵活操作。</p>
     </div>
   </div>
 

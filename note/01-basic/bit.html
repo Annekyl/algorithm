@@ -37,7 +37,7 @@
       <li><a href="#sec-subset">7. 枚举子集</a></li>
       <li><a href="#sec-bitmask">8. 状态压缩基础</a></li>
       <li><a href="#sec-application">9. 位运算在算法中的应用</a></li>
-      <li><a href="#sec-problems">10. 经典例题</a></li>
+      <li><a href="#practice">10. 例题与练习</a></li>
     </ul>
   </div>
 
@@ -696,285 +696,92 @@ dp[<span class="num">0</span>] = <span class="num">0</span>;  <span class="cm">/
   </div>
 
   <!-- ============================== -->
-  <!-- Section 10: 经典例题 -->
+  <!-- Section 10: Practice Problems -->
   <!-- ============================== -->
-  <div class="section" id="sec-problems">
-    <h2>10. 经典例题</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
-    <!-- Problem 1 -->
-    <h3>10.1 只出现一次的数字</h3>
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">LeetCode 136. <a href="https://leetcode.cn/problems/single-number/" target="_blank">Single Number</a></div>
-      <p>给定一个非空整数数组，除了某个元素只出现一次以外，其余每个元素均出现两次。找出那个只出现了一次的元素。要求线性时间复杂度，不使用额外空间。</p>
+      <div class="problem-title"><a href="https://leetcode.cn/problems/single-number/" target="_blank">LeetCode 136 - Single Number</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
-
-    <p><strong>思路:</strong> 利用 XOR 的自反性 (<code>a ^ a = 0</code>) 和恒等性 (<code>a ^ 0 = a</code>)，所有数异或一遍，出现两次的数相互抵消，剩下的是只出现一次的数。</p>
-
-    <pre><code><span class="ty">int</span> <span class="fn">singleNumber</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; nums) {
-    <span class="ty">int</span> ans = <span class="num">0</span>;
-    <span class="kw">for</span> (<span class="ty">int</span> x : nums) ans ^= x;
-    <span class="kw">return</span> ans;
-}</code></pre>
-    <div class="complexity">
-      <span class="label">时间复杂度</span> <span class="value">O(n)</span>
-    </div>
-    <div class="complexity">
-      <span class="label">空间复杂度</span> <span class="value">O(1)</span>
-    </div>
-
-    <!-- Problem 2 -->
-    <h3>10.2 只出现一次的数字 II</h3>
     <div class="problem">
-      <div class="problem-title">LeetCode 137. <a href="https://leetcode.cn/problems/single-number-ii/" target="_blank">Single Number II</a></div>
-      <p>除了某个元素只出现一次以外，其余每个元素均出现三次。找出只出现一次的元素。</p>
+      <div class="problem-title"><a href="https://leetcode.cn/problems/power-of-two/" target="_blank">LeetCode 231 - Power of Two</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
-
-    <p><strong>思路:</strong> 统计所有数每一位上 1 的个数，对 3 取余即为答案的对应位。</p>
-
-    <pre><code><span class="ty">int</span> <span class="fn">singleNumber</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; nums) {
-    <span class="ty">int</span> ans = <span class="num">0</span>;
-    <span class="kw">for</span> (<span class="ty">int</span> bit = <span class="num">0</span>; bit &lt; <span class="num">32</span>; bit++) {
-        <span class="ty">int</span> cnt = <span class="num">0</span>;
-        <span class="kw">for</span> (<span class="ty">int</span> x : nums) cnt += (x &gt;&gt; bit) &amp; <span class="num">1</span>;
-        <span class="kw">if</span> (cnt % <span class="num">3</span>) ans |= (<span class="num">1</span> &lt;&lt; bit);
-    }
-    <span class="kw">return</span> ans;
-}</code></pre>
-    <div class="complexity">
-      <span class="label">时间复杂度</span> <span class="value">O(32n)</span>
-    </div>
-
-    <!-- Problem 3 -->
-    <h3>10.3 两个只出现一次的数字</h3>
     <div class="problem">
-      <div class="problem-title">LeetCode 260. <a href="https://leetcode.cn/problems/single-number-iii/" target="_blank">Single Number III</a></div>
-      <p>给定一个整数数组 nums，其中恰好有两个元素只出现一次，其余所有元素均出现两次。找出只出现一次的那两个元素。</p>
+      <div class="problem-title"><a href="https://leetcode.cn/problems/hamming-distance/" target="_blank">LeetCode 461 - Hamming Distance</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
 
-    <p><strong>思路:</strong> 所有数异或得到 <code>xor_all = a ^ b</code>。找到 <code>xor_all</code> 中任意一个为 1 的位（如最低位的 1），该位为 1 说明 a 和 b 在该位不同，以此将所有数分成两组，分别异或即可得到 a 和 b。</p>
-
-    <pre><code><span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">singleNumber</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; nums) {
-    <span class="ty">long long</span> xor_all = <span class="num">0</span>;
-    <span class="kw">for</span> (<span class="ty">int</span> x : nums) xor_all ^= x;
-
-    <span class="cm">// 取最低位的 1，a 和 b 在该位不同</span>
-    <span class="ty">long long</span> diff = xor_all &amp; (-xor_all);
-
-    <span class="ty">int</span> a = <span class="num">0</span>, b = <span class="num">0</span>;
-    <span class="kw">for</span> (<span class="ty">int</span> x : nums) {
-        <span class="kw">if</span> (x &amp; diff)
-            a ^= x;
-        <span class="kw">else</span>
-            b ^= x;
-    }
-    <span class="kw">return</span> {a, b};
-}</code></pre>
-
-    <!-- Problem 4 -->
-    <h3>10.4 枚举子集求子集和问题</h3>
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">经典问题: 给定 n 个正整数和一个目标值 target，判断是否存在一个子集使得子集和等于 target。</div>
+      <div class="problem-title"><a href="https://leetcode.cn/problems/single-number-ii/" target="_blank">LeetCode 137 - Single Number II</a></div>
+      <span class="tag tag-mid">中等</span>
     </div>
-
-    <p><strong>思路:</strong> n 较小时（n &le; 20），直接枚举 2^n 个子集，检查每个子集的和。</p>
-
-    <pre><code><span class="ty">bool</span> <span class="fn">subsetSum</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; a, <span class="ty">int</span> target) {
-    <span class="ty">int</span> n = a.size();
-    <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">0</span>; mask &lt; (<span class="num">1</span> &lt;&lt; n); mask++) {
-        <span class="ty">int</span> sum = <span class="num">0</span>;
-        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
-            <span class="kw">if</span> (mask &amp; (<span class="num">1</span> &lt;&lt; i)) sum += a[i];
-        <span class="kw">if</span> (sum == target) <span class="kw">return true</span>;
-    }
-    <span class="kw">return false</span>;
-}</code></pre>
-    <div class="complexity">
-      <span class="label">时间复杂度</span> <span class="value">O(2^n * n)</span>
-    </div>
-
-    <!-- Problem 5 -->
-    <h3>10.5 最大异或对</h3>
     <div class="problem">
-      <div class="problem-title">AcWing 143. <a href="https://www.acwing.com/problem/content/145/" target="_blank">最大异或对</a></div>
-      <p>给定 n 个整数，求其中两个数的最大异或值。</p>
+      <div class="problem-title"><a href="https://leetcode.cn/problems/single-number-iii/" target="_blank">LeetCode 260 - Single Number III</a></div>
+      <span class="tag tag-mid">中等</span>
     </div>
-
-    <p><strong>思路 1 (暴力):</strong> O(n^2) 枚举所有数对。思路 2 (01-Trie): 利用字典树，对每个数在 Trie 上贪心查找使异或值最大的配对数，O(32n)。思路 3 (枚举高位): 从高位到低位贪心，利用集合判断。</p>
-
-    <pre><code><span class="cm">// 方法: 从高位到低位贪心（集合法）</span>
-<span class="ty">int</span> <span class="fn">maxXor</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; a) {
-    <span class="ty">int</span> ans = <span class="num">0</span>;
-    <span class="ty">unordered_set</span>&lt;<span class="ty">int</span>&gt; s;
-    <span class="kw">for</span> (<span class="ty">int</span> bit = <span class="num">30</span>; bit &gt;= <span class="num">0</span>; bit--) {
-        <span class="ty">int</span> cur = ans | (<span class="num">1</span> &lt;&lt; bit);
-        s.clear();
-        <span class="kw">for</span> (<span class="ty">int</span> x : a) {
-            s.insert(x &gt;&gt; bit);
-        }
-        <span class="ty">bool</span> found = <span class="kw">false</span>;
-        <span class="kw">for</span> (<span class="ty">int</span> x : a) {
-            <span class="kw">if</span> (s.count((x &gt;&gt; bit) ^ (cur &gt;&gt; bit))) {
-                found = <span class="kw">true</span>;
-                <span class="kw">break</span>;
-            }
-        }
-        <span class="kw">if</span> (found) ans = cur;
-    }
-    <span class="kw">return</span> ans;
-}</code></pre>
-
-    <!-- Problem 6 -->
-    <h3>10.6 汉明距离</h3>
     <div class="problem">
-      <div class="problem-title">LeetCode 461. <a href="https://leetcode.cn/problems/hamming-distance/" target="_blank">Hamming Distance</a></div>
-      <p>两个整数之间的汉明距离是两个数字对应二进制位不同的位数。给定两个整数 x 和 y，计算它们之间的汉明距离。</p>
+      <div class="problem-title"><a href="https://leetcode.cn/problems/counting-bits/" target="_blank">LeetCode 338 - Counting Bits</a></div>
+      <span class="tag tag-easy">入门</span>
     </div>
-
-    <pre><code><span class="ty">int</span> <span class="fn">hammingDistance</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
-    <span class="kw">return</span> <span class="fn">__builtin_popcount</span>(x ^ y);
-}</code></pre>
-
-    <!-- Problem 7 -->
-    <h3>10.7 颠倒二进制位</h3>
     <div class="problem">
-      <div class="problem-title">LeetCode 190. <a href="https://leetcode.cn/problems/reverse-bits/" target="_blank">Reverse Bits</a></div>
-      <p>颠倒给定的 32 位无符号整数的二进制位。</p>
+      <div class="problem-title"><a href="https://leetcode.cn/problems/reverse-bits/" target="_blank">LeetCode 190 - Reverse Bits</a></div>
+      <span class="tag tag-mid">中等</span>
     </div>
-
-    <pre><code><span class="ty">uint32_t</span> <span class="fn">reverseBits</span>(<span class="ty">uint32_t</span> n) {
-    <span class="ty">uint32_t</span> ans = <span class="num">0</span>;
-    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; <span class="num">32</span>; i++) {
-        ans = (ans &lt;&lt; <span class="num">1</span>) | (n &amp; <span class="num">1</span>);
-        n &gt;&gt;= <span class="num">1</span>;
-    }
-    <span class="kw">return</span> ans;
-}</code></pre>
-
-    <!-- Problem 8 -->
-    <h3>10.8 交替位二进制数</h3>
     <div class="problem">
-      <div class="problem-title">LeetCode 693. <a href="https://leetcode.cn/problems/binary-number-with-alternating-bits/" target="_blank">Binary Number with Alternating Bits</a></div>
-      <p>给定一个正整数，检查它的二进制表示是否总是 0、1 交替出现。</p>
+      <div class="problem-title"><a href="https://leetcode.cn/problems/binary-number-with-alternating-bits/" target="_blank">LeetCode 693 - Binary Number with Alternating Bits</a></div>
+      <span class="tag tag-easy">入门</span>
     </div>
-
-    <pre><code><span class="ty">bool</span> <span class="fn">hasAlternatingBits</span>(<span class="ty">int</span> n) {
-    <span class="cm">// n 和 n 右移一位异或，如果是交替位则结果全为 1</span>
-    <span class="ty">int</span> x = n ^ (n &gt;&gt; <span class="num">1</span>);
-    <span class="cm">// 检查 x 是否全为 1 (即 x &amp; (x+1) == 0)</span>
-    <span class="kw">return</span> (x &amp; (x + <span class="num">1</span>)) == <span class="num">0</span>;
-}</code></pre>
-
-    <!-- Problem 9 -->
-    <h3>10.9 2 的幂相关</h3>
     <div class="problem">
-      <div class="problem-title">LeetCode 231. <a href="https://leetcode.cn/problems/power-of-two/" target="_blank">Power of Two</a></div>
-      <p>给定一个整数 n，判断是否是 2 的幂。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1120" target="_blank">Luogu P1120 - 小木棍</a></div>
+      <span class="tag tag-mid">中等</span>
     </div>
 
-    <pre><code><span class="ty">bool</span> <span class="fn">isPowerOfTwo</span>(<span class="ty">int</span> n) {
-    <span class="kw">return</span> n &gt; <span class="num">0</span> &amp;&amp; (n &amp; (n - <span class="num">1</span>)) == <span class="num">0</span>;
-}
-
-<span class="cm">// 变体: 判断是否是 4 的幂</span>
-<span class="ty">bool</span> <span class="fn">isPowerOfFour</span>(<span class="ty">int</span> n) {
-    <span class="cm">// 是 2 的幂，且 1 在偶数位上</span>
-    <span class="kw">return</span> n &gt; <span class="num">0</span> &amp;&amp; (n &amp; (n - <span class="num">1</span>)) == <span class="num">0</span> &amp;&amp; (n &amp; <span class="num">0x55555555</span>) != <span class="num">0</span>;
-}</code></pre>
-
-    <!-- Problem 10 -->
-    <h3>10.10 位运算实现加法</h3>
+    <h3>变种题</h3>
     <div class="problem">
-      <div class="problem-title">不用加号求两数之和</div>
-      <p>LeetCode 371. 不使用 + 和 - 运算符，计算两个整数的和。</p>
+      <div class="problem-title"><a href="https://leetcode.cn/problems/sum-of-two-integers/" target="_blank">LeetCode 371 - Sum of Two Integers</a></div>
+      <span class="tag tag-mid">中等</span>
     </div>
-
-    <p><strong>思路:</strong> XOR 得到无进位加法结果，AND 左移一位得到进位，迭代直到没有进位。</p>
-
-    <pre><code><span class="ty">int</span> <span class="fn">getSum</span>(<span class="ty">int</span> a, <span class="ty">int</span> b) {
-    <span class="kw">while</span> (b != <span class="num">0</span>) {
-        <span class="ty">unsigned</span> <span class="ty">int</span> carry = (<span class="ty">unsigned</span> <span class="ty">int</span>)(a &amp; b) &lt;&lt; <span class="num">1</span>;
-        a = a ^ b;
-        b = carry;
-    }
-    <span class="kw">return</span> a;
-}</code></pre>
-
-    <div class="diagram">
-      <pre>
-计算 5 + 3 (0101 + 0011):
-
-第 1 轮:
-  XOR:  0101 ^ 0011 = 0110 (无进位和 = 6)
-  AND:  0101 & 0011 = 0001, 左移 = 0010 (进位 = 2)
-
-第 2 轮:
-  XOR:  0110 ^ 0010 = 0100 (无进位和 = 4)
-  AND:  0110 & 0010 = 0010, 左移 = 0100 (进位 = 4)
-
-第 3 轮:
-  XOR:  0100 ^ 0100 = 0000 (无进位和 = 0)
-  AND:  0100 & 0100 = 0100, 左移 = 1000 (进位 = 8)
-
-第 4 轮:
-  XOR:  0000 ^ 1000 = 1000 (= 8)
-  AND:  0000 & 1000 = 0000, 左移 = 0 (进位 = 0)
-
-b = 0, 结束。结果 = 8 = 5 + 3
-       </pre>
-    </div>
-
-    <!-- Problem 11 -->
-    <h3>10.11 比特位计数</h3>
     <div class="problem">
-      <div class="problem-title">LeetCode 338. <a href="https://leetcode.cn/problems/counting-bits/" target="_blank">Counting Bits</a></div>
-      <p>给定整数 n，返回 [0, n] 范围内每个数的二进制表示中 1 的个数。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3901" target="_blank">Luogu P3901 - 数列找不同（bitset）</a></div>
+      <span class="tag tag-mid">中等</span>
     </div>
-
-    <pre><code><span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">countBits</span>(<span class="ty">int</span> n) {
-    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; ans(n + <span class="num">1</span>);
-    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
-        <span class="cm">// i 的 1 的个数 = (i 去掉最低位 1) 的 1 的个数 + 1</span>
-        ans[i] = ans[i &amp; (i - <span class="num">1</span>)] + <span class="num">1</span>;
-    }
-    <span class="kw">return</span> ans;
-}</code></pre>
-    <div class="complexity">
-      <span class="label">时间复杂度</span> <span class="value">O(n)</span>
-    </div>
-    <div class="complexity">
-      <span class="label">空间复杂度</span> <span class="value">O(n)</span>
-    </div>
-
-    <!-- Problem 12 -->
-    <h3>10.12 不使用额外变量交换数组元素使分组成功</h3>
     <div class="problem">
-      <div class="problem-title">状压 DP 例题: 分配问题</div>
-      <p>有 n 个任务和 n 个人，第 i 个人完成第 j 个任务的代价为 cost[i][j]。每人恰好分配一个任务，求最小总代价。</p>
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1592/B" target="_blank">CF 1592B - Hemose Shopping</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1659/B" target="_blank">CF 1659B - Bit Flipping</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1455" target="_blank">Luogu P1455 - 捆扎荷花（状压）</a></div>
+      <span class="tag tag-hard">困难</span>
     </div>
 
-    <pre><code><span class="cm">// 经典状压 DP: 分配问题</span>
-<span class="ty">int</span> n;
-<span class="ty">int</span> cost[MAXN][MAXN];
-<span class="ty">int</span> dp[<span class="num">1</span> &lt;&lt; MAXN];
-
-<span class="ty">int</span> <span class="fn">assignment</span>() {
-    <span class="fn">memset</span>(dp, <span class="num">0x3f</span>, <span class="kw">sizeof</span>(dp));
-    dp[<span class="num">0</span>] = <span class="num">0</span>;
-
-    <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">0</span>; mask &lt; (<span class="num">1</span> &lt;&lt; n); mask++) {
-        <span class="ty">int</span> p = <span class="fn">__builtin_popcount</span>(mask);  <span class="cm">// 已分配的任务数 = 当前处理到第 p 个人</span>
-        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; n; j++) {
-            <span class="kw">if</span> (!(mask &amp; (<span class="num">1</span> &lt;&lt; j))) {
-                <span class="cm">// 第 p 个人去做第 j 个任务</span>
-                <span class="ty">int</span> nmask = mask | (<span class="num">1</span> &lt;&lt; j);
-                dp[nmask] = <span class="fn">min</span>(dp[nmask], dp[mask] + cost[p][j]);
-            }
-        }
-    }
-    <span class="kw">return</span> dp[(<span class="num">1</span> &lt;&lt; n) - <span class="num">1</span>];
-}</code></pre>
-    <div class="complexity">
-      <span class="label">时间复杂度</span> <span class="value">O(n * 2^n)</span>
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2114" target="_blank">Luogu P2114 - NOIP2020 与运算</a></div>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1553/D" target="_blank">CF 1553D - Backspace</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1605/C" target="_blank">CF 1605C - Dominant Character</a></div>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5522" target="_blank">Luogu P5522 - 【yLOI2019】 棠梨煎雪</a></div>
+      <span class="tag tag-hard">困难</span>
     </div>
   </div>
 

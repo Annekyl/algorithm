@@ -37,7 +37,7 @@
       <li><a href="#linear-inv">线性求逆元</a></li>
       <li><a href="#crt">中国剩余定理 (CRT)</a></li>
       <li><a href="#templates">完整 C++ 模板</a></li>
-      <li><a href="#problems">经典例题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -541,145 +541,95 @@ ll <span class="fn">qpow</span>(ll a, ll b, ll mod) {
 }</code><span class="lang-label">C++</span></pre>
   </div>
 
-  <!-- ============================== -->
-  <!-- Section 8: Problems -->
-  <!-- ============================== -->
-  <div class="section" id="problems">
-    <h2>经典例题</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
-    <h3>例题 1: 模运算下的除法</h3>
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">计算 (a / b) mod p</div>
-      <p>给定 a, b, p，求 (a / b) mod p，其中 p 为素数。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5656" target="_blank">P5656 - 扩展欧几里得算法</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
-    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
-<span class="kw">using namespace</span> std;
-<span class="kw">typedef</span> <span class="ty">long long</span> ll;
-
-ll <span class="fn">qpow</span>(ll a, ll b, ll p) {
-    ll res = <span class="num">1</span>; a %= p;
-    <span class="kw">while</span> (b) { <span class="kw">if</span> (b &amp; <span class="num">1</span>) res = res * a % p; a = a * a % p; b &gt;&gt;= <span class="num">1</span>; }
-    <span class="kw">return</span> res;
-}
-
-<span class="ty">int</span> <span class="fn">main</span>() {
-    ll a, b, p;
-    cin &gt;&gt; a &gt;&gt; b &gt;&gt; p;
-    <span class="cm">// (a / b) % p = a * b^(p-2) % p</span>
-    ll ans = a % p * <span class="fn">qpow</span>(b, p - <span class="num">2</span>, p) % p;
-    cout &lt;&lt; ans &lt;&lt; endl;
-}</code><span class="lang-label">C++</span></pre>
-
-    <h3>例题 2: POJ 1061 青蛙的约会</h3>
     <div class="problem">
-      <div class="problem-title">青蛙的约会 (exGCD)</div>
-      <p>已在裴蜀定理一节给出完整代码。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1082" target="_blank">P1082 - 同余方程</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
 
-    <h3>例题 3: 同余方程 (NOIP 2012)</h3>
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">求 ax &equiv; 1 (mod b) 的最小正整数解</div>
-      <p>给定正整数 a, b (b &le; 10^9)，求满足 ax &equiv; 1 (mod b) 的最小正整数 x。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1516" target="_blank">P1516 - 青蛙的约会</a></div>
+      <span class="tag tag-base">exGCD</span>
+      <span class="tag tag-mid">中等</span>
     </div>
-    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
-<span class="kw">using namespace</span> std;
-<span class="kw">typedef</span> <span class="ty">long long</span> ll;
-
-ll <span class="fn">exgcd</span>(ll a, ll b, ll &amp;x, ll &amp;y) {
-    <span class="kw">if</span> (b == <span class="num">0</span>) { x = <span class="num">1</span>; y = <span class="num">0</span>; <span class="kw">return</span> a; }
-    ll d = <span class="fn">exgcd</span>(b, a % b, y, x);
-    y -= a / b * x;
-    <span class="kw">return</span> d;
-}
-
-<span class="ty">int</span> <span class="fn">main</span>() {
-    ll a, b;
-    cin &gt;&gt; a &gt;&gt; b;
-    ll x, y;
-    <span class="fn">exgcd</span>(a, b, x, y);
-    <span class="cm">// ax + by = 1, x 即为 a 在模 b 下的逆元</span>
-    cout &lt;&lt; ((x % b) + b) % b &lt;&lt; endl;
-}</code><span class="lang-label">C++</span></pre>
-
-    <h3>例题 4: BZOJ 2818 GCD</h3>
     <div class="problem">
-      <div class="problem-title">GCD (欧拉函数)</div>
-      <p>给定 n (n &le; 10^7)，求有多少对 (x, y) 满足 1 &le; x, y &le; n 且 gcd(x, y) 是素数。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3811" target="_blank">P3811 - 乘法逆元</a></div>
+      <span class="tag tag-base">逆元</span>
+      <span class="tag tag-easy">简单</span>
     </div>
-    <pre><code><span class="cm">// 思路: 枚举素数 p, 求 gcd(x,y)=p 的对数</span>
-<span class="cm">// 即 gcd(x/p, y/p) = 1, 问题转化为求互素对数</span>
-<span class="cm">// 利用欧拉函数: sum_{i=1}^{n/p} phi(i) * 2 - 1</span>
-<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
-<span class="kw">using namespace</span> std;
-<span class="kw">typedef</span> <span class="ty">long long</span> ll;
-<span class="ty">const int</span> MAXN = <span class="num">10000005</span>;
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4777" target="_blank">P4777 - 扩展中国剩余定理</a></div>
+      <span class="tag tag-base">exCRT</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1665/C" target="_blank">CF 1665C - Tree Infection</a></div>
+      <span class="tag tag-base">GCD 性质</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1593" target="_blank">P1593 - 因子和</a></div>
+      <span class="tag tag-base">素因子分解</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
 
-<span class="ty">int</span> primes[MAXN], cnt;
-<span class="ty">bool</span> vis[MAXN];
-ll phi[MAXN], sum_phi[MAXN];
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2054" target="_blank">P2054 - 洗牌</a></div>
+      <span class="tag tag-base">exGCD</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4139" target="_blank">P4139 - 上帝与集合的正确用法</a></div>
+      <span class="tag tag-base">欧拉定理</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1047/B" target="_blank">CF 1047B - Cover Points</a></div>
+      <span class="tag tag-base">GCD</span>
+      <span class="tag tag-easy">简单</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2480" target="_blank">P2480 - 古代猪文</a></div>
+      <span class="tag tag-base">Lucas + CRT</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4549" target="_blank">P4549 - 裴蜀定理</a></div>
+      <span class="tag tag-base">裴蜀定理</span>
+      <span class="tag tag-easy">简单</span>
+    </div>
 
-<span class="ty">void</span> <span class="fn">init</span>(<span class="ty">int</span> n) {
-    phi[<span class="num">1</span>] = <span class="num">1</span>;
-    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i &lt;= n; i++) {
-        <span class="kw">if</span> (!vis[i]) { primes[cnt++] = i; phi[i] = i - <span class="num">1</span>; }
-        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; cnt &amp;&amp; (<span class="ty">long long</span>)i * primes[j] &lt;= n; j++) {
-            vis[i * primes[j]] = <span class="kw">true</span>;
-            <span class="kw">if</span> (i % primes[j] == <span class="num">0</span>) {
-                phi[i * primes[j]] = phi[i] * primes[j];
-                <span class="kw">break</span>;
-            }
-            phi[i * primes[j]] = phi[i] * (primes[j] - <span class="num">1</span>);
-        }
-    }
-    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
-        sum_phi[i] = sum_phi[i-<span class="num">1</span>] + phi[i];
-}
-
-<span class="ty">int</span> <span class="fn">main</span>() {
-    <span class="ty">int</span> n; cin &gt;&gt; n;
-    <span class="fn">init</span>(n);
-    ll ans = <span class="num">0</span>;
-    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; cnt; i++) {
-        <span class="ty">int</span> p = primes[i];
-        ans += <span class="num">2</span> * sum_phi[n / p] - <span class="num">1</span>;
-    }
-    cout &lt;&lt; ans &lt;&lt; endl;
-}</code><span class="lang-label">C++</span></pre>
-
-    <h3>常见题目链接</h3>
-    <div class="table-wrap">
-      <table>
-        <tr>
-          <th>题目</th>
-          <th>知识点</th>
-          <th>难度</th>
-        </tr>
-        <tr>
-          <td>POJ 1061 青蛙的约会</td>
-          <td>扩展欧几里得</td>
-          <td><span class="tag tag-mid">中等</span></td>
-        </tr>
-        <tr>
-          <td>NOIP 2012 同余方程</td>
-          <td>exGD 求逆元</td>
-          <td><span class="tag tag-easy">简单</span></td>
-        </tr>
-        <tr>
-          <td>SPOJ LOCKER</td>
-          <td>费马小定理 + 快速幂</td>
-          <td><span class="tag tag-mid">中等</span></td>
-        </tr>
-        <tr>
-          <td>BZOJ 2818 GCD</td>
-          <td>欧拉函数 + 素数筛</td>
-          <td><span class="tag tag-mid">中等</span></td>
-        </tr>
-        <tr>
-          <td>POJ 2891 Strange Way to Express Integers</td>
-          <td>扩展 CRT</td>
-          <td><span class="tag tag-hard">困难</span></td>
-        </tr>
-      </table>
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1614/D" target="_blank">CF 1614D2 - Divan and Kostomuksha</a></div>
+      <span class="tag tag-base">欧拉函数</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3327" target="_blank">P3327 - 约数个数和</a></div>
+      <span class="tag tag-base">数论分块</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1154/G" target="_blank">CF 1154G - Minimum Possible LCM</a></div>
+      <span class="tag tag-base">LCM</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1445" target="_blank">P1445 - 樱花</a></div>
+      <span class="tag tag-base">欧拉函数</span>
+      <span class="tag tag-mid">中等</span>
     </div>
   </div>
 

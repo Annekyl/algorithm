@@ -35,7 +35,7 @@
     <li><a href="#sec1">一、单调队列概述</a></li>
     <li><a href="#sec2">二、滑动窗口最大/小值</a></li>
     <li><a href="#sec3">三、DP 优化应用</a></li>
-    <li><a href="#sec4">四、综合例题与练习</a></li>
+    <li><a href="#practice">例题与练习</a></li>
   </ul>
 </div>
 
@@ -412,105 +412,87 @@ deque<span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt
   </div>
 </div>
 
-<!-- ============================================================ -->
-<!-- 第四节：综合例题与练习 -->
-<!-- ============================================================ -->
-<div class="section" id="sec4">
-  <h2>四、综合例题与练习</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
-  <h3>4.1 模板题</h3>
-  <div class="problem">
-    <div class="problem-title">洛谷 P1886 滑动窗口 / AcWing 154. 滑动窗口</div>
-    <p>经典滑动窗口最大值和最小值。使用单调队列模板，一次遍历求出所有窗口的最值。</p>
+    <h3>模板题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1886" target="_blank">Luogu P1886 - 滑动窗口</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2032" target="_blank">Luogu P2032 - 扫描</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
+
+    <h3>练习题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1714" target="_blank">Luogu P1714 - 切蛋糕</a></div>
+      <span class="tag tag-mid">前缀和+单调队列</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2627" target="_blank">Luogu P2627 - [USACO08NOV] 修剪草坪</a></div>
+      <span class="tag tag-mid">单调队列优化DP</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/372/B" target="_blank">CF 372B - Counting Rectangles is Fun</a></div>
+      <span class="tag tag-mid">单调队列+二维</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3088" target="_blank">Luogu P3088 - [USACO13NOV] Crowded Cows S</a></div>
+      <span class="tag tag-mid">双向单调队列</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2034" target="_blank">Luogu P2034 - 选择数字</a></div>
+      <span class="tag tag-mid">单调队列优化DP</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2216" target="_blank">Luogu P2216 - [HAOI2007] 理想的正方形</a></div>
+      <span class="tag tag-mid">二维滑动窗口</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2564" target="_blank">Luogu P2564 - [SCOI2009] 生日礼物</a></div>
+      <span class="tag tag-hard">滑动窗口+贪心</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3957" target="_blank">Luogu P3957 - 跳房子</a></div>
+      <span class="tag tag-hard">二分+单调队列优化DP</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5665" target="_blank">Luogu P5665 - [CSP-S2019] 划分</a></div>
+      <span class="tag tag-hard">单调队列优化DP</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3522" target="_blank">Luogu P3522 - [POI2011] TEM-Temperature</a></div>
+      <span class="tag tag-mid">单调队列+贪心</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/13/D" target="_blank">CF 13D - Triangles</a></div>
+      <span class="tag tag-hard">单调队列+几何</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2698" target="_blank">Luogu P2698 - [USACO12MAR] Flowerpot S</a></div>
+      <span class="tag tag-mid">单调队列+滑动窗口</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
   </div>
-
-  <div class="problem">
-    <div class="problem-title">LeetCode 239. 滑动窗口最大值</div>
-    <p>与上题相同，使用单调递减队列。</p>
-  </div>
-
-  <h3>4.2 DP 优化题</h3>
-  <div class="problem">
-    <div class="problem-title">洛谷 P2627 [USACO08NOV] 修剪草坪</div>
-    <p>不能连续选超过 k 头牛，求最大效率。单调队列优化 DP。</p>
-  </div>
-
-  <div class="problem">
-    <div class="problem-title">洛谷 P2564 [SCOI2009] 生日礼物</div>
-    <p>滑动窗口 + 单调队列思想，维护窗口内包含所有颜色的最小区间。</p>
-  </div>
-
-  <div class="problem">
-    <div class="problem-title">洛谷 P3088 [USACO13NOV] Crowded Cows S</div>
-    <p>从左右两个方向分别用单调队列维护窗口内的最大值，判断是否"拥挤"。</p>
-  </div>
-
-  <h3>4.3 综合应用</h3>
-  <div class="problem">
-    <div class="problem-title">洛谷 P1714 切蛋糕</div>
-    <p>求长度不超过 m 的连续子段的最大和。用前缀和 + 单调队列维护窗口最小值。</p>
-  </div>
-
-  <div class="problem">
-    <div class="problem-title">洛谷 P2216 [HAOI2007] 理想的正方形</div>
-    <p>二维滑动窗口：先对每行求窗口最值，再对每列求窗口最值。两次单调队列。</p>
-  </div>
-
-  <div class="problem">
-    <div class="problem-title">洛谷 P2034 选择数字</div>
-    <p>不能连续选超过 k 个数，求最大和。单调队列优化 DP。</p>
-  </div>
-
-  <h3>4.4 推荐练习清单</h3>
-  <div class="table-wrap">
-    <table>
-      <tr><th>题目</th><th>知识点</th><th>难度</th></tr>
-      <tr><td>洛谷 P1886 滑动窗口</td><td>单调队列模板</td><td><span class="tag tag-easy">简单</span></td></tr>
-      <tr><td>LeetCode 239 滑动窗口最大值</td><td>单调递减队列</td><td><span class="tag tag-hard">困难</span></td></tr>
-      <tr><td>洛谷 P1714 切蛋糕</td><td>前缀和 + 单调队列</td><td><span class="tag tag-mid">中等</span></td></tr>
-      <tr><td>洛谷 P2627 修剪草坪</td><td>单调队列优化 DP</td><td><span class="tag tag-mid">中等</span></td></tr>
-      <tr><td>洛谷 P2034 选择数字</td><td>单调队列优化 DP</td><td><span class="tag tag-mid">中等</span></td></tr>
-      <tr><td>洛谷 P3088 Crowded Cows</td><td>双方向单调队列</td><td><span class="tag tag-mid">中等</span></td></tr>
-      <tr><td>洛谷 P2216 理想的正方形</td><td>二维滑动窗口</td><td><span class="tag tag-mid">中等</span></td></tr>
-      <tr><td>洛谷 P2564 生日礼物</td><td>滑动窗口 + 贪心</td><td><span class="tag tag-hard">困难</span></td></tr>
-      <tr><td>洛谷 P3957 跳房子</td><td>二分 + 单调队列优化 DP</td><td><span class="tag tag-hard">困难</span></td></tr>
-      <tr><td>洛谷 P5665 划分</td><td>单调队列优化 DP</td><td><span class="tag tag-hard">困难</span></td></tr>
-    </table>
-  </div>
-
-  <h3>4.5 手写双端队列模板</h3>
-  <p>在对常数要求较高的场景下，可以用数组模拟双端队列：</p>
-  <pre><code><span class="cm">// 数组模拟双端队列（常数更小）</span>
-<span class="kw">const</span> <span class="ty">int</span> MAXN <span class="op">=</span> <span class="num">1000005</span>;
-<span class="ty">int</span> dq[MAXN];     <span class="cm">// 存下标</span>
-<span class="ty">int</span> head <span class="op">=</span> <span class="num">0</span>, tail <span class="op">=</span> <span class="num">0</span>;  <span class="cm">// [head, tail) 左闭右开</span>
-
-<span class="cm">// 队尾入队</span>
-<span class="ty">void</span> <span class="fn">push_back</span>(<span class="ty">int</span> x) { dq[tail<span class="op">++</span>] <span class="op">=</span> x; }
-<span class="cm">// 队首出队</span>
-<span class="ty">void</span> <span class="fn">pop_front</span>() { head<span class="op">++</span>; }
-<span class="cm">// 队尾出队</span>
-<span class="ty">void</span> <span class="fn">pop_back</span>() { tail<span class="op">--</span>; }
-<span class="cm">// 队首元素</span>
-<span class="ty">int</span> <span class="fn">front</span>() { <span class="kw">return</span> dq[head]; }
-<span class="cm">// 队尾元素</span>
-<span class="ty">int</span> <span class="fn">back</span>() { <span class="kw">return</span> dq[tail <span class="op">-</span> <span class="num">1</span>]; }
-<span class="cm">// 是否为空</span>
-<span class="ty">bool</span> <span class="fn">empty</span>() { <span class="kw">return</span> head <span class="op">==</span> tail; }</code></pre>
-
-  <div class="box box-tip">
-    <div class="box-title">总结</div>
-    <p>单调队列是滑动窗口最值和 DP 优化的核心工具，核心要点：</p>
-    <ul>
-      <li>单调队列 = <strong>单调栈</strong>的两端操作版本 + <strong>过期清理</strong></li>
-      <li>队列中存<strong>下标</strong>，方便判断元素是否过期</li>
-      <li>两个核心操作：从队尾维护单调性，从队首清理过期元素</li>
-      <li>滑动窗口最值：O(n) 时间，优于优先队列的 O(n log n)</li>
-      <li>DP 优化：当转移涉及区间最值时，分离变量后用单调队列维护</li>
-      <li>手写数组模拟 deque 可以进一步减小常数</li>
-    </ul>
-  </div>
-</div>
 
 </div> <!-- end container -->
 

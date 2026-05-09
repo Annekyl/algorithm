@@ -36,7 +36,7 @@
       <li><a href="#wythoff">威佐夫博弈 (Wythoff Game)</a></li>
       <li><a href="#anti">Anti-Nim 与 Anti-SG</a></li>
       <li><a href="#template">C++ 完整模板</a></li>
-      <li><a href="#problems">经典问题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -370,55 +370,90 @@
 }</code></pre>
   </div>
 
-  <!-- ===== 经典问题 ===== -->
-  <div class="section" id="problems">
-    <h2>经典问题</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P2197 - Nim 游戏</div>
-      <p>经典 Nim 游戏，判断先手是否必胜。</p>
-      <p><strong>思路</strong>：直接异或所有堆，非零先手胜。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2197" target="_blank">P2197 - Nim 游戏</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2252" target="_blank">P2252 - 取石子游戏</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
 
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P2252 - 取石子游戏</div>
-      <p>威佐夫博弈模板题，判断给定两堆石子的胜负。</p>
-      <p><strong>思路</strong>：用黄金比例公式判定。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1290" target="_blank">P1290 - 欧几里得游戏</a></div>
+      <span class="tag tag-base">博弈</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1247" target="_blank">P1247 - 取火柴游戏</a></div>
+      <span class="tag tag-base">Nim 变形</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/15/C" target="_blank">CF 15C - Industrial Nim</a></div>
+      <span class="tag tag-base">Nim 扩展</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1288" target="_blank">P1288 - 取数游戏</a></div>
+      <span class="tag tag-base">SG 函数</span>
+      <span class="tag tag-easy">简单</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4101" target="_blank">P4101 - 男神的礼物</a></div>
+      <span class="tag tag-base">SG 函数</span>
+      <span class="tag tag-mid">中等</span>
     </div>
 
+    <h3>变种题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P1247 - 取火柴游戏</div>
-      <p>Nim 游戏变形，求先手的最优操作。</p>
-      <p><strong>思路</strong>：异或后找到可操作的堆，将该堆调整为异或后等于 0 的值。</p>
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1191/D" target="_blank">CF 1191D - Tokitsukaze, CSL and Stone Game</a></div>
+      <span class="tag tag-base">博弈分析</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1456" target="_blank">P1456 - Monkey King</a></div>
+      <span class="tag tag-base">SG + 左偏树</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/138/D" target="_blank">CF 138D - World of Darkraft</a></div>
+      <span class="tag tag-base">SG + 分治</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2575" target="_blank">P2575 - 高手过招</a></div>
+      <span class="tag tag-base">SG 函数</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/768/E" target="_blank">CF 768E - Game of Stones</a></div>
+      <span class="tag tag-base">SG 打表</span>
+      <span class="tag tag-mid">中等</span>
     </div>
 
+    <h3>扩展题</h3>
     <div class="problem">
-      <div class="problem-title">洛谷 P1290 - 欧几里得游戏</div>
-      <p>给定两个正整数，每次用较大数减去较小数的正整数倍，变为 0 者胜。</p>
-      <p><strong>思路</strong>：递归分析，当 a/b >= 2 时先手必胜，否则递归判断。</p>
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/225/C" target="_blank">CF 225C - Barcode</a></div>
+      <span class="tag tag-base">博弈 + DP</span>
+      <span class="tag tag-hard">困难</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">POJ 1704 - Georgia and Bob</div>
-      <p>N 个棋子在一条线上，每次将一个棋子向左移动至少一格，不能越过其他棋子。无法移动者输。</p>
-      <p><strong>思路</strong>：将相邻棋子配对，转化为 Nim 游戏，每对的距离为一堆石子。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3235" target="_blank">P3235 - 博弈 + 线性代数</a></div>
+      <span class="tag tag-base">复合博弈</span>
+      <span class="tag tag-hard">困难</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">HDU 1847 - Good Luck in CET-4 Everybody!</div>
-      <p>一堆 n 张牌，每次取 2^k 张（k>=0），取走最后一张者胜。</p>
-      <p><strong>思路</strong>：SG 函数打表找规律，SG(n) = n % 3 == 0 ? 0 : (非零)。先手必胜当 n % 3 != 0。</p>
-    </div>
-
-    <div class="box box-tip">
-      <div class="box-title">博弈论解题思路</div>
-      <ul>
-        <li>先判断是否为经典博弈模型（Nim、巴什、威佐夫等）</li>
-        <li>若不是，尝试打 SG 表找规律</li>
-        <li>注意区分正常玩法和反常玩法</li>
-        <li>复合游戏用 SG 定理（异或合并）</li>
-        <li>SG 值可能有周期性，利用周期加速计算</li>
-      </ul>
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1033/G" target="_blank">CF 1033G - Chip Game</a></div>
+      <span class="tag tag-base">博弈论</span>
+      <span class="tag tag-hard">困难</span>
     </div>
   </div>
 

@@ -37,7 +37,7 @@
       <li><a href="#lcp">LCP 数组 &mdash; Kasai 算法</a></li>
       <li><a href="#applications">经典应用</a></li>
       <li><a href="#template">C++ 完整模板</a></li>
-      <li><a href="#problems">经典例题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -356,58 +356,112 @@ h 的"保底"性质保证了总比较次数不超过 2n
     </div>
   </div>
 
-  <!-- Section 6: 经典例题 -->
-  <div class="section" id="problems">
-    <h2>6. 经典例题</h2>
+  <!-- Section 6: 例题与练习 -->
+  <div class="section" id="practice">
+    <h2>6. 例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3809" target="_blank">Luogu P3809 - 【模板】后缀排序</a></div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3809" target="_blank">P3809 - [模板] 后缀排序</a></div>
       <p>给定一个字符串，求其后缀数组。后缀数组基础模板题。</p>
+      <span class="tag tag-base">模板</span>
       <span class="tag tag-easy">入门</span>
-      <span class="tag tag-str">后缀数组</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4051" target="_blank">Luogu P4051 [JSOI2007] 字符加密</a></div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4051" target="_blank">P4051 - [JSOI2007] 字符加密</a></div>
       <p>将字符串首尾相接后求后缀数组，利用 SA 找出字典序最小的循环表示。</p>
-      <span class="tag tag-mid">中等</span>
-      <span class="tag tag-str">后缀数组</span>
+      <span class="tag tag-base">后缀数组</span>
+      <span class="tag tag-easy">入门</span>
     </div>
 
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2852" target="_blank">Luogu P2852 [USACO06DEC] Milk Patterns G</a></div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2852" target="_blank">P2852 - [USACO06DEC] Milk Patterns G</a></div>
       <p>求至少出现 K 次的最长子串长度。在 LCP 数组上用长度为 K-1 的滑动窗口。</p>
+      <span class="tag tag-base">后缀数组+LCP</span>
       <span class="tag tag-mid">中等</span>
-      <span class="tag tag-str">后缀数组 + LCP</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2743" target="_blank">Luogu P2743 [USACO5.1] 乐曲主题 Musical Themes</a></div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2743" target="_blank">P2743 - [USACO5.1] 乐曲主题 Musical Themes</a></div>
       <p>求在旋律中至少出现两次且不重叠的最长主题。二分答案 + 后缀数组。</p>
+      <span class="tag tag-base">后缀数组+二分</span>
       <span class="tag tag-hard">困难</span>
-      <span class="tag tag-str">后缀数组 + 二分</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2463" target="_blank">Luogu P2463 [SDOI2008] Sandy的卡片</a></div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2463" target="_blank">P2463 - [SDOI2008] Sandy的卡片</a></div>
       <p>多个串的最长公共子串。将差分序列拼接后求 LCP 滑动窗口。</p>
+      <span class="tag tag-base">后缀数组+差分</span>
       <span class="tag tag-hard">困难</span>
-      <span class="tag tag-str">后缀数组 + 差分 + 滑动窗口</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3181" target="_blank">Luogu P3181 [HAOI2016] 找相同字符</a></div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3181" target="_blank">P3181 - [HAOI2016] 找相同字符</a></div>
       <p>求两个字符串的相同子串对数。拼接后利用 SA 和 LCP 分别统计。</p>
+      <span class="tag tag-base">后缀数组+计数</span>
       <span class="tag tag-hard">困难</span>
-      <span class="tag tag-str">后缀数组 + 计数</span>
     </div>
 
-    <div class="box box-tip">
-      <div class="box-title">学习路径</div>
-      <p>1. 先理解后缀数组的定义和倍增法原理<br>
-         2. 背诵或手写倍增法 + 基数排序模板<br>
-         3. 掌握 Kasai 算法求 LCP<br>
-         4. 练习 P3809 &rarr; P2852 &rarr; P4051 &rarr; P2463</p>
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2408" target="_blank">P2408 - 不同子串个数</a></div>
+      <p>利用后缀数组求不同子串总数。公式：n*(n+1)/2 - sum(lcp[i])。</p>
+      <span class="tag tag-base">后缀数组+LCP</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1117" target="_blank">P1117 - [NOI2016] 优秀的拆分</a></div>
+      <p>统计字符串中 AABB 形式的子串个数。枚举中间断点，用后缀数组 + LCP 求合法区间。</p>
+      <span class="tag tag-base">后缀数组</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3975" target="_blank">P3975 - [TJOI2015] 弦论</a></div>
+      <p>求字典序第 k 小的子串或不同子串。在后缀数组上统计每个后缀贡献的子串数量。</p>
+      <span class="tag tag-base">后缀数组</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/128/problem/B" target="_blank">CF 128B - String</a></div>
+      <p>求字典序第 k 小的子串。在后缀数组上利用 LCP 信息逐位确定答案。</p>
+      <span class="tag tag-base">后缀数组</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5341" target="_blank">P5341 - [TJOI2019] 甲苯先生和大中锋的字符串</a></div>
+      <p>求恰好出现 k 次的最长子串。后缀数组 + LCP + 单调栈维护滑动窗口。</p>
+      <span class="tag tag-base">后缀数组+单调栈</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/427/problem/D" target="_blank">CF 427D - Match &amp; Catch</a></div>
+      <p>找两个字符串各自的最短唯一子串。后缀数组 + LCP，分析 LCP 区间确定唯一性。</p>
+      <span class="tag tag-base">后缀数组+LCP</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1368" target="_blank">P1368 - [模板] 最小表示法</a></div>
+      <p>求循环字符串的最小表示。可用后缀数组或双指针 O(n) 解决。</p>
+      <span class="tag tag-base">后缀数组</span>
+      <span class="tag tag-easy">简单</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/1073/problem/G" target="_blank">CF 1073G - Yet Another LCP Problem</a></div>
+      <p>求两组后缀之间的 LCP 总和。后缀数组 + LCP + 单调栈维护贡献。</p>
+      <span class="tag tag-base">后缀数组+单调栈</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4248" target="_blank">P4248 - [AHOI2013] 差异</a></div>
+      <p>求所有后缀两两之间的 LCP 之和。后缀数组 + LCP + 单调栈统计贡献。</p>
+      <span class="tag tag-base">后缀数组+单调栈</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5231" target="_blank">P5231 - [JSOI2012] 玄武密码</a></div>
+      <p>对多个模式串在文本串中的出现位置做标记。可用后缀数组 + LCP 或 AC 自动机解决。</p>
+      <span class="tag tag-base">后缀数组</span>
+      <span class="tag tag-mid">中等</span>
     </div>
   </div>
 

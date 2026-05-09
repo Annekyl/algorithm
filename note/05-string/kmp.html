@@ -34,7 +34,7 @@
       <li><a href="#matching">3. KMP匹配过程</a></li>
       <li><a href="#next-app">4. next数组的应用</a></li>
       <li><a href="#template">5. 完整C++模板</a></li>
-      <li><a href="#problems">6. 经典题目</a></li>
+      <li><a href="#practice">6. 例题与练习</a></li>
     </ul>
   </div>
 
@@ -397,55 +397,111 @@ next = [0, 0, 0, 1, 2, 0]
 }</pre>
   </div>
 
-  <!-- Section 6: 经典题目 -->
-  <div class="section" id="problems">
-    <h2>6. 经典题目</h2>
+  <!-- Section 6: 例题与练习 -->
+  <div class="section" id="practice">
+    <h2>6. 例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P3375" target="_blank">P3375 [模板] KMP字符串匹配</a>
-      </div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3375" target="_blank">P3375 - [模板] KMP字符串匹配</a></div>
       <p>标准 KMP 模板题，输出所有匹配位置和 next 数组。</p>
-      <span class="tag tag-base">模板题</span>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5410" target="_blank">P5410 - [模板] 扩展KMP（Z函数）</a></div>
+      <p>Z 函数模板题，求字符串与每个后缀的最长公共前缀。</p>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
 
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P4391" target="_blank">P4391 [BOI2009] Radio Transmission 无线传输</a>
-      </div>
-      <p>给定一个循环串的某个子串，求最小循环节长度。直接使用 <code>n - next[n-1]</code> 即可。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4391" target="_blank">P4391 - [BOI2009] Radio Transmission 无线传输</a></div>
+      <p>给定循环串的子串，求最小循环节长度。直接使用 n - next[n-1] 即可。</p>
+      <span class="tag tag-base">KMP</span>
+      <span class="tag tag-easy">简单</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4824" target="_blank">P4824 - [USACO15FEB] Censoring G</a></div>
+      <p>在文本串中不断删除模式串，使用 KMP + 栈来模拟删除过程。</p>
+      <span class="tag tag-base">KMP</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3435" target="_blank">P3435 - [POI2006] OKR-Periods of Words</a></div>
+      <p>利用 next 数组的性质，求每个前缀的最小周期，并求和。</p>
+      <span class="tag tag-base">next数组</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2957" target="_blank">P2957 - [USACO09OCT] Barn Echo G</a></div>
+      <p>求两个字符串的最长公共前缀后缀，利用 KMP 的 next 数组或 Z 函数解决。</p>
+      <span class="tag tag-base">KMP</span>
       <span class="tag tag-easy">简单</span>
     </div>
 
+    <h3>变种题</h3>
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P4824" target="_blank">P4824 [USACO15FEB] Censoring G</a>
-      </div>
-      <p>在文本串中不断删除模式串，使用 KMP + 栈来模拟删除过程。</p>
+      <div class="problem-title"><a href="https://codeforces.com/contest/126/problem/B" target="_blank">CF 126B - Password</a></div>
+      <p>找既是前缀又是后缀、同时出现在中间的最长子串。利用 next 数组的链式回退性质。</p>
+      <span class="tag tag-base">next数组</span>
       <span class="tag tag-mid">中等</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P3435" target="_blank">P3435 [POI2006] OKR-Periods of Words</a>
-      </div>
-      <p>利用 next 数组的性质，求每个前缀的最小周期，并求和。</p>
-      <span class="tag tag-mid">中等</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P2375" target="_blank">P2375 [NOI2014] 动物园</a>
-      </div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2375" target="_blank">P2375 - [NOI2014] 动物园</a></div>
       <p>KMP 的进阶应用，需要同时维护 next 数组和"安全的" next 数组（限制长度）。</p>
+      <span class="tag tag-base">next数组</span>
       <span class="tag tag-hard">困难</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://codeforces.com/contest/126/problem/B" target="_blank">CF 126B Password</a>
-      </div>
-      <p>找一个既是前缀又是后缀、同时出现在中间的最长子串。利用 next 数组的链式回退性质。</p>
+      <div class="problem-title"><a href="https://codeforces.com/contest/471/problem/D" target="_blank">CF 471D - MUH and Cube Walls</a></div>
+      <p>差分后用 KMP 匹配。将高度差分序列化后，用 KMP 在文本串中查找模式串。</p>
+      <span class="tag tag-base">KMP</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3538" target="_blank">P3538 - [POI2012] OKR-A Horrible Poem</a></div>
+      <p>求字符串的最小循环节，结合 hash 和 next 数组的性质高效求解。</p>
+      <span class="tag tag-base">循环节</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/1137/problem/B" target="_blank">CF 1137B - Camp Schedule</a></div>
+      <p>KMP + 贪心。利用 next 数组找到模式串的最小周期，贪心地构造目标串。</p>
+      <span class="tag tag-base">KMP</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/535/problem/D" target="_blank">CF 535D - Tavas and Malekas</a></div>
+      <p>多个模式串在文本串中的固定位置出现，用 KMP 检查重叠部分的 next 数组一致性。</p>
+      <span class="tag tag-base">KMP</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/633/problem/C" target="_blank">CF 633C - Spy Syndrome 2</a></div>
+      <p>倒序 KMP + DP。将文本串反转后，用 KMP 在 Trie 中匹配单词进行动态规划。</p>
+      <span class="tag tag-base">KMP+DP</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3549" target="_blank">P3549 - [POI2012] PRE-Prefixuffix</a></div>
+      <p>求最长的字符串，使得它既是原串的前缀又是后缀，且两个位置不重叠。next 数组 + 枚举优化。</p>
+      <span class="tag tag-base">next数组</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/25/problem/E" target="_blank">CF 25E - Test</a></div>
+      <p>三个字符串的最短公共超串。用 KMP 求任意两串的最长前后缀匹配，枚举排列取最优。</p>
+      <span class="tag tag-base">KMP</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/1200/problem/E" target="_blank">CF 1200E - Compress Words</a></div>
+      <p>将多个字符串依次拼接，每次合并最长重叠后缀。KMP 或 Z 函数在线求最长公共前后缀。</p>
+      <span class="tag tag-base">KMP</span>
       <span class="tag tag-mid">中等</span>
     </div>
   </div>

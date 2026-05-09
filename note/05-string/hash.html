@@ -35,7 +35,7 @@
       <li><a href="#double-hash">4. 双哈希</a></li>
       <li><a href="#applications">5. 应用</a></li>
       <li><a href="#template">6. 完整C++模板</a></li>
-      <li><a href="#problems">7. 经典题目</a></li>
+      <li><a href="#practice">7. 例题与练习</a></li>
     </ul>
   </div>
 
@@ -396,63 +396,111 @@ H[4] = H[3]*B + S[3]              = hash("abcd")
     </div>
   </div>
 
-  <!-- Section 7: 经典题目 -->
-  <div class="section" id="problems">
-    <h2>7. 经典题目</h2>
+  <!-- Section 7: 例题与练习 -->
+  <div class="section" id="practice">
+    <h2>7. 例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P3370" target="_blank">P3370 [模板] 字符串哈希</a>
-      </div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3370" target="_blank">P3370 - [模板] 字符串哈希</a></div>
       <p>字符串去重模板题。对每个字符串计算哈希值，存入 set，输出 set 大小。</p>
-      <span class="tag tag-base">模板题</span>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P4391" target="_blank">P3375 后缀也可以用哈希做</a>
-      </div>
-      <p>可以用字符串哈希替代 KMP 进行子串匹配，但时间复杂度为 O(n+m log m) 或 O(n+m)。</p>
-      <span class="tag tag-base">模板题</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P1381" target="_blank">P1381 单词背诵</a>
-      </div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1381" target="_blank">P1381 - 单词背诵</a></div>
       <p>滑动窗口 + 哈希。将所有单词哈希化，用滑动窗口找包含所有单词的最短区间。</p>
-      <span class="tag tag-mid">中等</span>
+      <span class="tag tag-base">哈希</span>
+      <span class="tag tag-easy">入门</span>
     </div>
 
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P2852" target="_blank">P2852 [USACO06DEC] Milk Patterns G</a>
-      </div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2852" target="_blank">P2852 - [USACO06DEC] Milk Patterns G</a></div>
       <p>二分答案 + 哈希。求至少出现 K 次的最长公共子串长度。</p>
+      <span class="tag tag-base">哈希</span>
       <span class="tag tag-mid">中等</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P5018" target="_blank">P5018 [NOIP2018 提高组] 对称二叉树</a>
-      </div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5018" target="_blank">P5018 - [NOIP2018 提高组] 对称二叉树</a></div>
       <p>树上哈希。对每棵子树计算哈希值，判断是否存在对称的子树。</p>
+      <span class="tag tag-base">树哈希</span>
       <span class="tag tag-mid">中等</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://www.luogu.com.cn/problem/P5043" target="_blank">P5043 [模板] 树同构</a>
-      </div>
-      <p>树哈希的经典应用。判断两棵树是否同构，使用树哈希将树映射为哈希值。</p>
+      <div class="problem-title"><a href="https://codeforces.com/contest/19/problem/C" target="_blank">CF 19C - Deletion of Repeats</a></div>
+      <p>利用字符串哈希找到重复子串并删除，需要贪心策略配合哈希。</p>
+      <span class="tag tag-base">哈希</span>
       <span class="tag tag-hard">困难</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">
-        <a href="https://codeforces.com/contest/19/problem/C" target="_blank">CF 19C Deletion of Repeats</a>
-      </div>
-      <p>利用字符串哈希找到重复子串并删除，需要贪心策略配合哈希。</p>
+      <div class="problem-title"><a href="https://codeforces.com/contest/1200/problem/E" target="_blank">CF 1200E - Compress Words</a></div>
+      <p>将多个字符串依次拼接，每次合并最长重叠后缀。用哈希在线求最长公共前后缀。</p>
+      <span class="tag tag-base">哈希</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5043" target="_blank">P5043 - [模板] 树同构</a></div>
+      <p>树哈希的经典应用。判断两棵树是否同构，使用树哈希将树映射为哈希值。</p>
+      <span class="tag tag-base">树哈希</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/7/problem/D" target="_blank">CF 7D - Palindrome Degree</a></div>
+      <p>计算每个前缀的回文度。用正序和逆序哈希 O(1) 判断每个前缀是否为回文串。</p>
+      <span class="tag tag-base">回文哈希</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3501" target="_blank">P3501 - [POI2010] ANT-Antisymmetry</a></div>
+      <p>求最长的反对称子串（01 互补回文）。用哈希 + 二分或 Manacher 变种解决。</p>
+      <span class="tag tag-base">哈希+二分</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/154/problem/C" target="_blank">CF 154C - Double Profiles</a></div>
+      <p>统计图中互相是对方好友列表的顶点对数。用哈希对顶点的邻接列表编码。</p>
+      <span class="tag tag-base">哈希</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/271/problem/D" target="_blank">CF 271D - Good Substrings</a></div>
+      <p>统计"好"子串的种类数。用字符串哈希将每个子串哈希化后存入 set 去重。</p>
+      <span class="tag tag-base">哈希</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/1056/problem/E" target="_blank">CF 1056E - Check Transcription</a></div>
+      <p>枚举两个变量的长度，用哈希判断替换后是否与目标串一致。哈希 + 枚举优化。</p>
+      <span class="tag tag-base">哈希</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/985/problem/F" target="_blank">CF 985F - Isomorphic Strings</a></div>
+      <p>判断两个子串是否同构（存在字符置换映射）。对每个字符分别计算哈希后排序比较。</p>
+      <span class="tag tag-base">哈希</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2743" target="_blank">P2743 - [USACO5.1] 乐曲主题 Musical Themes</a></div>
+      <p>求至少出现两次且不重叠的最长主题。差分 + 哈希 + 二分答案。</p>
+      <span class="tag tag-base">哈希+二分</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/225/problem/E" target="_blank">CF 225E - Unsolvable</a></div>
+      <p>判断给定数是否可以表示为若干个 2 的幂之和且不重复。哈希 + 数论。</p>
+      <span class="tag tag-base">哈希</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4555" target="_blank">P4555 - [国家集训队] 最长双回文串</a></div>
+      <p>求可以分成两个回文串的最长子串长度。Manacher + 哈希综合应用。</p>
+      <span class="tag tag-base">哈希+回文</span>
       <span class="tag tag-hard">困难</span>
     </div>
   </div>

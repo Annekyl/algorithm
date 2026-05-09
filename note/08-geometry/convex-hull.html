@@ -35,7 +35,7 @@
       <li><a href="#graham">Graham 扫描</a></li>
       <li><a href="#rotating">旋转卡壳 (Rotating Calipers)</a></li>
       <li><a href="#template">完整模板</a></li>
-      <li><a href="#problems">经典例题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -481,60 +481,90 @@
 }</code></pre>
   </div>
 
-  <!-- ============================== -->
-  <!-- Section 6: 经典例题 -->
-  <!-- ============================== -->
-  <div class="section" id="problems">
-    <h2>经典例题</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">POJ 1113 - Wall</div>
-      <p>求凸包周长加上一个圆的周长（城堡围墙问题）。先求凸包，答案为凸包周长 + 2 * PI * L。</p>
-      <span class="tag tag-base">凸包</span>
-      <span class="tag tag-easy">入门</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">POJ 2187 - Beauty Contest</div>
-      <p>求平面上最远的两个点之间的距离的平方。先求凸包，再用旋转卡壳求直径。</p>
-      <span class="tag tag-base">凸包</span>
-      <span class="tag tag-mid">旋转卡壳</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">POJ 1873 - The Fortified Forest</div>
-      <p>小象砍树建围栏，用最少的树围住剩余的树。枚举子集，求凸包判断是否可行。</p>
-      <span class="tag tag-hard">枚举</span>
-      <span class="tag tag-base">凸包</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">洛谷 P2742 - 【模板】二维凸包</div>
-      <p>模板题：给定 n 个点，求凸包的周长。直接使用 Andrew 算法即可。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2742" target="_blank">P2742 - 【模板】二维凸包</a></div>
       <span class="tag tag-base">模板</span>
       <span class="tag tag-easy">入门</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">洛谷 P3829 - [SHOI2012] 信用卡凸包</div>
-      <p>多张信用卡（圆角矩形）的凸包。将信用卡的四个圆心取出，求所有圆心的凸包，再加上圆弧部分。</p>
-      <span class="tag tag-hard">进阶</span>
-      <span class="tag tag-base">凸包</span>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3829" target="_blank">P3829 - 信用卡凸包</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-mid">中等</span>
     </div>
 
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">POJ 3608 - Bridge Across Islands</div>
-      <p>求两个凸包之间的最短距离。使用旋转卡壳在两个凸包上同时扫描。</p>
-      <span class="tag tag-hard">旋转卡壳</span>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1183" target="_blank">P1183 - 多边形面积</a></div>
+      <span class="tag tag-base">凸包面积</span>
+      <span class="tag tag-easy">简单</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1452" target="_blank">P1452 - Beauty Contest</a></div>
+      <span class="tag tag-base">旋转卡壳</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1195/D" target="_blank">CF 1195D - OpenStreetMap</a></div>
       <span class="tag tag-base">凸包</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3239" target="_blank">P3239 - 亚瑟王</a></div>
+      <span class="tag tag-base">凸包 + 概率</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4514" target="_blank">P4514 - 上帝造题的七分钟</a></div>
+      <span class="tag tag-base">凸包性质</span>
+      <span class="tag tag-mid">中等</span>
     </div>
 
-    <div class="box box-info">
-      <div class="box-title">凸包问题的一般思路</div>
-      <p>1. 先判断问题是否可以通过凸包简化（如最远点对、最小包围多边形等）<br>
-         2. 使用 Andrew 算法求凸包<br>
-         3. 在凸包上用旋转卡壳或其他方法求解具体问题<br>
-         4. 注意退化情况（所有点共线、点数少于 3 等）</p>
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3238" target="_blank">P3238 - 道路</a></div>
+      <span class="tag tag-base">凸包 + 最短路</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1045/I" target="_blank">CF 1045I - Palindrome Pairs</a></div>
+      <span class="tag tag-base">凸包 + 字符串</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3173" target="_blank">P3173 - 金条</a></div>
+      <span class="tag tag-base">凸包优化</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1195/E" target="_blank">CF 1195E - OpenStreetMap</a></div>
+      <span class="tag tag-base">凸包 + 滑动窗口</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P6216" target="_blank">P6216 - 凸包计数</a></div>
+      <span class="tag tag-base">凸包 + 计数</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1156/E" target="_blank">CF 1156E - Special Segments of Permutation</a></div>
+      <span class="tag tag-base">凸包 + 分治</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4262" target="_blank">P4262 - 动态凸包</a></div>
+      <span class="tag tag-base">动态凸包</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1284/E" target="_blank">CF 1284E - New Year and Castle</a></div>
+      <span class="tag tag-base">凸包 + 枚举</span>
+      <span class="tag tag-hard">困难</span>
     </div>
   </div>
 

@@ -39,7 +39,7 @@
       <li><a href="#sec4">双端队列 BFS (0-1 BFS)</a></li>
       <li><a href="#sec5">BFS 状态搜索 &mdash; 状态空间搜索</a></li>
       <li><a href="#sec6">BFS 与 DFS 对比</a></li>
-      <li><a href="#sec7">经典例题汇总</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -783,212 +783,21 @@ BFS: 逐层搜索              DFS: 沿左子树一路深入
     </div>
   </div>
 
-  <!-- ============================================================ -->
-  <!-- Section 7: 经典例题汇总 -->
-  <!-- ============================================================ -->
-  <div class="section" id="sec7">
-    <h2>7. 经典例题汇总</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
-    <h3>7.1 基础 BFS</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>题目</th><th>来源</th><th>难度</th><th>核心考点</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>岛屿数量</td>
-            <td>LeetCode 200</td>
-            <td><span class="tag tag-easy">简单</span></td>
-            <td>BFS/DFS 求连通块数量</td>
-          </tr>
-          <tr>
-            <td>二叉树的层序遍历</td>
-            <td>LeetCode 102</td>
-            <td><span class="tag tag-easy">简单</span></td>
-            <td>按层 BFS</td>
-          </tr>
-          <tr>
-            <td>腐烂的橘子</td>
-            <td>LeetCode 994</td>
-            <td><span class="tag tag-mid">中等</span></td>
-            <td>多源 BFS</td>
-          </tr>
-          <tr>
-            <td>单词接龙</td>
-            <td>LeetCode 127</td>
-            <td><span class="tag tag-hard">困难</span></td>
-            <td>图上 BFS 最短路</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>7.2 最短路相关</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>题目</th><th>来源</th><th>难度</th><th>核心考点</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>迷宫最短路径</td>
-            <td>洛谷 P1162</td>
-            <td><span class="tag tag-easy">简单</span></td>
-            <td>网格 BFS 最短路</td>
-          </tr>
-          <tr>
-            <td>01 矩阵</td>
-            <td>LeetCode 542</td>
-            <td><span class="tag tag-mid">中等</span></td>
-            <td>多源 BFS</td>
-          </tr>
-          <tr>
-            <td>地图分析</td>
-            <td>LeetCode 1162</td>
-            <td><span class="tag tag-mid">中等</span></td>
-            <td>多源 BFS + 最远距离</td>
-          </tr>
-          <tr>
-            <td>最小代价使网格有效路径</td>
-            <td>LeetCode 1368</td>
-            <td><span class="tag tag-hard">困难</span></td>
-            <td>0-1 BFS</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>7.3 状态搜索</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>题目</th><th>来源</th><th>难度</th><th>核心考点</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>滑动谜题</td>
-            <td>LeetCode 773</td>
-            <td><span class="tag tag-hard">困难</span></td>
-            <td>状态编码 + BFS</td>
-          </tr>
-          <tr>
-            <td>打开转盘锁</td>
-            <td>LeetCode 752</td>
-            <td><span class="tag tag-mid">中等</span></td>
-            <td>字符串状态 BFS</td>
-          </tr>
-          <tr>
-            <td>水壶问题</td>
-            <td>LeetCode 365</td>
-            <td><span class="tag tag-mid">中等</span></td>
-            <td>双状态 BFS</td>
-          </tr>
-          <tr>
-            <td>骑士的最短路径</td>
-            <td>LintCode 611</td>
-            <td><span class="tag tag-mid">中等</span></td>
-            <td>棋盘 BFS</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>7.4 综合进阶</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>题目</th><th>来源</th><th>难度</th><th>核心考点</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Labyrinth</td>
-            <td>CF 1063B</td>
-            <td><span class="tag tag-hard">困难</span></td>
-            <td>0-1 BFS + 限制条件</td>
-          </tr>
-          <tr>
-            <td>逃离迷宫</td>
-            <td>洛谷 P1363</td>
-            <td><span class="tag tag-hard">困难</span></td>
-            <td>BFS + 无限图判环</td>
-          </tr>
-          <tr>
-            <td>双向 BFS</td>
-            <td>LeetCode 127 变体</td>
-            <td><span class="tag tag-hard">困难</span></td>
-            <td>两端同时 BFS，减少搜索空间</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>7.5 完整例题详解：腐烂的橘子 (多源 BFS)</h3>
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">LeetCode 994: <a href="https://leetcode.cn/problems/rotting-oranges/">腐烂的橘子</a></div>
-      <p><strong>题意：</strong>网格中有新鲜橘子(1)、腐烂橘子(2)和空格(0)。每分钟腐烂橘子会感染上下左右的新鲜橘子。
-      求所有橘子腐烂的最少分钟数，如果有橘子永远不会腐烂返回 -1。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1162" target="_blank">洛谷 P1162 填涂颜色</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1443" target="_blank">洛谷 P1443 马的遍历</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
 
-    <pre><code><span class="cm">// LeetCode 994 - 腐烂的橘子（经典多源 BFS）</span>
-<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
-<span class="kw">using</span> <span class="kw">namespace</span> std;
-
-<span class="kw">class</span> Solution {
-<span class="kw">public</span>:
-    <span class="ty">int</span> <span class="fn">orangesRotting</span>(<span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt;& grid) {
-        <span class="ty">int</span> n = grid.<span class="fn">size</span>(), m = grid[<span class="num">0</span>].<span class="fn">size</span>();
-        queue&lt;pair&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; q;
-        <span class="ty">int</span> fresh = <span class="num">0</span>;
-
-        <span class="cm">// 步骤1: 将所有腐烂橘子入队，统计新鲜橘子数</span>
-        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
-            <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; m; j++) {
-                <span class="kw">if</span> (grid[i][j] == <span class="num">2</span>) q.<span class="fn">push</span>({i, j});
-                <span class="kw">if</span> (grid[i][j] == <span class="num">1</span>) fresh++;
-            }
-
-        <span class="kw">if</span> (fresh == <span class="num">0</span>) <span class="kw">return</span> <span class="num">0</span>;
-
-        <span class="ty">int</span> dx[] = {<span class="num">0</span>,<span class="num">0</span>,<span class="num">1</span>,-<span class="num">1</span>};
-        <span class="ty">int</span> dy[] = {<span class="num">1</span>,-<span class="num">1</span>,<span class="num">0</span>,<span class="num">0</span>};
-        <span class="ty">int</span> minutes = <span class="num">0</span>;
-
-        <span class="cm">// 步骤2: 多源 BFS，逐层感染</span>
-        <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
-            <span class="ty">int</span> sz = q.<span class="fn">size</span>();
-            <span class="ty">bool</span> spread = <span class="kw">false</span>;
-            <span class="kw">while</span> (sz--) {
-                <span class="kw">auto</span> [x, y] = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
-                <span class="kw">for</span> (<span class="ty">int</span> k = <span class="num">0</span>; k &lt; <span class="num">4</span>; k++) {
-                    <span class="ty">int</span> nx = x+dx[k], ny = y+dy[k];
-                    <span class="kw">if</span> (nx&gt;=<span class="num">0</span> && nx&lt;n && ny&gt;=<span class="num">0</span> && ny&lt;m
-                        && grid[nx][ny] == <span class="num">1</span>) {
-                        grid[nx][ny] = <span class="num">2</span>;  <span class="cm">// 感染</span>
-                        fresh--;
-                        spread = <span class="kw">true</span>;
-                        q.<span class="fn">push</span>({nx, ny});
-                    }
-                }
-            }
-            <span class="kw">if</span> (spread) minutes++;
-        }
-
-        <span class="cm">// 步骤3: 检查是否还有新鲜橘子</span>
-        <span class="kw">return</span> fresh == <span class="num">0</span> ? minutes : -<span class="num">1</span>;
-    }
-};</code></pre>
-
-    <div class="box box-warn">
-      <div class="box-title">BFS 常见陷阱</div>
-      <ul>
-        <li><strong>忘记判重：</strong>节点可能被多次加入队列，导致重复计算和超时。入队时就要标记已访问，而不是出队时才标记。</li>
-        <li><strong>边界检查遗漏：</strong>网格问题中要检查 nx, ny 是否越界。</li>
-        <li><strong>队列溢出：</strong>搜索空间过大时，BFS 队列可能消耗大量内存。考虑双向 BFS 或迭代加深。</li>
-        <li><strong>状态转移遗漏：</strong>状态搜索问题中，确保所有可能的操作都被考虑。</li>
-        <li><strong>多源 BFS 初始化错误：</strong>所有源点必须在 BFS 开始前全部入队，而不是一个一个入。</li>
-      </ul>
-    </div>
   </div>
 
 </div>

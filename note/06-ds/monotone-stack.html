@@ -36,7 +36,7 @@
     <li><a href="#sec2">二、下一个更大/小元素</a></li>
     <li><a href="#sec3">三、柱状图中最大矩形</a></li>
     <li><a href="#sec4">四、接雨水</a></li>
-    <li><a href="#sec5">五、综合例题与练习</a></li>
+    <li><a href="#practice">例题与练习</a></li>
   </ul>
 </div>
 
@@ -421,90 +421,87 @@ stack<span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt
   </div>
 </div>
 
-<!-- ============================================================ -->
-<!-- 第五节：综合例题与练习 -->
-<!-- ============================================================ -->
-<div class="section" id="sec5">
-  <h2>五、综合例题与练习</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
-  <h3>5.1 基础题</h3>
-  <div class="problem">
-    <div class="problem-title">洛谷 P5788 【模板】单调栈</div>
-    <p>求每个元素的下一个更大元素，直接使用单调递减栈模板。</p>
-  </div>
+    <h3>模板题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5788" target="_blank">Luogu P5788 - 【模板】单调栈</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
 
-  <div class="problem">
-    <div class="problem-title">LeetCode 496. 下一个更大元素 I</div>
-    <p>两个数组，求 nums1 中每个元素在 nums2 中的下一个更大元素。先对 nums2 用单调栈预处理，再查表。</p>
-  </div>
+    <h3>练习题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1901" target="_blank">Luogu P1901 - 传播思想</a></div>
+      <span class="tag tag-mid">单调栈综合</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2866" target="_blank">Luogu P2866 - [USACO06NOV] Bad Hair Day S</a></div>
+      <span class="tag tag-base">单调递减栈</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/91/B" target="_blank">CF 91B - Queue</a></div>
+      <span class="tag tag-mid">单调栈+二分</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4147" target="_blank">Luogu P4147 - 玉蟾宫</a></div>
+      <span class="tag tag-mid">单调栈+二维转化</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2659" target="_blank">Luogu P2659 - 美丽的序列</a></div>
+      <span class="tag tag-mid">单调栈+贪心</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3522" target="_blank">Luogu P3522 - [POI2011] TEM-Temperature</a></div>
+      <span class="tag tag-mid">单调队列+贪心</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
 
-  <div class="problem">
-    <div class="problem-title">LeetCode 503. 下一个更大元素 II</div>
-    <p>循环数组中的下一个更大元素。将数组复制一份拼接在后面，或者用取模运算模拟。</p>
-  </div>
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1156/C" target="_blank">CF 1156C - Match Points</a></div>
+      <span class="tag tag-mid">单调栈+二分</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2216" target="_blank">Luogu P2216 - [HAOI2007] 理想的正方形</a></div>
+      <span class="tag tag-mid">二维单调栈</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2341" target="_blank">Luogu P2341 - [HAOI2006] 受欢迎的牛</a></div>
+      <span class="tag tag-mid">单调栈+图论</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3522" target="_blank">Luogu P3522 - [POI2011] TEM-Temperature</a></div>
+      <span class="tag tag-mid">单调队列+贪心</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
 
-  <h3>5.2 进阶题</h3>
-  <div class="problem">
-    <div class="problem-title">LeetCode 84. 柱状图中最大的矩形</div>
-    <p>经典单调栈应用，维护单调递增栈，每个柱子出栈时计算以其为高度的最大矩形面积。</p>
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4425" target="_blank">Luogu P4425 - [HNOI/AHOI2018] 转盘</a></div>
+      <span class="tag tag-hard">单调栈+线段树</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1288/D" target="_blank">CF 1288D - Minimax Problem</a></div>
+      <span class="tag tag-hard">单调栈+二分答案</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1353" target="_blank">Luogu P1353 - [USACO08JAN] Running S</a></div>
+      <span class="tag tag-mid">单调队列+DP</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
   </div>
-
-  <div class="problem">
-    <div class="problem-title">LeetCode 42. 接雨水</div>
-    <p>经典单调栈应用，也可以用双指针或动态规划求解。</p>
-  </div>
-
-  <div class="problem">
-    <div class="problem-title">LeetCode 316. 去除重复字母</div>
-    <p>利用单调栈思想，在保证字典序最小的同时去除重复字符。</p>
-  </div>
-
-  <h3>5.3 综合应用</h3>
-  <div class="problem">
-    <div class="problem-title">洛谷 P2866 [USACO06NOV] Bad Hair Day S</div>
-    <p>每头牛能看到右边几头比它矮的牛。使用单调递减栈，每次入栈时栈的大小就是能看到的牛的数量。</p>
-  </div>
-
-  <div class="problem">
-    <div class="problem-title">洛谷 P1901 传播思想</div>
-    <p>单调栈结合其他技巧的综合应用。</p>
-  </div>
-
-  <div class="problem">
-    <div class="problem-title">洛谷 P4147 玉蟾宫</div>
-    <p>二维矩阵中求最大全 0 矩形，逐行使用柱状图最大矩形算法。</p>
-  </div>
-
-  <h3>5.4 推荐练习清单</h3>
-  <div class="table-wrap">
-    <table>
-      <tr><th>题目</th><th>知识点</th><th>难度</th></tr>
-      <tr><td>洛谷 P5788 单调栈模板</td><td>下一个更大元素</td><td><span class="tag tag-easy">简单</span></td></tr>
-      <tr><td>LeetCode 496 下一个更大元素 I</td><td>单调栈 + 查表</td><td><span class="tag tag-easy">简单</span></td></tr>
-      <tr><td>LeetCode 503 下一个更大元素 II</td><td>循环数组 + 单调栈</td><td><span class="tag tag-mid">中等</span></td></tr>
-      <tr><td>LeetCode 739 每日温度</td><td>下一个更大元素（距离）</td><td><span class="tag tag-mid">中等</span></td></tr>
-      <tr><td>LeetCode 84 柱状图最大矩形</td><td>单调栈经典应用</td><td><span class="tag tag-hard">困难</span></td></tr>
-      <tr><td>LeetCode 42 接雨水</td><td>单调栈 / 双指针</td><td><span class="tag tag-hard">困难</span></td></tr>
-      <tr><td>LeetCode 316 去除重复字母</td><td>单调栈 + 贪心</td><td><span class="tag tag-hard">困难</span></td></tr>
-      <tr><td>洛谷 P2866 Bad Hair Day</td><td>单调递减栈</td><td><span class="tag tag-easy">简单</span></td></tr>
-      <tr><td>洛谷 P4147 玉蟾宫</td><td>单调栈 + 二维转化</td><td><span class="tag tag-mid">中等</span></td></tr>
-      <tr><td>LeetCode 85 最大矩形</td><td>二维转一维 + 单调栈</td><td><span class="tag tag-hard">困难</span></td></tr>
-    </table>
-  </div>
-
-  <div class="box box-tip">
-    <div class="box-title">总结</div>
-    <p>单调栈是竞赛中非常实用的数据结构，核心要点：</p>
-    <ul>
-      <li><strong>单调递减栈</strong>：找下一个更大元素；<strong>单调递增栈</strong>：找下一个更小元素</li>
-      <li>每个元素最多入栈一次、出栈一次，总时间复杂度 <strong>O(n)</strong></li>
-      <li>栈中通常存<strong>下标</strong>而非值，方便计算宽度等信息</li>
-      <li>善用<strong>哨兵</strong>简化边界处理</li>
-      <li>柱状图最大矩形和接雨水是单调栈的经典应用，务必熟练掌握</li>
-      <li>单调栈可以与其他技巧（贪心、DP、二分）结合使用</li>
-    </ul>
-  </div>
-</div>
 
 </div> <!-- end container -->
 

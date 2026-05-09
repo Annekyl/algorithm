@@ -39,7 +39,7 @@
     <li><a href="#boruvka">Boruvka 算法</a></li>
     <li><a href="#comparison">算法对比</a></li>
     <li><a href="#applications">MST 进阶应用</a></li>
-    <li><a href="#problems">经典题目</a></li>
+    <li><a href="#practice">例题与练习</a></li>
     <li><a href="#templates">完整代码模板</a></li>
   </ul>
 </div>
@@ -469,48 +469,99 @@
   </ul>
 </div>
 
-<!-- ==================== 7. 经典题目 ==================== -->
-<div class="section" id="problems">
-  <h2>7. 经典题目</h2>
+<!-- ==================== 7. 例题与练习 ==================== -->
+<div class="section" id="practice">
+  <h2>7. 例题与练习</h2>
 
+  <h3>模板题</h3>
   <div class="problem">
-    <div class="problem-title">POJ 1251 Jungle Roads</div>
-    <p>裸的最小生成树，Kruskal 或 Prim 均可。字符顶点映射为数字。</p>
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3366" target="_blank">P3366 【模板】最小生成树</a></div>
+    <span class="tag tag-base">模板</span>
+    <span class="tag tag-easy">入门</span>
+    <p>MST 模板题，Kruskal 或 Prim 均可。注意判断图是否连通。</p>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1546" target="_blank">P1546 最短网络 Agri-Net</a></div>
+    <span class="tag tag-base">模板</span>
+    <span class="tag tag-easy">入门</span>
+    <p>稠密图 MST，Prim 邻接矩阵版本即可。</p>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2872" target="_blank">P2872 [USACO07NOV] Building Roads S</a></div>
+    <span class="tag tag-base">模板</span>
+    <span class="tag tag-easy">入门</span>
+    <p>完全图 MST，部分边已存在（权值为 0），练习预处理。</p>
   </div>
 
+  <h3>练习题</h3>
   <div class="problem">
-    <div class="problem-title">POJ 1287 Networking</div>
-    <p>给定网络拓扑，求最小生成树。注意可能有重边和自环，需预处理。</p>
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1967" target="_blank">P1967 货车运输</a></div>
+    <span class="tag tag-mid">中等</span>
+    <p>最大生成树 + LCA 求路径最小边权，练习 MST 与树上倍增的结合。</p>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4180" target="_blank">P4180 严格次小生成树</a></div>
+    <span class="tag tag-hard">困难</span>
+    <p>在 MST 上用倍增维护路径最大和次大边权，枚举非树边替换。</p>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2330" target="_blank">P2330 繁忙的都市</a></div>
+    <span class="tag tag-easy">入门</span>
+    <p>求最大边权最小的生成树（即 MST 的最大边），Kruskal 即可。</p>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1991" target="_blank">P1991 无线通讯网</a></div>
+    <span class="tag tag-mid">中等</span>
+    <p>Kruskal 求 MST，答案为第 (n-p) 条边的权值。</p>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1396" target="_blank">P1396 营救</a></div>
+    <span class="tag tag-mid">中等</span>
+    <p>Kruskal + 并查集，当 s 和 t 连通时当前边权即为答案。</p>
   </div>
 
+  <h3>变种题</h3>
   <div class="problem">
-    <div class="problem-title">POJ 2421 Constructing Roads</div>
-    <p>部分边已经修建，求剩余最小花费。已修建的边权值设为 0 即可。</p>
+    <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1245/D" target="_blank">CF 1245D - Shichikuji and Power Grid</a></div>
+    <span class="tag tag-mid">中等</span>
+    <p>虚拟源点建图，建发电站相当于从虚拟源点连边，转化为 MST。</p>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4047" target="_blank">P4047 [JSOI2010] 部落划分</a></div>
+    <span class="tag tag-mid">中等</span>
+    <p>Kruskal 思想，当连通分量恰为 k 个时停止，当前边权即答案。</p>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2504" target="_blank">P2504 聪明的猴子</a></div>
+    <span class="tag tag-easy">入门</span>
+    <p>求 MST 最大边，猴子能跳过该距离即可全部到达，练习 MST 应用。</p>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1200" target="_blank">P1200 坑爹的黑店</a></div>
+    <span class="tag tag-mid">中等</span>
+    <p>Kruskal 重构树应用，求两点间路径最大边权的最小值。</p>
+  </div>
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3656" target="_blank">P3656 购买食物</a></div>
+    <span class="tag tag-mid">中等</span>
+    <p>贪心 + 并查集，类似 Kruskal 的边权排序合并过程。</p>
   </div>
 
+  <h3>扩展题</h3>
   <div class="problem">
-    <div class="problem-title">洛谷 P3366 最小生成树</div>
-    <p>MST 模板题。注意判断图是否连通（若选中的边数 &lt; V-1 则不连通）。</p>
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4768" target="_blank">P4768 [NOI2018] 归程</a></div>
+    <span class="tag tag-hard">困难</span>
+    <p>Kruskal 重构树 + 倍增 + 最短路，综合性极强的进阶题。</p>
   </div>
-
   <div class="problem">
-    <div class="problem-title">洛谷 P1967 货车运输</div>
-    <p>求两点间所有路径中最小边权的最大值。解法：建最大生成树，树上两点路径的最小边权即为答案（倍增/LCA）。</p>
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P6477" target="_blank">P6477 [NOI Online #2] 建设城市</a></div>
+    <span class="tag tag-hard">困难</span>
+    <p>Kruskal 重构树 + 组合数学，求满足条件的路径方案数。</p>
   </div>
-
   <div class="problem">
-    <div class="problem-title">洛谷 P4180 严格次小生成树</div>
-    <p>求严格次小生成树。在 MST 上用倍增维护路径最大和次大边权，枚举非树边替换。</p>
-  </div>
-
-  <div class="problem">
-    <div class="problem-title">Codeforces 1245D Shichikuji and Power Grid</div>
-    <p>虚拟源点建图，转化为 MST 问题。建立发电站相当于从虚拟源点连边。</p>
-  </div>
-
-  <div class="problem">
-    <div class="problem-title">POJ 1751 Highways</div>
-    <p>部分点已经连接，求需要新建的边使所有点连通且总距离最小。Prim 直接输出新加入的边。</p>
+    <div class="problem-title"><a href="https://codeforces.com/problemset/problem/160/D" target="_blank">CF 160D - Edges in MST</a></div>
+    <span class="tag tag-hard">困难</span>
+    <p>判断每条边在 MST 中的状态：必选 / 可选 / 不选，需用边双连通分量。</p>
   </div>
 </div>
 

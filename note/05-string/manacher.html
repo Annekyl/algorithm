@@ -37,7 +37,7 @@
       <li><a href="#core">算法核心 &mdash; 镜像对称与中心扩展</a></li>
       <li><a href="#trace">详细执行过程</a></li>
       <li><a href="#template">C++ 完整模板</a></li>
-      <li><a href="#problems">经典例题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -377,50 +377,106 @@ n' = 9
     </div>
   </div>
 
-  <!-- Section 6: 经典例题 -->
-  <div class="section" id="problems">
-    <h2>6. 经典例题</h2>
+  <!-- Section 6: 例题与练习 -->
+  <div class="section" id="practice">
+    <h2>6. 例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3805" target="_blank">Luogu P3805 - 【模板】Manacher</a></div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3805" target="_blank">P3805 - [模板] Manacher</a></div>
       <p>给定一个字符串，求其最长回文子串的长度。Manacher 模板题。</p>
+      <span class="tag tag-base">模板</span>
       <span class="tag tag-easy">入门</span>
-      <span class="tag tag-str">Manacher</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1659" target="_blank">P1659 - [国家集训队] 拉拉队排练</a></div>
+      <p>求第 k 长的回文子串出现次数之和。用 Manacher + 前缀和/桶排序。</p>
+      <span class="tag tag-base">Manacher</span>
+      <span class="tag tag-mid">中等</span>
     </div>
 
+    <h3>练习题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4555" target="_blank">P4555 - [国家集训队] 最长双回文串</a></div>
+      <p>求可以分成两个回文串的最长子串长度。用 Manacher 预处理后，正反各扫一遍。</p>
+      <span class="tag tag-base">Manacher+贪心</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/17/problem/E" target="_blank">CF 17E - Palisection</a></div>
+      <p>求相交的回文子串对数。正难则反，用 Manacher 求不相交的回文对数。</p>
+      <span class="tag tag-base">Manacher+前缀和</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
     <div class="problem">
       <div class="problem-title"><a href="https://leetcode.cn/problems/palindromic-substrings/" target="_blank">LeetCode 647 - 回文子串</a></div>
-      <p>给定一个字符串，求其中回文子串的数目。利用 <code>p[i]</code> 数组统计：<code>ans += p[i] / 2</code>。</p>
+      <p>给定一个字符串，求其中回文子串的数目。利用 p[i] 数组统计：ans += p[i] / 2。</p>
+      <span class="tag tag-base">Manacher+计数</span>
       <span class="tag tag-mid">中等</span>
-      <span class="tag tag-str">Manacher + 计数</span>
     </div>
-
     <div class="problem">
       <div class="problem-title"><a href="https://leetcode.cn/problems/longest-palindromic-substring/" target="_blank">LeetCode 5 - 最长回文子串</a></div>
       <p>给定一个字符串，求其最长回文子串。经典应用。</p>
+      <span class="tag tag-base">Manacher</span>
       <span class="tag tag-mid">中等</span>
-      <span class="tag tag-str">Manacher</span>
     </div>
 
+    <h3>变种题</h3>
     <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4555" target="_blank">Luogu P4555 - [国家集训队] 最长双回文串</a></div>
-      <p>求可以分成两个回文串的最长子串长度。用 Manacher 预处理后，正反各扫一遍。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1435" target="_blank">P1435 - IOI2000 回文串</a></div>
+      <p>求将字符串变成回文串的最少插入字符数。等价于 n - LCS(s, reverse(s))，可用 Manacher 辅助。</p>
+      <span class="tag tag-base">回文</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/835/problem/D" target="_blank">CF 835D - Palindromes Characteristics</a></div>
+      <p>求字符串中每个 k-回文子串的数量。利用 Manacher + DP 递推回文的层级。</p>
+      <span class="tag tag-base">Manacher+DP</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3501" target="_blank">P3501 - [POI2010] ANT-Antisymmetry</a></div>
+      <p>求最长的反对称子串（01 互补回文）。Manacher 变种，比较时要求互补而非相等。</p>
+      <span class="tag tag-base">Manacher变种</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/432/problem/D" target="_blank">CF 432D - Prefixes and Suffixes</a></div>
+      <p>求既是前缀又是后缀的所有子串及其出现次数。Manacher + KMP/哈希综合应用。</p>
+      <span class="tag tag-base">Manacher</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/1326/problem/D2" target="_blank">CF 1326D2 - Prefix-Suffix Palindrome (Hard version)</a></div>
+      <p>在字符串两端添加尽量少的字符使其成为回文串。Manacher 求最长回文前缀/后缀。</p>
+      <span class="tag tag-base">Manacher+贪心</span>
       <span class="tag tag-hard">困难</span>
-      <span class="tag tag-str">Manacher + 贪心</span>
     </div>
 
+    <h3>扩展题</h3>
     <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1659" target="_blank">Luogu P1659 - [国家集训队] 拉拉队排练</a></div>
-      <p>求第 k 长的回文子串出现次数之和。用 Manacher + 前缀和/桶排序。</p>
+      <div class="problem-title"><a href="https://codeforces.com/contest/932/problem/G" target="_blank">CF 932G - Palindrome Partitioning IV</a></div>
+      <p>将字符串分成若干段，每段都是回文串，且段数为偶数。Manacher + 回文自动机 + DP。</p>
+      <span class="tag tag-base">Manacher+DP</span>
       <span class="tag tag-hard">困难</span>
-      <span class="tag tag-str">Manacher + 排序</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/17/E" target="_blank">Codeforces 17E - Palisection</a></div>
-      <p>求相交的回文子串对数。正难则反，用 Manacher 求不相交的回文对数。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4287" target="_blank">P4287 - [SHOI2009] 回文串的长度</a></div>
+      <p>求字符串中最长的回文周期。结合 Manacher 和回文的性质分析。</p>
+      <span class="tag tag-base">Manacher</span>
       <span class="tag tag-hard">困难</span>
-      <span class="tag tag-str">Manacher + 前缀和</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/2022/problem/B" target="_blank">CF 2022B - Selection of Personnel</a></div>
+      <p>利用 Manacher 求回文子串长度，结合组合数学计数。</p>
+      <span class="tag tag-base">Manacher+计数</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1217" target="_blank">P1217 - [USACO1.5] 回文质数</a></div>
+      <p>求区间内既是回文又是质数的数。先枚举回文数（可用 Manacher 思想构造），再判断质数。</p>
+      <span class="tag tag-base">回文构造</span>
+      <span class="tag tag-easy">简单</span>
     </div>
 
     <div class="box box-tip">

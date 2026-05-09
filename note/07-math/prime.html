@@ -37,7 +37,7 @@
       <li><a href="#factorization">素数分解</a></li>
       <li><a href="#miller-rabin">Miller-Rabin 素性测试</a></li>
       <li><a href="#templates">完整 C++ 模板</a></li>
-      <li><a href="#problems">经典例题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -581,174 +581,100 @@ ll <span class="fn">qpow</span>(ll a, ll b, ll mod) {
 }</code><span class="lang-label">C++</span></pre>
   </div>
 
-  <!-- ============================== -->
-  <!-- Section 8: Problems -->
-  <!-- ============================== -->
-  <div class="section" id="problems">
-    <h2>经典例题</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
-    <h3>例题 1: 素数计数</h3>
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">求 [2, n] 内素数的个数</div>
-      <p>给定 n (n &le; 10^7)，求 [2, n] 内素数的个数。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3383" target="_blank">P3383 - 线性筛素数</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
-    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
-<span class="kw">using namespace</span> std;
-<span class="ty">const int</span> MAXN = <span class="num">10000005</span>;
-<span class="ty">bool</span> is_prime[MAXN];
-<span class="ty">int</span> main() {
-    <span class="ty">int</span> n; cin &gt;&gt; n;
-    <span class="fn">memset</span>(is_prime, <span class="kw">true</span>, <span class="kw">sizeof</span>(is_prime));
-    is_prime[<span class="num">0</span>] = is_prime[<span class="num">1</span>] = <span class="kw">false</span>;
-    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i * i &lt;= n; i++)
-        <span class="kw">if</span> (is_prime[i])
-            <span class="kw">for</span> (<span class="ty">int</span> j = i * i; j &lt;= n; j += i)
-                is_prime[j] = <span class="kw">false</span>;
-    <span class="ty">int</span> cnt = <span class="num">0</span>;
-    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i &lt;= n; i++) <span class="kw">if</span> (is_prime[i]) cnt++;
-    cout &lt;&lt; cnt &lt;&lt; endl;
-}</code><span class="lang-label">C++</span></pre>
-
-    <h3>例题 2: Goldbach's Conjecture (POJ 2262)</h3>
     <div class="problem">
-      <div class="problem-title">哥德巴赫猜想验证</div>
-      <p>给定一个大于 4 的偶数 n，将其表示为两个素数之和。数据范围: 6 &le; n &le; 10^6。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3868" target="_blank">P3868 - 素数判定</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
-    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
-<span class="kw">using namespace</span> std;
-<span class="ty">const int</span> MAXN = <span class="num">1000005</span>;
-<span class="ty">bool</span> is_prime[MAXN];
-<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; primes;
-<span class="ty">int</span> main() {
-    <span class="fn">memset</span>(is_prime, <span class="kw">true</span>, <span class="kw">sizeof</span>(is_prime));
-    is_prime[<span class="num">0</span>] = is_prime[<span class="num">1</span>] = <span class="kw">false</span>;
-    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i &lt; MAXN; i++) {
-        <span class="kw">if</span> (is_prime[i]) {
-            primes.<span class="fn">push_back</span>(i);
-            <span class="kw">for</span> (<span class="ty">long long</span> j = (<span class="ty">long long</span>)i * i; j &lt; MAXN; j += i)
-                is_prime[j] = <span class="kw">false</span>;
-        }
-    }
-    <span class="ty">int</span> n;
-    <span class="kw">while</span> (cin &gt;&gt; n &amp;&amp; n) {
-        <span class="kw">for</span> (<span class="ty">int</span> p : primes) {
-            <span class="kw">if</span> (p &gt; n / <span class="num">2</span>) <span class="kw">break</span>;
-            <span class="kw">if</span> (is_prime[n - p]) {
-                printf(<span class="str">"%d = %d + %d\n"</span>, n, p, n - p);
-                <span class="kw">break</span>;
-            }
-        }
-    }
-}</code><span class="lang-label">C++</span></pre>
 
-    <h3>例题 3: 素因子分解 (POJ 1365)</h3>
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">Prime Land</div>
-      <p>给定一个数的素因子分解形式，求该数减 1 后的素因子分解形式。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1217" target="_blank">P1217 - 回文质数</a></div>
+      <span class="tag tag-base">素数筛</span>
+      <span class="tag tag-easy">简单</span>
     </div>
-    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
-<span class="kw">using namespace</span> std;
-
-<span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; <span class="fn">factorize</span>(<span class="ty">int</span> n) {
-    <span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; res;
-    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i * i &lt;= n; i++) {
-        <span class="kw">if</span> (n % i == <span class="num">0</span>) {
-            <span class="ty">int</span> cnt = <span class="num">0</span>;
-            <span class="kw">while</span> (n % i == <span class="num">0</span>) { n /= i; cnt++; }
-            res.<span class="fn">push_back</span>({i, cnt});
-        }
-    }
-    <span class="kw">if</span> (n &gt; <span class="num">1</span>) res.<span class="fn">push_back</span>({n, <span class="num">1</span>});
-    <span class="kw">return</span> res;
-}
-
-<span class="ty">int</span> <span class="fn">main</span>() {
-    <span class="ty">char</span> line[<span class="num">256</span>];
-    <span class="kw">while</span> (<span class="fn">fgets</span>(line, <span class="kw">sizeof</span>(line), stdin) &amp;&amp; line[<span class="num">0</span>] != <span class="str">'0'</span>) {
-        <span class="ty">int</span> val = <span class="num">1</span>;
-        <span class="ty">int</span> p, e;
-        <span class="ty">char</span>* ptr = line;
-        <span class="kw">while</span> (<span class="fn">sscanf</span>(ptr, <span class="str">"%d %d"</span>, &amp;p, &amp;e) == <span class="num">2</span>) {
-            <span class="kw">while</span> (e--) val *= p;
-            ptr = <span class="fn">strchr</span>(ptr, <span class="str">' '</span>) + <span class="num">1</span>;
-            ptr = <span class="fn">strchr</span>(ptr, <span class="str">' '</span>) + <span class="num">1</span>;
-        }
-        val--;
-        <span class="kw">auto</span> f = <span class="fn">factorize</span>(val);
-        <span class="kw">for</span> (<span class="ty">int</span> i = f.<span class="fn">size</span>() - <span class="num">1</span>; i &gt;= <span class="num">0</span>; i--) {
-            <span class="kw">if</span> (i &lt; (<span class="ty">int</span>)f.<span class="fn">size</span>() - <span class="num">1</span>) <span class="fn">putchar</span>(<span class="str">' '</span>);
-            printf(<span class="str">"%d %d"</span>, f[i].first, f[i].second);
-        }
-        <span class="fn">puts</span>(<span class="str">""</span>);
-    }
-}</code><span class="lang-label">C++</span></pre>
-
-    <h3>例题 4: 反素数 (ZOJ 2562)</h3>
     <div class="problem">
-      <div class="problem-title">求不超过 n 的反素数</div>
-      <p>反素数：设 g(x) 为 x 的因子个数，若对于任意 0 &lt; i &lt; x，都有 g(i) &lt; g(x)，则 x 为反素数。求不超过 n (n &le; 10^16) 的最大反素数。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1835" target="_blank">P1835 - 素数密度</a></div>
+      <span class="tag tag-base">区间筛</span>
+      <span class="tag tag-mid">中等</span>
     </div>
-    <pre><code><span class="cm">// 反素数搜索: 利用反素数的素因子一定是前缀连续素数</span>
-<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
-<span class="kw">using namespace</span> std;
-<span class="kw">typedef</span> <span class="ty">long long</span> ll;
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3912" target="_blank">P3912 - 素数个数</a></div>
+      <span class="tag tag-base">埃氏筛</span>
+      <span class="tag tag-easy">简单</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/776/B" target="_blank">CF 776B - Sherlock and his girlfriend</a></div>
+      <span class="tag tag-base">素数筛</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1075" target="_blank">P1075 - 质因数分解</a></div>
+      <span class="tag tag-base">素因子分解</span>
+      <span class="tag tag-easy">简单</span>
+    </div>
 
-ll n, ans, max_cnt;
-<span class="ty">int</span> primes[] = {<span class="num">2</span>,<span class="num">3</span>,<span class="num">5</span>,<span class="num">7</span>,<span class="num">11</span>,<span class="num">13</span>,<span class="num">17</span>,<span class="num">19</span>,<span class="num">23</span>,<span class="num">29</span>,<span class="num">31</span>,<span class="num">37</span>,<span class="num">41</span>,<span class="num">43</span>,<span class="num">47</span>};
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2568" target="_blank">P2568 - GCD</a></div>
+      <span class="tag tag-base">欧拉函数</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1390" target="_blank">P1390 - 公约数的和</a></div>
+      <span class="tag tag-base">欧拉函数</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1582" target="_blank">P1582 - 倒水</a></div>
+      <span class="tag tag-base">位运算</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/17/A" target="_blank">CF 17A - Noldbach problem</a></div>
+      <span class="tag tag-base">素数筛</span>
+      <span class="tag tag-easy">简单</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2822" target="_blank">P2822 - 组合数问题</a></div>
+      <span class="tag tag-base">素因子分解</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
 
-<span class="ty">void</span> <span class="fn">dfs</span>(<span class="ty">int</span> idx, ll val, ll div_cnt, <span class="ty">int</span> last_exp) {
-    <span class="kw">if</span> (div_cnt &gt; max_cnt || (div_cnt == max_cnt &amp;&amp; val &lt; ans)) {
-        max_cnt = div_cnt;
-        ans = val;
-    }
-    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= last_exp; i++) {
-        <span class="kw">if</span> (val &gt; n / primes[idx]) <span class="kw">break</span>;
-        val *= primes[idx];
-        <span class="fn">dfs</span>(idx + <span class="num">1</span>, val, div_cnt * (i + <span class="num">1</span>), i);
-    }
-}
-
-<span class="ty">int</span> <span class="fn">main</span>() {
-    cin &gt;&gt; n;
-    ans = <span class="num">1</span>; max_cnt = <span class="num">1</span>;
-    <span class="fn">dfs</span>(<span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">60</span>);
-    cout &lt;&lt; ans &lt;&lt; endl;
-}</code><span class="lang-label">C++</span></pre>
-
-    <h3>常见题目链接</h3>
-    <div class="table-wrap">
-      <table>
-        <tr>
-          <th>题目</th>
-          <th>知识点</th>
-          <th>难度</th>
-        </tr>
-        <tr>
-          <td>POJ 2262 Goldbach's Conjecture</td>
-          <td>埃氏筛</td>
-          <td><span class="tag tag-easy">简单</span></td>
-        </tr>
-        <tr>
-          <td>SPOJ PRIME1 (Prime Generator)</td>
-          <td>区间筛</td>
-          <td><span class="tag tag-mid">中等</span></td>
-        </tr>
-        <tr>
-          <td>POJ 1365 Prime Land</td>
-          <td>素数分解</td>
-          <td><span class="tag tag-mid">中等</span></td>
-        </tr>
-        <tr>
-          <td>UVA 543 Goldbach's Conjecture</td>
-          <td>埃氏筛</td>
-          <td><span class="tag tag-easy">简单</span></td>
-        </tr>
-        <tr>
-          <td>ZOJ 2562 More Divisors (反素数)</td>
-          <td>素数 + DFS</td>
-          <td><span class="tag tag-hard">困难</span></td>
-        </tr>
-      </table>
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4718" target="_blank">P4718 - Pollard-Rho 模板</a></div>
+      <span class="tag tag-base">大数分解</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/26/A" target="_blank">CF 26A - Almost Prime</a></div>
+      <span class="tag tag-base">素因子计数</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/300/A" target="_blank">CF 300A - Array</a></div>
+      <span class="tag tag-base">素性判定</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1463" target="_blank">P1463 - 反素数</a></div>
+      <span class="tag tag-base">反素数</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/915/D" target="_blank">CF 915D - Almost Acyclic Graph</a></div>
+      <span class="tag tag-base">素性检测</span>
+      <span class="tag tag-hard">困难</span>
     </div>
   </div>
 

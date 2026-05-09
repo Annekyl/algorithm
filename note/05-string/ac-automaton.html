@@ -38,7 +38,7 @@
       <li><a href="#fail-tree">fail树及其应用</a></li>
       <li><a href="#dp">AC自动机上DP</a></li>
       <li><a href="#template">C++ 完整模板</a></li>
-      <li><a href="#problems">经典例题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -399,55 +399,106 @@ c(abc) 的 cnt 包含了所有以 "c" 结尾的模式串信息
     </div>
   </div>
 
-  <!-- Section 7: 经典例题 -->
-  <div class="section" id="problems">
-    <h2>7. 经典例题</h2>
+  <!-- Section 7: 例题与练习 -->
+  <div class="section" id="practice">
+    <h2>7. 例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3808" target="_blank">Luogu P3808 - 【模板】AC自动机（简单版）</a></div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3808" target="_blank">P3808 - [模板] AC自动机（简单版）</a></div>
       <p>给定 n 个模式串和一个文本串，求有多少个模式串在文本串中出现过。</p>
+      <span class="tag tag-base">模板</span>
       <span class="tag tag-easy">入门</span>
-      <span class="tag tag-str">AC自动机</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3796" target="_blank">Luogu P3796 - 【模板】AC自动机（加强版）</a></div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3796" target="_blank">P3796 - [模板] AC自动机（加强版）</a></div>
       <p>给定 n 个模式串和一个文本串，求每个模式串的出现次数。</p>
-      <span class="tag tag-mid">中等</span>
-      <span class="tag tag-str">AC自动机</span>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
 
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5357" target="_blank">Luogu P5357 - 【模板】AC自动机（二次加强版）</a></div>
-      <p>给定 n 个模式串和一个文本串，输出每个模式串的出现次数。模式串可能重复。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5357" target="_blank">P5357 - [模板] AC自动机（二次加强版）</a></div>
+      <p>给定 n 个模式串和一个文本串，输出每个模式串的出现次数。模式串可能重复，需要用 fail 树拓扑序累加。</p>
+      <span class="tag tag-base">AC自动机+fail树</span>
       <span class="tag tag-mid">中等</span>
-      <span class="tag tag-str">AC自动机 + fail树</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2292" target="_blank">Luogu P2292 - 方程的解</a></div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2292" target="_blank">P2292 - 方程的解</a></div>
       <p>AC自动机上 DP 典型题，求不包含任何禁止单词的字符串方案数。</p>
+      <span class="tag tag-base">AC自动机+DP</span>
       <span class="tag tag-hard">困难</span>
-      <span class="tag tag-str">AC自动机 + DP</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4052" target="_blank">Luogu P4052 - [JSOI2007] 文本生成器</a></div>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4052" target="_blank">P4052 - [JSOI2007] 文本生成器</a></div>
       <p>求长度为 m 的文本串中至少包含一个给定单词的方案数。正难则反，用 AC自动机上 DP 求不包含任何单词的方案数。</p>
+      <span class="tag tag-base">AC自动机+DP</span>
       <span class="tag tag-hard">困难</span>
-      <span class="tag tag-str">AC自动机 + DP</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2414" target="_blank">Luogu P2414 - [NOI2011] 阿狸的打字机</a></div>
-      <p>fail树 + 树状数组经典题，利用 fail 树的 DFS 序维护匹配信息。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2414" target="_blank">P2414 - [NOI2011] 阿狸的打字机</a></div>
+      <p>fail 树 + 树状数组经典题。利用 fail 树的 DFS 序维护匹配信息，离线处理查询。</p>
+      <span class="tag tag-base">fail树+树状数组</span>
       <span class="tag tag-hard">困难</span>
-      <span class="tag tag-str">AC自动机 + fail树 + 树状数组</span>
     </div>
 
-    <div class="box box-tip">
-      <div class="box-title">学习建议</div>
-      <p>建议按难度递进学习：先做 P3808 理解基本原理，再做 P3796 / P5357 熟悉 fail 树，最后挑战 P4052 / P2414 掌握 AC自动机上 DP 和 fail 树的进阶应用。</p>
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3966" target="_blank">P3966 - [TJOI2013] 单词</a></div>
+      <p>统计每个单词在所有文本中出现的次数。在 AC 自动机上对 fail 树做拓扑序累加。</p>
+      <span class="tag tag-base">fail树</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5231" target="_blank">P5231 - [JSOI2012] 玄武密码</a></div>
+      <p>对多个模式串在文本串中的出现位置做标记，用 AC 自动机匹配后在 fail 树上标记子树。</p>
+      <span class="tag tag-base">AC自动机</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2444" target="_blank">P2444 - [POI2000] 病毒</a></div>
+      <p>在 AC 自动机上找从根出发的无限长路径（不含危险节点）。在 Trie 图上 DFS 找环。</p>
+      <span class="tag tag-base">AC自动机+DFS</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3311" target="_blank">P3311 - [SDOI2014] 数数</a></div>
+      <p>AC自动机上 DP。统计不包含任何给定模式串的数的个数，数位 DP + AC 自动机。</p>
+      <span class="tag tag-base">AC自动机+数位DP</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/963/problem/D" target="_blank">CF 963D - Frequency of String</a></div>
+      <p>求在文本串中恰好出现 k 次的最短子串。在 AC 自动机上对 fail 树做 LCA 分析。</p>
+      <span class="tag tag-base">fail树+LCA</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3121" target="_blank">P3121 - [USACO15FEB] Censoring G</a></div>
+      <p>AC自动机 + 栈。在文本串中不断删除模式串，用栈模拟删除过程，配合 AC 自动机转移。</p>
+      <span class="tag tag-base">AC自动机+栈</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/163/problem/E" target="_blank">CF 163E - e-Government</a></div>
+      <p>支持动态添加/删除模式串的 AC 自动机。fail 树 + 树状数组维护 DFS 序，实现动态计数。</p>
+      <span class="tag tag-base">fail树+树状数组</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4045" target="_blank">P4045 - [JSOI2009] 密码</a></div>
+      <p>AC自动机 + 状压 DP。在 AC 自动机上用状态压缩 DP 统计覆盖所有模式串的最短文本。</p>
+      <span class="tag tag-base">AC自动机+状压DP</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/710/problem/F" target="_blank">CF 710F - String Set Queries</a></div>
+      <p>动态多模式串匹配。在线添加/删除模式串集合，查询文本串中匹配总数。AC 自动机 + 分块重建。</p>
+      <span class="tag tag-base">AC自动机+分块</span>
+      <span class="tag tag-hard">困难</span>
     </div>
   </div>
 

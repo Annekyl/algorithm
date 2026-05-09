@@ -37,6 +37,7 @@
       <li><a href="#slope">3. 斜率优化 DP (Convex Hull Trick)</a></li>
       <li><a href="#quad">4. 四边形不等式优化</a></li>
       <li><a href="#summary">5. 总结与对比</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -849,38 +850,6 @@
       <div class="step"><strong>实现并调试</strong> &mdash; 注意边界条件、精度问题（斜率优化避免浮点）</div>
     </div>
 
-    <h3>推荐阅读与练习</h3>
-    <div class="problem">
-      <div class="problem-title">单调队列优化练习题</div>
-      <ul>
-        <li>Luogu P1886 - 滑动窗口（基础）</li>
-        <li>Luogu P2627 - 修剪草坪</li>
-        <li>Luogu P3957 - 跳房子</li>
-        <li>POJ 3017 - Cut the Sequence</li>
-      </ul>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">斜率优化练习题</div>
-      <ul>
-        <li>Luogu P3628 - 玩具装箱</li>
-        <li>Luogu P3195 - 玩具装箱（加强版）</li>
-        <li>Luogu P4072 - 征途</li>
-        <li>Luogu P2900 - Land Acquisition (USACO)</li>
-        <li>BZOJ 1010 - 玩具装箱</li>
-      </ul>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">四边形不等式优化练习题</div>
-      <ul>
-        <li>Luogu P1880 - 石子合并</li>
-        <li>Luogu P4767 - 邮局</li>
-        <li>Luogu P1775 - 石子合并（弱化版）</li>
-        <li>Luogu P3233 - 世界树</li>
-      </ul>
-    </div>
-
     <div class="box box-hard">
       <div class="box-title">进阶方向</div>
       <ul>
@@ -889,6 +858,73 @@
         <li><strong>李超线段树</strong>：维护动态凸包，支持插入直线和查询最大值，适合斜率不单调且在线的场景</li>
         <li><strong>CDQ 分治优化 DP</strong>：将 DP 的转移下标分治处理，配合数据结构优化</li>
       </ul>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 例题与练习 -->
+  <!-- ============================================================ -->
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
+
+    <h3>模板题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1886" target="_blank">洛谷 P1886 滑动窗口 / [模板] 单调队列</a></div>
+      <span class="tag tag-base">模板</span><span class="tag tag-easy">入门</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2216" target="_blank">洛谷 P2216 [HAOI2007] 理想的正方形</a></div>
+      <span class="tag tag-base">模板</span><span class="tag tag-easy">入门</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3029" target="_blank">洛谷 P3029 [USACO11NOV] Cow Lineup</a></div>
+      <span class="tag tag-base">模板</span><span class="tag tag-easy">入门</span>
+    </div>
+
+    <h3>练习题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1973" target="_blank">洛谷 P1973 [NOI2011] Noi嘉年华</a></div>
+      <span class="tag tag-mid">提高</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/contest/13/problem/E" target="_blank">CF 13E Holes</a></div>
+      <span class="tag tag-mid">提高</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2627" target="_blank">洛谷 P2627 [USACO11OPEN] Mowing the Lawn G</a></div>
+      <span class="tag tag-mid">提高</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3957" target="_blank">洛谷 P3957 [NOIP2017] 跳房子</a></div>
+      <span class="tag tag-mid">提高</span>
+    </div>
+
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3628" target="_blank">洛谷 P3628 [APIO2010] 特别行动队</a></div>
+      <span class="tag tag-mid">提高</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4072" target="_blank">洛谷 P4072 [SDOI2016] 征途</a></div>
+      <span class="tag tag-mid">提高</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2900" target="_blank">洛谷 P2900 [USACO08MAR] Land Acquisition G</a></div>
+      <span class="tag tag-mid">提高</span>
+    </div>
+
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4767" target="_blank">洛谷 P4767 [IOI2000] 邮局</a></div>
+      <span class="tag tag-hard">省选</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1775" target="_blank">洛谷 P1775 石子合并（弱化版）</a></div>
+      <span class="tag tag-hard">省选</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3233" target="_blank">洛谷 P3233 [HNOI2014] 世界树</a></div>
+      <span class="tag tag-hard">省选</span>
     </div>
   </div>
 

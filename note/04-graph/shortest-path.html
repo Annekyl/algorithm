@@ -37,6 +37,7 @@
       <li><a href="#floyd">Floyd-Warshall 算法</a></li>
       <li><a href="#johnson">Johnson 算法</a></li>
       <li><a href="#comparison">算法对比与选型</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -300,11 +301,6 @@
       </ul>
     </div>
 
-    <div class="problem">
-      <div class="problem-title">经典题目</div>
-      <p><a href="https://www.luogu.com.cn/problem/P4779" target="_blank">Luogu P4779 - 单源最短路径（标准版）</a></p>
-      <p>模板题，堆优化 Dijkstra 求单源最短路。</p>
-    </div>
   </div>
 
   <!-- ============================================================ -->
@@ -380,11 +376,6 @@
     <span class="kw">return false</span>;
 }</code></pre>
 
-    <div class="problem">
-      <div class="problem-title">经典题目</div>
-      <p><a href="https://www.luogu.com.cn/problem/P3385" target="_blank">Luogu P3385 - 负环</a></p>
-      <p>判断图中是否存在从源点可达的负环。</p>
-    </div>
   </div>
 
   <!-- ============================================================ -->
@@ -525,11 +516,6 @@
       </ul>
     </div>
 
-    <div class="problem">
-      <div class="problem-title">经典题目</div>
-      <p><a href="https://www.luogu.com.cn/problem/P3385" target="_blank">Luogu P3385 - 负环</a> - 判断负环</p>
-      <p><a href="https://www.luogu.com.cn/problem/P5960" target="_blank">Luogu P5960 - 差分约束</a> - 差分约束系统模板</p>
-    </div>
   </div>
 
   <!-- ============================================================ -->
@@ -683,11 +669,6 @@ nxt[i][j] = j;  <span class="cm">// 若有边 i→j</span>
       </ul>
     </div>
 
-    <div class="problem">
-      <div class="problem-title">经典题目</div>
-      <p><a href="https://www.luogu.com.cn/problem/P2910" target="_blank">Luogu P2910 - Clear And Present Danger</a></p>
-      <p>先 Floyd 预处理，再按给定路径累加。</p>
-    </div>
   </div>
 
   <!-- ============================================================ -->
@@ -840,11 +821,6 @@ nxt[i][j] = j;  <span class="cm">// 若有边 i→j</span>
                 dist_all[i][j] += h[j] - h[i];
 }</code></pre>
 
-    <div class="problem">
-      <div class="problem-title">经典题目</div>
-      <p><a href="https://www.luogu.com.cn/problem/P5905" target="_blank">Luogu P5905 - Johnson 全源最短路</a></p>
-      <p>Johnson 算法模板题。</p>
-    </div>
   </div>
 
   <!-- ============================================================ -->
@@ -985,14 +961,111 @@ nxt[i][j] = j;  <span class="cm">// 若有边 i→j</span>
       <li><strong>差分约束</strong>：将不等式约束转化为图论模型，用 SPFA 求解。</li>
     </ul>
 
+  </div>
+
+  <!-- ===== 例题与练习 ===== -->
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
+
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">综合练习题目</div>
-      <p><a href="https://www.luogu.com.cn/problem/P4779" target="_blank">Luogu P4779 - 单源最短路径（标准版）</a> - Dijkstra 模板</p>
-      <p><a href="https://www.luogu.com.cn/problem/P3371" target="_blank">Luogu P3371 - 单源最短路径（弱化版）</a> - SPFA / Dijkstra</p>
-      <p><a href="https://www.luogu.com.cn/problem/P3385" target="_blank">Luogu P3385 - 负环</a> - SPFA 判负环</p>
-      <p><a href="https://www.luogu.com.cn/problem/P2910" target="_blank">Luogu P2910 - Clear And Present Danger</a> - Floyd 应用</p>
-      <p><a href="https://www.luogu.com.cn/problem/P5905" target="_blank">Luogu P5905 - Johnson 全源最短路</a> - Johnson 模板</p>
-      <p><a href="https://www.luogu.com.cn/problem/P5960" target="_blank">Luogu P5960 - 差分约束</a> - 差分约束系统</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4779" target="_blank">P4779 【模板】单源最短路径（标准版）</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-mid">中等</span>
+      <p>堆优化 Dijkstra 模板题，邻接表 + 优先队列。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3371" target="_blank">P3371 【模板】单源最短路径（弱化版）</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-mid">中等</span>
+      <p>SPFA 或 Dijkstra 均可，练习最短路基本写法。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5905" target="_blank">P5905 Johnson 全源最短路</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-hard">困难</span>
+      <p>Johnson 算法模板题，势函数重赋权 + Dijkstra。</p>
+    </div>
+
+    <h3>练习题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3385" target="_blank">P3385 负环</a></div>
+      <span class="tag tag-easy">入门</span>
+      <p>SPFA 判负环模板题，记录入队次数即可。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5960" target="_blank">P5960 差分约束</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>差分约束系统模板，转化为最短路用 SPFA 求解。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2910" target="_blank">P2910 Clear And Present Danger</a></div>
+      <span class="tag tag-easy">入门</span>
+      <p>Floyd 全源最短路，再按给定路径累加距离。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1144" target="_blank">P1144 最短路计数</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>Dijkstra + 计数 DP，松弛时统计最短路条数。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1629" target="_blank">P1629 邮递员送信</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>正向图 + 反向图各跑一次 Dijkstra，练习反向建图。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1462" target="_blank">P1462 通往奥格瑞玛的道路</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>二分答案 + Dijkstra，判定在费用上限内能否到达终点。</p>
+    </div>
+
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/20/C" target="_blank">CF 20C - Dijkstra?</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>Dijkstra + 路径还原，练习 pre[] 数组的使用。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4568" target="_blank">P4568 飞行路线</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>分层图最短路，将图复制 k 层表示免费使用 k 次机会。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1073" target="_blank">P1073 最优贸易</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>分层图最短路 / SPFA，维护每个点的最大收益差。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1948" target="_blank">P1948 电话线</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>二分答案 + BFS/最短路，判定最大边权上限内能否到达。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1339" target="_blank">P1339 Heat Wave</a></div>
+      <span class="tag tag-easy">入门</span>
+      <p>基础最短路，练习 Dijkstra 或 SPFA 的标准写法。</p>
+    </div>
+
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3275" target="_blank">P3275 糖果</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>差分约束 + SPFA + 判正环，综合性强的约束建模题。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4001" target="_blank">P4001 狼抓兔子</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>最小割 = 最大流，转化为最短路问题（平面图对偶图）。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P6175" target="_blank">P6175 无向图的最小环</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>Floyd 求最小环，在循环中检查 dp[i][j] + g[i][k] + g[k][j]。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/601/A" target="_blank">CF 601A - The Two Routes</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>两种交通工具的最短路，铁路和公路各建一张图分别跑 BFS。</p>
     </div>
   </div>
 

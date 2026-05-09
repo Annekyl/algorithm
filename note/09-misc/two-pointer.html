@@ -35,7 +35,7 @@
       <li><a href="#sliding">滑动窗口</a></li>
       <li><a href="#fast-slow">快慢指针</a></li>
       <li><a href="#template">完整模板</a></li>
-      <li><a href="#problems">经典例题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -500,88 +500,95 @@
 }</code></pre>
   </div>
 
-  <!-- ============================== -->
-  <!-- Section 6: 经典例题 -->
-  <!-- ============================== -->
-  <div class="section" id="problems">
-    <h2>经典例题</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">LeetCode 1 - Two Sum</div>
-      <p>哈希表 O(n) 或排序后对撞指针 O(n log n)。注意排序后下标会变。</p>
-      <span class="tag tag-easy">对撞指针</span>
-      <span class="tag tag-base">哈希</span>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1102" target="_blank">P1102 - A-B 数对</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1419" target="_blank">P1419 - 寻找段落</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-mid">中等</span>
     </div>
 
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">LeetCode 11 - Container With Most Water</div>
-      <p>经典对撞指针题。移动较矮的一侧，因为移动较高的一侧面积只会减小。</p>
-      <span class="tag tag-easy">对撞指针</span>
-      <span class="tag tag-base">贪心</span>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1638" target="_blank">P1638 - 逛画展</a></div>
+      <span class="tag tag-base">滑动窗口</span>
+      <span class="tag tag-easy">简单</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1398/C" target="_blank">CF 1398C - Good Subarrays</a></div>
+      <span class="tag tag-base">前缀和 + 双指针</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1594" target="_blank">P1594 - 护卫队</a></div>
+      <span class="tag tag-base">对撞指针</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1328/E" target="_blank">CF 1328E - Tree Queries</a></div>
+      <span class="tag tag-base">树上双指针</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1147" target="_blank">P1147 - 连续自然数和</a></div>
+      <span class="tag tag-base">尺取</span>
+      <span class="tag tag-easy">简单</span>
     </div>
 
+    <h3>变种题</h3>
     <div class="problem">
-      <div class="problem-title">LeetCode 15 - 3Sum</div>
-      <p>排序 + 固定一个数 + 对撞指针。注意去重处理。</p>
-      <span class="tag tag-mid">对撞指针</span>
-      <span class="tag tag-base">去重</span>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2391" target="_blank">P2391 - 出雪莱</a></div>
+      <span class="tag tag-base">双指针 + 排序</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1272/E" target="_blank">CF 1272E - Nearest Opposite Parity</a></div>
+      <span class="tag tag-base">双指针 + BFS</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2698" target="_blank">P2698 - Flowerpot</a></div>
+      <span class="tag tag-base">单调队列 + 尺取</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1141/F" target="_blank">CF 1141F - Equal Sum Segments</a></div>
+      <span class="tag tag-base">前缀和 + 双指针</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4414" target="_blank">P4414 - 三人组</a></div>
+      <span class="tag tag-base">三指针</span>
+      <span class="tag tag-mid">中等</span>
     </div>
 
+    <h3>扩展题</h3>
     <div class="problem">
-      <div class="problem-title">LeetCode 76 - Minimum Window Substring</div>
-      <p>经典滑动窗口。用计数器维护窗口内字符的覆盖情况。</p>
-      <span class="tag tag-hard">滑动窗口</span>
-      <span class="tag tag-base">哈希</span>
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1175/E" target="_blank">CF 1175E - Minimal Segment Cover</a></div>
+      <span class="tag tag-base">贪心 + 双指针</span>
+      <span class="tag tag-hard">困难</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">LeetCode 3 - Longest Substring Without Repeating Characters</div>
-      <p>滑动窗口 + 哈希表记录字符上次出现位置。</p>
-      <span class="tag tag-mid">滑动窗口</span>
-      <span class="tag tag-base">哈希</span>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3957" target="_blank">P3957 - 跳房子</a></div>
+      <span class="tag tag-base">二分 + 尺取</span>
+      <span class="tag tag-mid">中等</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">LeetCode 141 - Linked List Cycle</div>
-      <p>Floyd 环检测的经典应用。快慢指针相遇即有环。</p>
-      <span class="tag tag-easy">快慢指针</span>
-      <span class="tag tag-base">链表</span>
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1354/D" target="_blank">CF 1354D - Multiset</a></div>
+      <span class="tag tag-base">二分 + 双指针</span>
+      <span class="tag tag-mid">中等</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title">LeetCode 209 - Minimum Size Subarray Sum</div>
-      <p>滑动窗口求最短子数组。右指针扩展，左指针在满足条件时收缩。</p>
-      <span class="tag tag-mid">滑动窗口</span>
-      <span class="tag tag-base">数组</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">LeetCode 234 - Palindrome Linked List</div>
-      <p>快慢指针找中点 + 反转后半部分 + 比较。O(n) 时间 O(1) 空间。</p>
-      <span class="tag tag-easy">快慢指针</span>
-      <span class="tag tag-base">链表反转</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">洛谷 P1102 - A-B 数对</div>
-      <p>排序后用对撞指针（或二分）找满足 A-B=C 的数对个数。</p>
-      <span class="tag tag-easy">对撞指针</span>
-      <span class="tag tag-base">排序</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title">洛谷 P1638 - 逛画展</div>
-      <p>滑动窗口：找包含所有种类画的最短连续区间。</p>
-      <span class="tag tag-mid">滑动窗口</span>
-      <span class="tag tag-base">区间</span>
-    </div>
-
-    <div class="box box-warn">
-      <div class="box-title">常见错误</div>
-      <p>1. 对撞指针要求<strong>有序</strong>，别忘了先排序<br>
-         2. 滑动窗口的收缩条件要仔细，避免死循环<br>
-         3. 三数之和等题目要注意<strong>去重</strong>处理<br>
-         4. 快慢指针找链表中点时，偶数个节点的中点定义要与题目一致</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3575" target="_blank">P3575 - 双指针综合</a></div>
+      <span class="tag tag-base">综合应用</span>
+      <span class="tag tag-hard">困难</span>
     </div>
   </div>
 

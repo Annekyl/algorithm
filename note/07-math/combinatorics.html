@@ -36,7 +36,7 @@
       <li><a href="#catalan">卡特兰数 (Catalan)</a></li>
       <li><a href="#inclusion-exclusion">容斥原理</a></li>
       <li><a href="#templates">完整 C++ 模板</a></li>
-      <li><a href="#problems">经典例题</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -705,179 +705,95 @@ ll <span class="fn">coprime_count</span>(ll n, ll m) {
 }</code><span class="lang-label">C++</span></pre>
   </div>
 
-  <!-- ============================== -->
-  <!-- Section 7: Problems -->
-  <!-- ============================== -->
-  <div class="section" id="problems">
-    <h2>经典例题</h2>
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
-    <h3>例题 1: 组合数取模 (模板题)</h3>
+    <h3>模板题</h3>
     <div class="problem">
-      <div class="problem-title">求 C(n, m) mod (10^9+7)</div>
-      <p>多组询问，每组给定 n (n &le; 10^6) 和 m，求 C(n, m) mod 10^9+7。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3807" target="_blank">P3807 - Lucas 定理模板</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
-    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
-<span class="kw">using namespace</span> std;
-<span class="kw">typedef</span> <span class="ty">long long</span> ll;
-<span class="ty">const int</span> MAXN = <span class="num">1000005</span>;
-<span class="ty">const ll</span> MOD = <span class="num">1000000007</span>;
-
-ll fac[MAXN], inv_fac[MAXN];
-
-ll <span class="fn">qpow</span>(ll a, ll b, ll p) {
-    ll res = <span class="num">1</span>; a %= p;
-    <span class="kw">while</span> (b) { <span class="kw">if</span> (b &amp; <span class="num">1</span>) res = res * a % p; a = a * a % p; b &gt;&gt;= <span class="num">1</span>; }
-    <span class="kw">return</span> res;
-}
-
-<span class="ty">void</span> <span class="fn">init</span>() {
-    fac[<span class="num">0</span>] = <span class="num">1</span>;
-    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; MAXN; i++) fac[i] = fac[i-<span class="num">1</span>] * i % MOD;
-    inv_fac[MAXN-<span class="num">1</span>] = <span class="fn">qpow</span>(fac[MAXN-<span class="num">1</span>], MOD-<span class="num">2</span>, MOD);
-    <span class="kw">for</span> (<span class="ty">int</span> i = MAXN-<span class="num">2</span>; i &gt;= <span class="num">0</span>; i--) inv_fac[i] = inv_fac[i+<span class="num">1</span>] * (i+<span class="num">1</span>) % MOD;
-}
-
-ll <span class="fn">C</span>(ll n, ll m) {
-    <span class="kw">if</span> (m &lt; <span class="num">0</span> || m &gt; n) <span class="kw">return</span> <span class="num">0</span>;
-    <span class="kw">return</span> fac[n] * inv_fac[m] % MOD * inv_fac[n-m] % MOD;
-}
-
-<span class="ty">int</span> <span class="fn">main</span>() {
-    <span class="fn">init</span>();
-    <span class="ty">int</span> T; cin &gt;&gt; T;
-    <span class="kw">while</span> (T--) {
-        ll n, m; cin &gt;&gt; n &gt;&gt; m;
-        cout &lt;&lt; <span class="fn">C</span>(n, m) &lt;&lt; <span class="str">"\n"</span>;
-    }
-}</code><span class="lang-label">C++</span></pre>
-
-    <h3>例题 2: 合法括号序列 (卡特兰数)</h3>
     <div class="problem">
-      <div class="problem-title">n 对括号的合法序列数</div>
-      <p>给定 n，求 n 对括号的合法匹配方案数，结果对 10^9+7 取模。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1313" target="_blank">P1313 - 计算组合数</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
     </div>
-    <pre><code><span class="cm">// 答案就是卡特兰数 H(n)</span>
-<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
-<span class="kw">using namespace</span> std;
-<span class="kw">typedef</span> <span class="ty">long long</span> ll;
-<span class="ty">const ll</span> MOD = <span class="num">1000000007</span>;
 
-ll <span class="fn">qpow</span>(ll a, ll b, ll p) {
-    ll res = <span class="num">1</span>; a %= p;
-    <span class="kw">while</span> (b) { <span class="kw">if</span> (b &amp; <span class="num">1</span>) res = res * a % p; a = a * a % p; b &gt;&gt;= <span class="num">1</span>; }
-    <span class="kw">return</span> res;
-}
-
-<span class="ty">int</span> <span class="fn">main</span>() {
-    <span class="ty">int</span> n; cin &gt;&gt; n;
-    <span class="cm">// H(n) = C(2n, n) / (n+1)</span>
-    <span class="cm">// C(2n, n) = (2n)! / (n!)^2</span>
-    <span class="cm">// 用逆元计算</span>
-    ll num = <span class="num">1</span>, den = <span class="num">1</span>;
-    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
-        num = num * (n + i) % MOD;
-        den = den * i % MOD;
-    }
-    ll ans = num * <span class="fn">qpow</span>(den, MOD-<span class="num">2</span>, MOD) % MOD;
-    ans = ans * <span class="fn">qpow</span>(n+<span class="num">1</span>, MOD-<span class="num">2</span>, MOD) % MOD;
-    cout &lt;&lt; ans &lt;&lt; endl;
-}</code><span class="lang-label">C++</span></pre>
-
-    <h3>例题 3: 错排问题</h3>
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title">错排公式</div>
-      <p>求 1~n 的错排方案数（每个元素都不在原来的位置上）。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2822" target="_blank">P2822 - 组合数问题</a></div>
+      <span class="tag tag-base">组合数</span>
+      <span class="tag tag-mid">中等</span>
     </div>
-    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
-<span class="kw">using namespace</span> std;
-<span class="kw">typedef</span> <span class="ty">long long</span> ll;
-
-<span class="ty">int</span> <span class="fn">main</span>() {
-    <span class="ty">int</span> n; cin &gt;&gt; n;
-    ll D[<span class="num">25</span>];
-    D[<span class="num">0</span>] = <span class="num">1</span>; D[<span class="num">1</span>] = <span class="num">0</span>;
-    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i &lt;= n; i++)
-        D[i] = (i - <span class="num">1</span>) * (D[i-<span class="num">1</span>] + D[i-<span class="num">2</span>]);
-    cout &lt;&lt; D[n] &lt;&lt; endl;
-}</code><span class="lang-label">C++</span></pre>
-
-    <h3>例题 4: 容斥原理 &mdash; 整除计数</h3>
     <div class="problem">
-      <div class="problem-title">[1, n] 中能被给定集合中任一数整除的数的个数</div>
-      <p>给定 n 和 k 个数 a<sub>1</sub>, ..., a<sub>k</sub>，求 [1, n] 中能被其中至少一个数整除的整数个数。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3197" target="_blank">P3197 - 越狱</a></div>
+      <span class="tag tag-base">容斥原理</span>
+      <span class="tag tag-mid">中等</span>
     </div>
-    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
-<span class="kw">using namespace</span> std;
-<span class="kw">typedef</span> <span class="ty">long long</span> ll;
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1096/C" target="_blank">CF 1096C - Polygon for the Angle</a></div>
+      <span class="tag tag-base">组合计数</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1450" target="_blank">P1450 - 硬币购物</a></div>
+      <span class="tag tag-base">容斥 + DP</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2290" target="_blank">P2290 - 树的计数</a></div>
+      <span class="tag tag-base">Prüfer 序列</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
 
-<span class="ty">int</span> <span class="fn">main</span>() {
-    ll n; <span class="ty">int</span> k;
-    cin &gt;&gt; n &gt;&gt; k;
-    <span class="ty">vector</span>&lt;ll&gt; a(k);
-    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; k; i++) cin &gt;&gt; a[i];
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4921" target="_blank">P4921 - 情侣？给我烧了！</a></div>
+      <span class="tag tag-base">错排</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/997/C" target="_blank">CF 997C - Sky Full of Stars</a></div>
+      <span class="tag tag-base">容斥原理</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3200" target="_blank">P3200 - 奇怪的矩阵</a></div>
+      <span class="tag tag-base">卡特兰数</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2791" target="_blank">P2791 - 夹挤定理</a></div>
+      <span class="tag tag-base">组合恒等式</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/510/D" target="_blank">CF 510D - Fox And Jumping</a></div>
+      <span class="tag tag-base">容斥 + GCD</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
 
-    ll ans = <span class="num">0</span>;
-    <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">1</span>; mask &lt; (<span class="num">1</span> &lt;&lt; k); mask++) {
-        ll lcm_val = <span class="num">1</span>; <span class="ty">int</span> bits = <span class="num">0</span>;
-        <span class="ty">bool</span> overflow = <span class="kw">false</span>;
-        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; k; i++) {
-            <span class="kw">if</span> (mask &gt;&gt; i &amp; <span class="num">1</span>) {
-                bits++;
-                ll g = <span class="fn">__gcd</span>(lcm_val, a[i]);
-                <span class="cm">// 检查是否会溢出或超过 n</span>
-                <span class="kw">if</span> (lcm_val / g &gt; n / a[i]) {
-                    overflow = <span class="kw">true</span>;
-                    <span class="kw">break</span>;
-                }
-                lcm_val = lcm_val / g * a[i];
-            }
-        }
-        <span class="kw">if</span> (overflow) <span class="kw">continue</span>;
-        <span class="kw">if</span> (bits &amp; <span class="num">1</span>) ans += n / lcm_val;
-        <span class="kw">else</span>          ans -= n / lcm_val;
-    }
-    cout &lt;&lt; ans &lt;&lt; endl;
-}</code><span class="lang-label">C++</span></pre>
-
-    <h3>常见题目链接</h3>
-    <div class="table-wrap">
-      <table>
-        <tr>
-          <th>题目</th>
-          <th>知识点</th>
-          <th>难度</th>
-        </tr>
-        <tr>
-          <td>Luogu P3807 Lucas 定理</td>
-          <td>Lucas 定理</td>
-          <td><span class="tag tag-mid">中等</span></td>
-        </tr>
-        <tr>
-          <td>Luogu P1313 合并果子</td>
-          <td>组合数</td>
-          <td><span class="tag tag-mid">中等</span></td>
-        </tr>
-        <tr>
-          <td>POJ 3252 Round Numbers</td>
-          <td>组合数 + 数位</td>
-          <td><span class="tag tag-mid">中等</span></td>
-        </tr>
-        <tr>
-          <td>HDOJ 1028 Ignatius and the Princess III</td>
-          <td>整数拆分</td>
-          <td><span class="tag tag-easy">简单</span></td>
-        </tr>
-        <tr>
-          <td>Luogu P1450 硬币购物</td>
-          <td>容斥原理 + DP</td>
-          <td><span class="tag tag-hard">困难</span></td>
-        </tr>
-        <tr>
-          <td>LeetCode 96 Unique BST</td>
-          <td>卡特兰数</td>
-          <td><span class="tag tag-mid">中等</span></td>
-        </tr>
-      </table>
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1553/H" target="_blank">CF 1553H - XOR and Distance</a></div>
+      <span class="tag tag-base">容斥 + 分治</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4841" target="_blank">P4841 - 城市规划</a></div>
+      <span class="tag tag-base">指数型生成函数</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5488" target="_blank">P5488 - 差分与前缀和</a></div>
+      <span class="tag tag-base">生成函数</span>
+      <span class="tag tag-hard">困难</span>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1054/H" target="_blank">CF 1054H - Epic Convolution</a></div>
+      <span class="tag tag-base">组合 + 卷积</span>
+      <span class="tag tag-hard">困难</span>
     </div>
   </div>
 

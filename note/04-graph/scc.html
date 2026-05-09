@@ -34,7 +34,7 @@
       <li><a href="#sec5">5. 缩点后 DAG 上的 DP</a></li>
       <li><a href="#sec6">6. 完整 C++ 模板</a></li>
       <li><a href="#sec7">7. 复杂度分析</a></li>
-      <li><a href="#sec8">8. 经典题目</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -625,56 +625,104 @@
     </div>
   </div>
 
-  <!-- ==================== 8. 经典题目 ==================== -->
-  <div class="section" id="sec8">
-    <h2>8. 经典题目</h2>
+  <!-- ==================== 8. 例题与练习 ==================== -->
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
       <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3387" target="_blank">P3387 【模板】缩点</a></div>
-      <p>经典缩点 + DAG 最长路 DP 模板题。给定有向图和点权，求路径上点权和的最大值。</p>
+      <span class="tag tag-base">模板</span>
       <span class="tag tag-mid">中等</span>
+      <p>经典缩点 + DAG 最长路 DP 模板题，给定有向图和点权求路径上点权和最大值。</p>
     </div>
-
     <div class="problem">
       <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2863" target="_blank">P2863 [USACO06JAN] The Cow Prom S</a></div>
-      <p>求大小大于 1 的 SCC 数量。直接 Tarjan 模板应用。</p>
-      <span class="tag tag-easy">简单</span>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+      <p>求大小大于 1 的 SCC 数量，直接 Tarjan 模板应用。</p>
     </div>
-
-    <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2341" target="_blank">P2341 [USACO03FALL / HAOI2006] 受欢迎的牛 G</a></div>
-      <p>缩点后，出度为 0 的 SCC 若唯一则其中所有牛都受欢迎。</p>
-      <span class="tag tag-mid">中等</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2746" target="_blank">P2746 [USACO5.3] Network of Schools</a></div>
-      <p>缩点后统计入度为 0 和出度为 0 的 SCC 数量，求最少添加边数使图强连通。</p>
-      <span class="tag tag-mid">中等</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1407" target="_blank">P1407 [国家集训队] 稳定婚姻</a></div>
-      <p>2-SAT 问题，利用 SCC 判断婚姻匹配是否存在矛盾。</p>
-      <span class="tag tag-mid">中等</span>
-    </div>
-
     <div class="problem">
       <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4782" target="_blank">P4782 【模板】2-SAT</a></div>
-      <p>2-SAT 模板题。利用 Tarjan SCC 判定并输出方案。</p>
+      <span class="tag tag-base">模板</span>
       <span class="tag tag-mid">中等</span>
+      <p>2-SAT 模板题，利用 Tarjan SCC 判定并输出方案。</p>
     </div>
 
+    <h3>练习题</h3>
     <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3275" target="_blank">P3275 [SCOI2011] 糖果</a></div>
-      <p>差分约束 + Tarjan SCC + 拓扑排序 DP，综合性强。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2341" target="_blank">P2341 [HAOI2006] 受欢迎的牛 G</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>缩点后，出度为 0 的 SCC 若唯一则其中所有牛都受欢迎。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2746" target="_blank">P2746 [USACO5.3] Network of Schools</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>缩点后统计入度为 0 和出度为 0 的 SCC 数量，求最少添加边数使图强连通。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1407" target="_blank">P1407 [国家集训队] 稳定婚姻</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>2-SAT 问题，利用 SCC 判断婚姻匹配是否存在矛盾。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1262" target="_blank">P1262 间谍网络</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>SCC 缩点后，对入度为 0 的 SCC 需要花费，贪心选取最小代价。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3119" target="_blank">P3119 [USACO15JAN] Grass Cownoisseur G</a></div>
       <span class="tag tag-hard">困难</span>
+      <p>SCC 缩点 + DAG 上枚举反向边，求回到起点的最长路径。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2272" target="_blank">P2272 [ZJOI2007] 最大半连通子图</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>SCC 缩点 + DAG 上 DP 计数，求最大半连通子图大小和方案数。</p>
     </div>
 
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/427/C" target="_blank">CF 427C - Checkposts</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>SCC 缩点，对每个 SCC 选最小权值节点，求总代价和方案数。</p>
+    </div>
     <div class="problem">
       <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1239/D" target="_blank">CF 1239D - Catowice City</a></div>
-      <p>利用 SCC 的性质构造合法方案，思维题。</p>
       <span class="tag tag-hard">困难</span>
+      <p>利用 SCC 的性质构造合法方案，思维题。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3275" target="_blank">P3275 [SCOI2011] 糖果</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>差分约束 + Tarjan SCC + 拓扑排序 DP，综合性强。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2672" target="_blank">P2672 [NOIP2015 普及组] 销售员</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>拓扑排序 + 贪心，需分析 SCC 缩点后的依赖关系。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5058" target="_blank">P5058 [ZJOI2004] 嗅探器</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>SCC + 割点，练习 Tarjan 求割点的变体应用。</p>
+    </div>
+
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3357" target="_blank">P3357 最长 k 可重区间集问题</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>SCC 缩点 + 最小费用最大流，建模技巧要求高。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4342" target="_blank">P4342 [IOI1998] Polygon</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>环形 DP + 拆环技巧，虽非直接 SCC 但需图论建模思维。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/999/E" target="_blank">CF 999E - Reachability from the Capital</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>SCC 缩点后，统计从起点所在 SCC 出发不可达的 SCC 入度为 0 的数量。</p>
     </div>
   </div>
 

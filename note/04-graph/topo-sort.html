@@ -35,7 +35,7 @@
       <li><a href="#sec6">6. 应用场景</a></li>
       <li><a href="#sec7">7. 完整 C++ 模板</a></li>
       <li><a href="#sec8">8. 复杂度分析</a></li>
-      <li><a href="#sec9">9. 经典题目</a></li>
+      <li><a href="#practice">例题与练习</a></li>
     </ul>
   </div>
 
@@ -479,50 +479,99 @@
     </div>
   </div>
 
-  <!-- ==================== 9. 经典题目 ==================== -->
-  <div class="section" id="sec9">
-    <h2>9. 经典题目</h2>
+  <!-- ==================== 9. 例题与练习 ==================== -->
+  <div class="section" id="practice">
+    <h2>例题与练习</h2>
 
+    <h3>模板题</h3>
     <div class="problem">
       <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1347" target="_blank">P1347 排序</a></div>
-      <p>给定若干大小关系，判断能否确定全序、矛盾、或信息不足。拓扑排序判环 + 检查唯一性。</p>
+      <span class="tag tag-base">模板</span>
       <span class="tag tag-mid">中等</span>
+      <p>给定若干大小关系，判断能否确定全序、矛盾、或信息不足。拓扑排序判环 + 检查唯一性。</p>
     </div>
-
-    <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1982" target="_blank">P1982 小朋友的数字</a></div>
-      <p>拓扑排序处理有依赖关系的递推，结合动态规划求最大值。</p>
-      <span class="tag tag-hard">困难</span>
-    </div>
-
     <div class="problem">
       <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1113" target="_blank">P1113 杂务</a></div>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
       <p>经典 DAG 最长路问题，求项目最短完成时间（关键路径）。</p>
-      <span class="tag tag-easy">简单</span>
     </div>
-
     <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2017" target="_blank">P2017 [USACO09DEC] Dizzy Cows G</a></div>
-      <p>混合图（有向+无向边）拓扑排序，用入度确定无向边方向。</p>
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1983" target="_blank">P1983 车站分级</a></div>
+      <span class="tag tag-base">模板</span>
       <span class="tag tag-mid">中等</span>
+      <p>根据列车停站信息建图，拓扑排序 + DAG DP 求最少分级数。</p>
     </div>
 
-    <div class="problem">
-      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/510/C" target="_blank">CF 510C - Fox And Names</a></div>
-      <p>给定字典序关系，建图后拓扑排序判断是否存在合法字母序。</p>
-      <span class="tag tag-mid">中等</span>
-    </div>
-
-    <div class="problem">
-      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P10381" target="_blank">P10381 拓扑排序 (模板题)</a></div>
-      <p>标准拓扑排序模板题，练习 Kahn 算法和 DFS 实现。</p>
-      <span class="tag tag-easy">简单</span>
-    </div>
-
+    <h3>练习题</h3>
     <div class="problem">
       <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4017" target="_blank">P4017 最大食物链计数</a></div>
-      <p>拓扑排序 + DP 统计从源到汇的所有路径数。</p>
       <span class="tag tag-mid">中等</span>
+      <p>拓扑排序 + DP 统计从源到汇的所有路径数。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/510/C" target="_blank">CF 510C - Fox And Names</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>给定字典序关系，建图后拓扑排序判断是否存在合法字母序。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2017" target="_blank">P2017 [USACO09DEC] Dizzy Cows G</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>混合图（有向+无向边）拓扑排序，用入度确定无向边方向。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1347" target="_blank">P1982 小朋友的数字</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>拓扑排序处理有依赖关系的递推，结合动态规划求最大值。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1265" target="_blank">P1265 公路修建</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>完全图 MST，但可借助拓扑排序思维分析贪心策略。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3243" target="_blank">P3243 [HNOI2015] 菜肴制作</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>反向建图 + 字典序最小拓扑排序，经典思维题。</p>
+    </div>
+
+    <h3>变种题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3119" target="_blank">P3119 [USACO15JAN] Grass Cownoisseur G</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>SCC 缩点 + 拓扑排序 DP，枚举反向边求最长路径。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P10381" target="_blank">P10381 拓扑排序模板</a></div>
+      <span class="tag tag-easy">入门</span>
+      <p>标准拓扑排序模板题，练习 Kahn 算法和 DFS 实现。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1807" target="_blank">P1807 最长路</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>DAG 上求最长路，拓扑排序后按拓扑序 DP 即可。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2865" target="_blank">P2865 [USACO06NOV] Roadblocks G</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>次短路问题，练习拓扑序 DP 或 Dijkstra 的扩展。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P6145" target="_blank">P6145 [USACO20FEB] Timeline G</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>拓扑排序 + DP，根据约束关系求每个事件的最早发生时间。</p>
+    </div>
+
+    <h3>扩展题</h3>
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P10171" target="_blank">P10171 排序不等式</a></div>
+      <span class="tag tag-hard">困难</span>
+      <p>拓扑排序 + 贪心，需分析约束关系并构造最优排列。</p>
+    </div>
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/427/C" target="_blank">CF 427C - Checkposts</a></div>
+      <span class="tag tag-mid">中等</span>
+      <p>SCC + 缩点后拓扑分析，统计入度为 0 的 SCC 的最小代价。</p>
     </div>
   </div>
 
