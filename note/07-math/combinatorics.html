@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>组合数学 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt; 数学篇 &gt; 组合数学
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>组合数学</h1>
+    <p class="subtitle">Combinatorics &mdash; 组合数、Lucas 定理、卡特兰数与容斥原理</p>
+    <div class="tags">
+      <span class="tag tag-math">数学</span>
+      <span class="tag tag-mid">中等</span>
+      <span class="tag tag-hard">进阶</span>
+    </div>
+  </div>
+
+  <!-- Table of Contents -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#comb-basic">组合数 C(n,k) 基础</a></li>
+      <li><a href="#comb-pre">预处理组合数</a></li>
+      <li><a href="#lucas">Lucas 定理</a></li>
+      <li><a href="#catalan">卡特兰数 (Catalan)</a></li>
+      <li><a href="#inclusion-exclusion">容斥原理</a></li>
+      <li><a href="#templates">完整 C++ 模板</a></li>
+      <li><a href="#problems">经典例题</a></li>
+    </ul>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 1: Basic Combinations -->
+  <!-- ============================== -->
+  <div class="section" id="comb-basic">
+    <h2>组合数 C(n,k) 基础</h2>
+    <p>组合数 C(n, k) 表示从 n 个不同元素中选取 k 个元素的方案数（不考虑顺序），也记作 C<sub>n</sub><sup>k</sup> 或 (n k)。</p>
+
+    <div class="box box-info">
+      <div class="box-title">定义公式</div>
+      <p><strong>C(n, k) = n! / (k! * (n-k)!)</strong></p>
+      <p>等价形式：C(n, k) = n*(n-1)*(n-2)*...*(n-k+1) / (k*(k-1)*(k-2)*...*1)</p>
+    </div>
+
+    <h3>Pascal 三角（杨辉三角）</h3>
+    <p>组合数满足递推关系，可以构成 Pascal 三角：</p>
+
+    <div class="diagram">
+      <pre>
+              C(0,0)
+            C(1,0) C(1,1)
+          C(2,0) C(2,1) C(2,2)
+        C(3,0) C(3,1) C(3,2) C(3,3)
+      C(4,0) C(4,1) C(4,2) C(4,3) C(4,4)
+
+  具体数值:
+          1
+         1  1
+        1  2  1
+       1  3  3  1
+      1  4  6  4  1
+     1  5 10 10  5  1
+    1  6 15 20 15  6  1
+      </pre>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">递推公式</div>
+      <p><strong>C(n, k) = C(n-1, k-1) + C(n-1, k)</strong></p>
+      <p>边界条件：C(n, 0) = C(n, n) = 1</p>
+    </div>
+
+    <h3>组合数的性质</h3>
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>性质</th>
+          <th>公式</th>
+          <th>说明</th>
+        </tr>
+        <tr>
+          <td>对称性</td>
+          <td>C(n, k) = C(n, n-k)</td>
+          <td>选 k 个等于不选 n-k 个</td>
+        </tr>
+        <tr>
+          <td>递推</td>
+          <td>C(n, k) = C(n-1, k-1) + C(n-1, k)</td>
+          <td>Pascal 恒等式</td>
+        </tr>
+        <tr>
+          <td>求和</td>
+          <td>sum C(n, k) = 2^n</td>
+          <td>k 从 0 到 n</td>
+        </tr>
+        <tr>
+          <td>Vandermonde</td>
+          <td>C(m+n, r) = sum C(m, i)*C(n, r-i)</td>
+          <td>卷积形式</td>
+        </tr>
+        <tr>
+          <td>吸收恒等式</td>
+          <td>k*C(n, k) = n*C(n-1, k-1)</td>
+          <td>常用于求和化简</td>
+        </tr>
+      </table>
+    </div>
+
+    <h3>递推法求组合数</h3>
+    <pre><code><span class="cm">// Pascal 三角递推: O(n^2) 预处理</span>
+<span class="ty">const int</span> MAXN = <span class="num">5005</span>;
+<span class="ty">long long</span> C[MAXN][MAXN];
+
+<span class="ty">void</span> <span class="fn">init_pascal</span>() {
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; MAXN; i++) {
+        C[i][<span class="num">0</span>] = <span class="num">1</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">1</span>; j &lt;= i; j++)
+            C[i][j] = C[i-<span class="num">1</span>][j-<span class="num">1</span>] + C[i-<span class="num">1</span>][j];
+    }
+}
+<span class="cm">// 优点: 简单, 不需要模运算(如果数值不大)</span>
+<span class="cm">// 缺点: O(n^2) 空间和时间, 只适合 n &le; 5000</span></code><span class="lang-label">C++</span></pre>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 2: Precompute Combinations -->
+  <!-- ============================== -->
+  <div class="section" id="comb-pre">
+    <h2>预处理组合数</h2>
+    <p>当 n 较大（如 10^6）且需要取模时，Pascal 三角的 O(n^2) 方法不可行。使用<strong>阶乘 + 逆元</strong>的方法可以在 O(n) 预处理后 O(1) 查询。</p>
+
+    <div class="complexity">
+      <span class="label">预处理:</span>
+      <span class="value">O(n)</span>
+      <span class="label">单次查询:</span>
+      <span class="value">O(1)</span>
+    </div>
+
+    <h3>原理</h3>
+    <p>C(n, k) = n! / (k! * (n-k)!) = fac[n] * inv_fac[k] * inv_fac[n-k] (mod p)</p>
+    <p>预处理 fac[i] = i! mod p 和 inv_fac[i] = (i!)^(-1) mod p 即可。</p>
+
+    <h3>代码模板</h3>
+    <pre><code><span class="cm">// 阶乘 + 逆元预处理组合数</span>
+<span class="ty">const int</span> MAXN = <span class="num">1000005</span>;
+<span class="ty">const long long</span> MOD = <span class="num">1000000007</span>; <span class="cm">// 10^9 + 7</span>
+<span class="ty">long long</span> fac[MAXN], inv_fac[MAXN];
+
+<span class="ty">long long</span> <span class="fn">qpow</span>(<span class="ty">long long</span> a, <span class="ty">long long</span> b, <span class="ty">long long</span> p) {
+    <span class="ty">long long</span> res = <span class="num">1</span>; a %= p;
+    <span class="kw">while</span> (b) {
+        <span class="kw">if</span> (b &amp; <span class="num">1</span>) res = res * a % p;
+        a = a * a % p;
+        b &gt;&gt;= <span class="num">1</span>;
+    }
+    <span class="kw">return</span> res;
+}
+
+<span class="ty">void</span> <span class="fn">init_comb</span>() {
+    fac[<span class="num">0</span>] = <span class="num">1</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; MAXN; i++)
+        fac[i] = fac[i - <span class="num">1</span>] * i % MOD;
+    <span class="cm">// 用快速幂求 inv_fac[n]，然后反向递推</span>
+    inv_fac[MAXN - <span class="num">1</span>] = <span class="fn">qpow</span>(fac[MAXN - <span class="num">1</span>], MOD - <span class="num">2</span>, MOD);
+    <span class="kw">for</span> (<span class="ty">int</span> i = MAXN - <span class="num">2</span>; i &gt;= <span class="num">0</span>; i--)
+        inv_fac[i] = inv_fac[i + <span class="num">1</span>] * (i + <span class="num">1</span>) % MOD;
+}
+
+<span class="ty">long long</span> <span class="fn">C</span>(<span class="ty">int</span> n, <span class="ty">int</span> k) {
+    <span class="kw">if</span> (k &lt; <span class="num">0</span> || k &gt; n) <span class="kw">return</span> <span class="num">0</span>;
+    <span class="kw">return</span> fac[n] * inv_fac[k] % MOD * inv_fac[n - k] % MOD;
+}</code><span class="lang-label">C++</span></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">常见模数</div>
+      <div class="table-wrap">
+        <table>
+          <tr>
+            <th>模数</th>
+            <th>值</th>
+            <th>特点</th>
+          </tr>
+          <tr>
+            <td>10^9 + 7</td>
+            <td>1000000007</td>
+            <td>最常用，是素数</td>
+          </tr>
+          <tr>
+            <td>998244353</td>
+            <td>998244353</td>
+            <td>NTT 友好素数 (119*2^23+1)</td>
+          </tr>
+          <tr>
+            <td>10^9 + 9</td>
+            <td>1000000009</td>
+            <td>也是素数</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <h3>组合数取模的注意事项</h3>
+    <div class="box box-warn">
+      <div class="box-title">常见陷阱</div>
+      <ul>
+        <li>模数必须是素数才能用费马小定理求逆元</li>
+        <li>当模数较小（如 p &le; n）时，阶乘中会出现 0，此时不能直接用逆元法，需要 Lucas 定理</li>
+        <li>减法取模要注意：(a - b) % p 可能为负数，需要 <code>((a-b)%p + p) % p</code></li>
+      </ul>
+    </div>
+
+    <h3>多组询问优化</h3>
+    <p>如果有 T 组询问，每组求 C(n, k)，预处理只需做一次，之后每组 O(1) 查询。总复杂度 O(MAXN + T)。</p>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 3: Lucas Theorem -->
+  <!-- ============================== -->
+  <div class="section" id="lucas">
+    <h2>Lucas 定理</h2>
+    <p>当 n 很大（如 n ~ 10^18）而模数 p 较小（如 p ~ 10^5）时，无法预处理 [1, n] 的阶乘。Lucas 定理可以将大组合数的计算转化为小组合数的计算。</p>
+
+    <div class="box box-info">
+      <div class="box-title">Lucas 定理</div>
+      <p>设 p 是素数，将 n 和 k 表示为 p 进制：</p>
+      <p>n = n<sub>s</sub>*p<sup>s</sup> + ... + n<sub>1</sub>*p + n<sub>0</sub></p>
+      <p>k = k<sub>s</sub>*p<sup>s</sup> + ... + k<sub>1</sub>*p + k<sub>0</sub></p>
+      <p>则 <strong>C(n, k) &equiv; &prod; C(n<sub>i</sub>, k<sub>i</sub>) (mod p)</strong></p>
+      <p>即：把 n 和 k 写成 p 进制后，逐位计算小组合数再相乘。</p>
+    </div>
+
+    <div class="complexity">
+      <span class="label">时间复杂度:</span>
+      <span class="value">O(log<sub>p</sub>n * p)</span>
+      <span class="label">预处理 O(p)，每次查询 O(log n)</span>
+    </div>
+
+    <h3>算法流程</h3>
+    <div class="steps">
+      <div class="step">预处理 [0, p-1] 的阶乘和阶乘逆元（O(p)）</div>
+      <div class="step">将 n 和 k 不断除以 p，逐位处理</div>
+      <div class="step">对每一位，计算 C(n%p, k%p) mod p</div>
+      <div class="step">将所有位的结果相乘取模</div>
+    </div>
+
+    <h3>图解</h3>
+    <div class="diagram">
+      <pre>
+  计算 C(100, 30) mod 7
+
+  100 的 7 进制: 100 = 2*49 + 0*7 + 2 = (202)_7
+   30 的 7 进制:  30 = 0*49 + 4*7 + 2 = (042)_7
+
+  逐位计算:
+    C(2, 0) * C(0, 4) * C(2, 2) mod 7
+    = 1      * 0        * 1
+    = 0
+
+  所以 C(100, 30) &equiv; 0 (mod 7)
+
+  (因为某一位 k_i &gt; n_i，对应的小组合数为 0)
+      </pre>
+    </div>
+
+    <h3>代码模板</h3>
+    <pre><code><span class="cm">// Lucas 定理</span>
+<span class="ty">const int</span> MAXP = <span class="num">100005</span>;
+<span class="ty">long long</span> fac[MAXP], inv_fac[MAXP];
+<span class="ty">long long</span> P;
+
+<span class="ty">long long</span> <span class="fn">qpow</span>(<span class="ty">long long</span> a, <span class="ty">long long</span> b, <span class="ty">long long</span> p) {
+    <span class="ty">long long</span> res = <span class="num">1</span>; a %= p;
+    <span class="kw">while</span> (b) {
+        <span class="kw">if</span> (b &amp; <span class="num">1</span>) res = res * a % p;
+        a = a * a % p;
+        b &gt;&gt;= <span class="num">1</span>;
+    }
+    <span class="kw">return</span> res;
+}
+
+<span class="ty">void</span> <span class="fn">init_lucas</span>(<span class="ty">long long</span> p) {
+    P = p;
+    fac[<span class="num">0</span>] = <span class="num">1</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; p; i++)
+        fac[i] = fac[i - <span class="num">1</span>] * i % p;
+    inv_fac[p - <span class="num">1</span>] = <span class="fn">qpow</span>(fac[p - <span class="num">1</span>], p - <span class="num">2</span>, p);
+    <span class="kw">for</span> (<span class="ty">int</span> i = p - <span class="num">2</span>; i &gt;= <span class="num">0</span>; i--)
+        inv_fac[i] = inv_fac[i + <span class="num">1</span>] * (i + <span class="num">1</span>) % p;
+}
+
+<span class="cm">// 小范围组合数 C(n, k) mod p, 要求 n, k &lt; p</span>
+<span class="ty">long long</span> <span class="fn">C_small</span>(<span class="ty">long long</span> n, <span class="ty">long long</span> k) {
+    <span class="kw">if</span> (k &lt; <span class="num">0</span> || k &gt; n) <span class="kw">return</span> <span class="num">0</span>;
+    <span class="kw">return</span> fac[n] * inv_fac[k] % P * inv_fac[n - k] % P;
+}
+
+<span class="cm">// Lucas 定理: C(n, k) mod p</span>
+<span class="ty">long long</span> <span class="fn">lucas</span>(<span class="ty">long long</span> n, <span class="ty">long long</span> k) {
+    <span class="kw">if</span> (k == <span class="num">0</span>) <span class="kw">return</span> <span class="num">1</span>;
+    <span class="kw">return</span> <span class="fn">C_small</span>(n % P, k % P) * <span class="fn">lucas</span>(n / P, k / P) % P;
+}</code><span class="lang-label">C++</span></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">何时使用 Lucas？</div>
+      <p>当 p 是素数且 p 较小（如 p &le; 10^5），而 n, k 很大（如 n ~ 10^18）时使用 Lucas 定理。如果 p 很大（如 10^9+7）且 n 也不太大（如 n &le; 10^6），直接用阶乘+逆元法即可。</p>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 4: Catalan Numbers -->
+  <!-- ============================== -->
+  <div class="section" id="catalan">
+    <h2>卡特兰数 (Catalan)</h2>
+    <p>卡特兰数是组合数学中一个非常重要的数列，在很多看似无关的问题中都会出现。</p>
+
+    <div class="box box-info">
+      <div class="box-title">卡特兰数公式</div>
+      <p>H<sub>n</sub> = C(2n, n) / (n+1) = C(2n, n) - C(2n, n+1)</p>
+      <p>递推公式：H<sub>n</sub> = sum(H<sub>i</sub> * H<sub>n-1-i</sub>), i = 0 to n-1</p>
+      <p>边界：H<sub>0</sub> = H<sub>1</sub> = 1</p>
+    </div>
+
+    <h3>前几项</h3>
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>n</th>
+          <th>0</th>
+          <th>1</th>
+          <th>2</th>
+          <th>3</th>
+          <th>4</th>
+          <th>5</th>
+          <th>6</th>
+          <th>7</th>
+          <th>8</th>
+          <th>9</th>
+          <th>10</th>
+        </tr>
+        <tr>
+          <td><strong>H(n)</strong></td>
+          <td>1</td>
+          <td>1</td>
+          <td>2</td>
+          <td>5</td>
+          <td>14</td>
+          <td>42</td>
+          <td>132</td>
+          <td>429</td>
+          <td>1430</td>
+          <td>4862</td>
+          <td>16796</td>
+        </tr>
+      </table>
+    </div>
+
+    <h3>经典应用场景</h3>
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>问题</th>
+          <th>描述</th>
+          <th>答案</th>
+        </tr>
+        <tr>
+          <td>括号匹配</td>
+          <td>n 对括号的合法匹配方案数</td>
+          <td>H<sub>n</sub></td>
+        </tr>
+        <tr>
+          <td>出栈序列</td>
+          <td>1,2,...,n 依次入栈，不同的出栈序列数</td>
+          <td>H<sub>n</sub></td>
+        </tr>
+        <tr>
+          <td>二叉树计数</td>
+          <td>n 个节点的不同二叉搜索树数</td>
+          <td>H<sub>n</sub></td>
+        </tr>
+        <tr>
+          <td>路径问题</td>
+          <td>从 (0,0) 到 (n,n) 不穿过对角线的路径数</td>
+          <td>H<sub>n</sub></td>
+        </tr>
+        <tr>
+          <td>凸多边形三角剖分</td>
+          <td>n+2 边凸多边形的三角剖分方案数</td>
+          <td>H<sub>n</sub></td>
+        </tr>
+      </table>
+    </div>
+
+    <h3>路径问题图解</h3>
+    <div class="diagram">
+      <pre>
+  从 (0,0) 到 (3,3)，每次只能向右或向上走一步
+  且不能越过对角线 (即在任意位置，向上步数 &le; 向右步数)
+
+      3 |       *---*---*
+        |       |       |
+      2 |   *---*---*   |
+        |   |   |       |
+      1 | *---*   |     |
+        | |       |     |
+      0 *---*---*---*---*
+        0   1   2   3
+
+  合法路径数 = H(3) = 5
+
+  总路径数 C(6,3) = 20
+  非法路径数 = C(6,2) = 15 (反射原理)
+  合法路径 = 20 - 15 = 5 = H(3)
+      </pre>
+    </div>
+
+    <h3>代码模板</h3>
+    <pre><code><span class="cm">// 卡特兰数: 用组合数公式计算</span>
+<span class="cm">// H(n) = C(2n, n) / (n+1) = C(2n, n) - C(2n, n+1)</span>
+<span class="cm">// 在模 p 下: H(n) = C(2n, n) * inv(n+1) % p</span>
+
+<span class="ty">long long</span> <span class="fn">catalan</span>(<span class="ty">int</span> n) {
+    <span class="kw">return</span> <span class="fn">C</span>(<span class="num">2</span> * n, n) * <span class="fn">inv</span>(n + <span class="num">1</span>) % MOD;
+}
+
+<span class="cm">// 或者用减法形式 (避免求逆元)</span>
+<span class="ty">long long</span> <span class="fn">catalan2</span>(<span class="ty">int</span> n) {
+    <span class="kw">return</span> (<span class="fn">C</span>(<span class="num">2</span> * n, n) - <span class="fn">C</span>(<span class="num">2</span> * n, n + <span class="num">1</span>) + MOD) % MOD;
+}
+
+<span class="cm">// 递推法 (无取模, 大数需要高精度)</span>
+<span class="ty">long long</span> h[<span class="num">36</span>];
+<span class="ty">void</span> <span class="fn">init_catalan</span>() {
+    h[<span class="num">0</span>] = h[<span class="num">1</span>] = <span class="num">1</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i &lt;= <span class="num">35</span>; i++) <span class="cm">// long long 范围内最多到 35</span>
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; i; j++)
+            h[i] += h[j] * h[i - <span class="num">1</span> - j];
+}</code><span class="lang-label">C++</span></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">括号匹配问题详解</div>
+      <p>给定 n 对括号，求所有合法的括号序列。例如 n=3 时：</p>
+      <ul>
+        <li>((()))</li>
+        <li>(()())</li>
+        <li>(())()</li>
+        <li>()(())</li>
+        <li>()()()</li>
+      </ul>
+      <p>共 H(3) = 5 种。每个时刻，已放置的右括号数不能超过左括号数，这等价于路径不越过对角线。</p>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 5: Inclusion-Exclusion -->
+  <!-- ============================== -->
+  <div class="section" id="inclusion-exclusion">
+    <h2>容斥原理</h2>
+    <p>容斥原理是计数问题中的基本工具，用于计算多个集合并集的大小。</p>
+
+    <div class="box box-info">
+      <div class="box-title">容斥原理公式</div>
+      <p>|A<sub>1</sub> &cup; A<sub>2</sub> &cup; ... &cup; A<sub>n</sub>| = &sum;|A<sub>i</sub>| - &sum;|A<sub>i</sub> &cap; A<sub>j</sub>| + &sum;|A<sub>i</sub> &cap; A<sub>j</sub> &cap; A<sub>k</sub>| - ... + (-1)<sup>n+1</sup>|A<sub>1</sub> &cap; ... &cap; A<sub>n</sub>|</p>
+    </div>
+
+    <h3>简单理解</h3>
+    <div class="steps">
+      <div class="step">加上每个集合的大小</div>
+      <div class="step">减去每两个集合交集的大小（因为被重复计算了）</div>
+      <div class="step">加上每三个集合交集的大小（因为被多减了）</div>
+      <div class="step">依此类推，正负交替</div>
+    </div>
+
+    <h3>图解：两个集合</h3>
+    <div class="diagram">
+      <pre>
+  |A &cup; B| = |A| + |B| - |A &cap; B|
+
+  ┌──────────────┐  ┌──────────────┐
+  │              │  │              │
+  │     A        │  │       B      │
+  │         ┌────┼──┼────┐         │
+  │         │A&B │  │    │         │
+  │         └────┼──┼────┘         │
+  │              │  │              │
+  └──────────────┘  └──────────────┘
+
+  = |A| + |B| - 重复计算的 |A&B|
+      </pre>
+    </div>
+
+    <h3>经典例题：[1, n] 中与 m 互素的数的个数</h3>
+    <p>给定 n 和 m，求 [1, n] 中与 m 互素的整数个数。使用容斥原理，对 m 的素因子进行容斥。</p>
+
+    <pre><code><span class="cm">// 容斥原理: 求 [1, n] 中与 m 互素的数的个数</span>
+<span class="cm">// 思路: 对 m 的素因子做容斥</span>
+<span class="cm">// 与 m 不互素 = 被 m 的某个素因子整除</span>
+<span class="cm">// ans = n - |被 p1 整除 &cup; 被 p2 整除 &cup; ...|</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="kw">typedef</span> <span class="ty">long long</span> ll;
+
+ll <span class="fn">solve</span>(ll n, ll m) {
+    <span class="cm">// 分解 m 的素因子</span>
+    <span class="ty">vector</span>&lt;ll&gt; primes;
+    <span class="ty">long long</span> tmp = m;
+    <span class="kw">for</span> (ll i = <span class="num">2</span>; i * i &lt;= tmp; i++) {
+        <span class="kw">if</span> (tmp % i == <span class="num">0</span>) {
+            primes.<span class="fn">push_back</span>(i);
+            <span class="kw">while</span> (tmp % i == <span class="num">0</span>) tmp /= i;
+        }
+    }
+    <span class="kw">if</span> (tmp &gt; <span class="num">1</span>) primes.<span class="fn">push_back</span>(tmp);
+
+    <span class="ty">int</span> k = primes.<span class="fn">size</span>();
+    ll ans = <span class="num">0</span>;
+    <span class="cm">// 枚举素因子的所有子集</span>
+    <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">1</span>; mask &lt; (<span class="num">1</span> &lt;&lt; k); mask++) {
+        ll prod = <span class="num">1</span>;
+        <span class="ty">int</span> bits = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; k; i++) {
+            <span class="kw">if</span> (mask &gt;&gt; i &amp; <span class="num">1</span>) {
+                prod *= primes[i];
+                bits++;
+            }
+        }
+        <span class="kw">if</span> (bits &amp; <span class="num">1</span>) ans += n / prod;   <span class="cm">// 奇数个素因子: 加</span>
+        <span class="kw">else</span>          ans -= n / prod;   <span class="cm">// 偶数个素因子: 减</span>
+    }
+    <span class="kw">return</span> n - ans; <span class="cm">// 与 m 互素的个数</span>
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    ll n, m;
+    cin &gt;&gt; n &gt;&gt; m;
+    cout &lt;&lt; <span class="fn">solve</span>(n, m) &lt;&lt; endl;
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>容斥原理的一般框架</h3>
+    <pre><code><span class="cm">// 容斥原理通用框架</span>
+<span class="cm">// 枚举 2^n 个子集, 正负交替</span>
+<span class="ty">int</span> <span class="fn">inclusion_exclusion</span>(<span class="ty">int</span> n_sets) {
+    <span class="ty">int</span> ans = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">1</span>; mask &lt; (<span class="num">1</span> &lt;&lt; n_sets); mask++) {
+        <span class="ty">int</span> bits = <span class="fn">__builtin_popcount</span>(mask);
+        <span class="ty">int</span> intersection_size = <span class="fn">calc_intersection</span>(mask); <span class="cm">// 根据具体问题实现</span>
+        <span class="kw">if</span> (bits &amp; <span class="num">1</span>)
+            ans += intersection_size;  <span class="cm">// 奇数个集合: 加</span>
+        <span class="kw">else</span>
+            ans -= intersection_size;  <span class="cm">// 偶数个集合: 减</span>
+    }
+    <span class="kw">return</span> ans;
+}</code><span class="lang-label">C++</span></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">复杂度注意</div>
+      <p>直接枚举 2<sup>n</sup> 个子集的时间复杂度为 O(2<sup>n</sup>)。当 n 较大（如 n &gt; 20）时不可行，需要寻找其他方法（如折半搜索、DP 等）。</p>
+    </div>
+
+    <h3>错排问题（容斥经典应用）</h3>
+    <p>n 个元素的错排：将 1~n 重新排列，使得没有一个元素在原来的位置上。错排数 D(n) 可以用容斥原理推导。</p>
+
+    <div class="box box-info">
+      <div class="box-title">错排公式</div>
+      <p>D(n) = n! * (1 - 1/1! + 1/2! - 1/3! + ... + (-1)<sup>n</sup>/n!)</p>
+      <p>递推：D(n) = (n-1) * (D(n-1) + D(n-2))</p>
+    </div>
+
+    <pre><code><span class="cm">// 错排数</span>
+<span class="ty">long long</span> D[<span class="num">25</span>];
+<span class="ty">void</span> <span class="fn">init_derangement</span>() {
+    D[<span class="num">0</span>] = <span class="num">1</span>; D[<span class="num">1</span>] = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i &lt;= <span class="num">20</span>; i++)
+        D[i] = (i - <span class="num">1</span>) * (D[i - <span class="num">1</span>] + D[i - <span class="num">2</span>]);
+}</code><span class="lang-label">C++</span></pre>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 6: Templates -->
+  <!-- ============================== -->
+  <div class="section" id="templates">
+    <h2>完整 C++ 模板</h2>
+
+    <h3>模板一：阶乘逆元 + 组合数 + 卡特兰数</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="kw">typedef</span> <span class="ty">long long</span> ll;
+
+<span class="ty">const int</span> MAXN = <span class="num">2000005</span>;
+<span class="ty">const ll</span> MOD = <span class="num">1000000007</span>;
+
+ll fac[MAXN], inv_fac[MAXN];
+
+ll <span class="fn">qpow</span>(ll a, ll b, ll p) {
+    ll res = <span class="num">1</span>; a %= p;
+    <span class="kw">while</span> (b) { <span class="kw">if</span> (b &amp; <span class="num">1</span>) res = res * a % p; a = a * a % p; b &gt;&gt;= <span class="num">1</span>; }
+    <span class="kw">return</span> res;
+}
+
+<span class="ty">void</span> <span class="fn">init</span>() {
+    fac[<span class="num">0</span>] = <span class="num">1</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; MAXN; i++) fac[i] = fac[i-<span class="num">1</span>] * i % MOD;
+    inv_fac[MAXN-<span class="num">1</span>] = <span class="fn">qpow</span>(fac[MAXN-<span class="num">1</span>], MOD-<span class="num">2</span>, MOD);
+    <span class="kw">for</span> (<span class="ty">int</span> i = MAXN-<span class="num">2</span>; i &gt;= <span class="num">0</span>; i--) inv_fac[i] = inv_fac[i+<span class="num">1</span>] * (i+<span class="num">1</span>) % MOD;
+}
+
+ll <span class="fn">C</span>(ll n, ll k) {
+    <span class="kw">if</span> (k &lt; <span class="num">0</span> || k &gt; n) <span class="kw">return</span> <span class="num">0</span>;
+    <span class="kw">return</span> fac[n] * inv_fac[k] % MOD * inv_fac[n-k] % MOD;
+}
+
+ll <span class="fn">catalan</span>(ll n) {
+    <span class="kw">return</span> <span class="fn">C</span>(<span class="num">2</span>*n, n) * <span class="fn">qpow</span>(n+<span class="num">1</span>, MOD-<span class="num">2</span>, MOD) % MOD;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">init</span>();
+    <span class="ty">int</span> T; cin &gt;&gt; T;
+    <span class="kw">while</span> (T--) {
+        <span class="ty">int</span> n, k; cin &gt;&gt; n &gt;&gt; k;
+        cout &lt;&lt; <span class="fn">C</span>(n, k) &lt;&lt; endl;
+    }
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>模板二：Lucas 定理</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="kw">typedef</span> <span class="ty">long long</span> ll;
+
+ll <span class="fn">qpow</span>(ll a, ll b, ll p) {
+    ll res = <span class="num">1</span>; a %= p;
+    <span class="kw">while</span> (b) { <span class="kw">if</span> (b &amp; <span class="num">1</span>) res = res * a % p; a = a * a % p; b &gt;&gt;= <span class="num">1</span>; }
+    <span class="kw">return</span> res;
+}
+
+ll P, fac[<span class="num">100005</span>], inv_fac[<span class="num">100005</span>];
+
+<span class="ty">void</span> <span class="fn">init_lucas</span>(ll p) {
+    P = p; fac[<span class="num">0</span>] = <span class="num">1</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; p; i++) fac[i] = fac[i-<span class="num">1</span>] * i % p;
+    inv_fac[p-<span class="num">1</span>] = <span class="fn">qpow</span>(fac[p-<span class="num">1</span>], p-<span class="num">2</span>, p);
+    <span class="kw">for</span> (<span class="ty">int</span> i = p-<span class="num">2</span>; i &gt;= <span class="num">0</span>; i--) inv_fac[i] = inv_fac[i+<span class="num">1</span>] * (i+<span class="num">1</span>) % p;
+}
+
+ll <span class="fn">C_small</span>(ll n, ll k) {
+    <span class="kw">if</span> (k &lt; <span class="num">0</span> || k &gt; n) <span class="kw">return</span> <span class="num">0</span>;
+    <span class="kw">return</span> fac[n] * inv_fac[k] % P * inv_fac[n-k] % P;
+}
+
+ll <span class="fn">lucas</span>(ll n, ll k) {
+    <span class="kw">if</span> (k == <span class="num">0</span>) <span class="kw">return</span> <span class="num">1</span>;
+    <span class="kw">return</span> <span class="fn">C_small</span>(n%P, k%P) * <span class="fn">lucas</span>(n/P, k/P) % P;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> T; cin &gt;&gt; T;
+    <span class="kw">while</span> (T--) {
+        ll n, m, p; cin &gt;&gt; n &gt;&gt; m &gt;&gt; p;
+        <span class="fn">init_lucas</span>(p);
+        cout &lt;&lt; <span class="fn">lucas</span>(n+m, n) &lt;&lt; endl;
+    }
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>模板三：容斥原理（互素计数）</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="kw">typedef</span> <span class="ty">long long</span> ll;
+
+<span class="cm">// 求 [1, n] 中与 m 互素的数的个数</span>
+ll <span class="fn">coprime_count</span>(ll n, ll m) {
+    <span class="ty">vector</span>&lt;ll&gt; p;
+    <span class="kw">for</span> (ll i = <span class="num">2</span>; i * i &lt;= m; i++) {
+        <span class="kw">if</span> (m % i == <span class="num">0</span>) {
+            p.<span class="fn">push_back</span>(i);
+            <span class="kw">while</span> (m % i == <span class="num">0</span>) m /= i;
+        }
+    }
+    <span class="kw">if</span> (m &gt; <span class="num">1</span>) p.<span class="fn">push_back</span>(m);
+
+    <span class="ty">int</span> k = p.<span class="fn">size</span>();
+    ll ans = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">1</span>; mask &lt; (<span class="num">1</span> &lt;&lt; k); mask++) {
+        ll prod = <span class="num">1</span>; <span class="ty">int</span> bits = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; k; i++)
+            <span class="kw">if</span> (mask &gt;&gt; i &amp; <span class="num">1</span>) { prod *= p[i]; bits++; }
+        <span class="kw">if</span> (bits &amp; <span class="num">1</span>) ans += n / prod;
+        <span class="kw">else</span>          ans -= n / prod;
+    }
+    <span class="kw">return</span> n - ans;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    ll n, m; cin &gt;&gt; n &gt;&gt; m;
+    cout &lt;&lt; <span class="fn">coprime_count</span>(n, m) &lt;&lt; endl;
+}</code><span class="lang-label">C++</span></pre>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 7: Problems -->
+  <!-- ============================== -->
+  <div class="section" id="problems">
+    <h2>经典例题</h2>
+
+    <h3>例题 1: 组合数取模 (模板题)</h3>
+    <div class="problem">
+      <div class="problem-title">求 C(n, m) mod (10^9+7)</div>
+      <p>多组询问，每组给定 n (n &le; 10^6) 和 m，求 C(n, m) mod 10^9+7。</p>
+    </div>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="kw">typedef</span> <span class="ty">long long</span> ll;
+<span class="ty">const int</span> MAXN = <span class="num">1000005</span>;
+<span class="ty">const ll</span> MOD = <span class="num">1000000007</span>;
+
+ll fac[MAXN], inv_fac[MAXN];
+
+ll <span class="fn">qpow</span>(ll a, ll b, ll p) {
+    ll res = <span class="num">1</span>; a %= p;
+    <span class="kw">while</span> (b) { <span class="kw">if</span> (b &amp; <span class="num">1</span>) res = res * a % p; a = a * a % p; b &gt;&gt;= <span class="num">1</span>; }
+    <span class="kw">return</span> res;
+}
+
+<span class="ty">void</span> <span class="fn">init</span>() {
+    fac[<span class="num">0</span>] = <span class="num">1</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; MAXN; i++) fac[i] = fac[i-<span class="num">1</span>] * i % MOD;
+    inv_fac[MAXN-<span class="num">1</span>] = <span class="fn">qpow</span>(fac[MAXN-<span class="num">1</span>], MOD-<span class="num">2</span>, MOD);
+    <span class="kw">for</span> (<span class="ty">int</span> i = MAXN-<span class="num">2</span>; i &gt;= <span class="num">0</span>; i--) inv_fac[i] = inv_fac[i+<span class="num">1</span>] * (i+<span class="num">1</span>) % MOD;
+}
+
+ll <span class="fn">C</span>(ll n, ll m) {
+    <span class="kw">if</span> (m &lt; <span class="num">0</span> || m &gt; n) <span class="kw">return</span> <span class="num">0</span>;
+    <span class="kw">return</span> fac[n] * inv_fac[m] % MOD * inv_fac[n-m] % MOD;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">init</span>();
+    <span class="ty">int</span> T; cin &gt;&gt; T;
+    <span class="kw">while</span> (T--) {
+        ll n, m; cin &gt;&gt; n &gt;&gt; m;
+        cout &lt;&lt; <span class="fn">C</span>(n, m) &lt;&lt; <span class="str">"\n"</span>;
+    }
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>例题 2: 合法括号序列 (卡特兰数)</h3>
+    <div class="problem">
+      <div class="problem-title">n 对括号的合法序列数</div>
+      <p>给定 n，求 n 对括号的合法匹配方案数，结果对 10^9+7 取模。</p>
+    </div>
+    <pre><code><span class="cm">// 答案就是卡特兰数 H(n)</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="kw">typedef</span> <span class="ty">long long</span> ll;
+<span class="ty">const ll</span> MOD = <span class="num">1000000007</span>;
+
+ll <span class="fn">qpow</span>(ll a, ll b, ll p) {
+    ll res = <span class="num">1</span>; a %= p;
+    <span class="kw">while</span> (b) { <span class="kw">if</span> (b &amp; <span class="num">1</span>) res = res * a % p; a = a * a % p; b &gt;&gt;= <span class="num">1</span>; }
+    <span class="kw">return</span> res;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n; cin &gt;&gt; n;
+    <span class="cm">// H(n) = C(2n, n) / (n+1)</span>
+    <span class="cm">// C(2n, n) = (2n)! / (n!)^2</span>
+    <span class="cm">// 用逆元计算</span>
+    ll num = <span class="num">1</span>, den = <span class="num">1</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        num = num * (n + i) % MOD;
+        den = den * i % MOD;
+    }
+    ll ans = num * <span class="fn">qpow</span>(den, MOD-<span class="num">2</span>, MOD) % MOD;
+    ans = ans * <span class="fn">qpow</span>(n+<span class="num">1</span>, MOD-<span class="num">2</span>, MOD) % MOD;
+    cout &lt;&lt; ans &lt;&lt; endl;
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>例题 3: 错排问题</h3>
+    <div class="problem">
+      <div class="problem-title">错排公式</div>
+      <p>求 1~n 的错排方案数（每个元素都不在原来的位置上）。</p>
+    </div>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="kw">typedef</span> <span class="ty">long long</span> ll;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n; cin &gt;&gt; n;
+    ll D[<span class="num">25</span>];
+    D[<span class="num">0</span>] = <span class="num">1</span>; D[<span class="num">1</span>] = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i &lt;= n; i++)
+        D[i] = (i - <span class="num">1</span>) * (D[i-<span class="num">1</span>] + D[i-<span class="num">2</span>]);
+    cout &lt;&lt; D[n] &lt;&lt; endl;
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>例题 4: 容斥原理 &mdash; 整除计数</h3>
+    <div class="problem">
+      <div class="problem-title">[1, n] 中能被给定集合中任一数整除的数的个数</div>
+      <p>给定 n 和 k 个数 a<sub>1</sub>, ..., a<sub>k</sub>，求 [1, n] 中能被其中至少一个数整除的整数个数。</p>
+    </div>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="kw">typedef</span> <span class="ty">long long</span> ll;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    ll n; <span class="ty">int</span> k;
+    cin &gt;&gt; n &gt;&gt; k;
+    <span class="ty">vector</span>&lt;ll&gt; a(k);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; k; i++) cin &gt;&gt; a[i];
+
+    ll ans = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">1</span>; mask &lt; (<span class="num">1</span> &lt;&lt; k); mask++) {
+        ll lcm_val = <span class="num">1</span>; <span class="ty">int</span> bits = <span class="num">0</span>;
+        <span class="ty">bool</span> overflow = <span class="kw">false</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; k; i++) {
+            <span class="kw">if</span> (mask &gt;&gt; i &amp; <span class="num">1</span>) {
+                bits++;
+                ll g = <span class="fn">__gcd</span>(lcm_val, a[i]);
+                <span class="cm">// 检查是否会溢出或超过 n</span>
+                <span class="kw">if</span> (lcm_val / g &gt; n / a[i]) {
+                    overflow = <span class="kw">true</span>;
+                    <span class="kw">break</span>;
+                }
+                lcm_val = lcm_val / g * a[i];
+            }
+        }
+        <span class="kw">if</span> (overflow) <span class="kw">continue</span>;
+        <span class="kw">if</span> (bits &amp; <span class="num">1</span>) ans += n / lcm_val;
+        <span class="kw">else</span>          ans -= n / lcm_val;
+    }
+    cout &lt;&lt; ans &lt;&lt; endl;
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>常见题目链接</h3>
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>题目</th>
+          <th>知识点</th>
+          <th>难度</th>
+        </tr>
+        <tr>
+          <td>Luogu P3807 Lucas 定理</td>
+          <td>Lucas 定理</td>
+          <td><span class="tag tag-mid">中等</span></td>
+        </tr>
+        <tr>
+          <td>Luogu P1313 合并果子</td>
+          <td>组合数</td>
+          <td><span class="tag tag-mid">中等</span></td>
+        </tr>
+        <tr>
+          <td>POJ 3252 Round Numbers</td>
+          <td>组合数 + 数位</td>
+          <td><span class="tag tag-mid">中等</span></td>
+        </tr>
+        <tr>
+          <td>HDOJ 1028 Ignatius and the Princess III</td>
+          <td>整数拆分</td>
+          <td><span class="tag tag-easy">简单</span></td>
+        </tr>
+        <tr>
+          <td>Luogu P1450 硬币购物</td>
+          <td>容斥原理 + DP</td>
+          <td><span class="tag tag-hard">困难</span></td>
+        </tr>
+        <tr>
+          <td>LeetCode 96 Unique BST</td>
+          <td>卡特兰数</td>
+          <td><span class="tag tag-mid">中等</span></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="section" style="text-align:center; padding:20px; border:none; background:transparent; box-shadow:none;">
+    <p style="color:var(--text-dim); font-size:0.9em;">
+      <a href="../index.html" style="color:var(--accent); text-decoration:none;">返回首页</a>
+      &nbsp;&middot;&nbsp;
+      <a href="gcd.html" style="color:var(--accent); text-decoration:none;">上一篇: GCD与扩展欧几里得</a>
+    </p>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

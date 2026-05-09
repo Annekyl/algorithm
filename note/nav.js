@@ -1,0 +1,298 @@
+/**
+ * ACM Algorithm Notes - Navigation Enhancement
+ * Features: back button, sidebar TOC, back-to-top, copy button, search, theme toggle, cross-links
+ */
+(function () {
+  'use strict';
+
+  const BASE = getBasePath();
+
+  // ===== 1. Back Button (top-left) =====
+  const backBtn = document.createElement('a');
+  backBtn.className = 'nav-back-btn';
+  backBtn.href = BASE + 'index.html';
+  backBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> 返回目录';
+  document.body.appendChild(backBtn);
+
+  // ===== 2. Sidebar TOC (right side) =====
+  const headings = document.querySelectorAll('.section h2, .section h3, .section-title');
+  if (headings.length > 1) {
+    const sidebar = document.createElement('nav');
+    sidebar.className = 'sidebar-toc';
+    sidebar.innerHTML = '<div class="sidebar-toc-title">目录</div><ul class="sidebar-toc-list"></ul>';
+    const list = sidebar.querySelector('.sidebar-toc-list');
+
+    headings.forEach((h, i) => {
+      if (!h.id) h.id = 'heading-' + i;
+      const li = document.createElement('li');
+      li.className = 'sidebar-toc-item' + (h.tagName === 'H3' ? ' sidebar-toc-sub' : '');
+      const a = document.createElement('a');
+      a.href = '#' + h.id;
+      a.textContent = h.textContent;
+      a.className = 'sidebar-toc-link';
+      li.appendChild(a);
+      list.appendChild(li);
+    });
+
+    document.body.appendChild(sidebar);
+
+    const links = sidebar.querySelectorAll('.sidebar-toc-link');
+    const offsetMap = Array.from(headings);
+
+    function updateActive() {
+      const scrollY = window.scrollY + 120;
+      let activeIdx = 0;
+      for (let i = 0; i < offsetMap.length; i++) {
+        if (offsetMap[i].offsetTop <= scrollY) activeIdx = i;
+      }
+      links.forEach((l, i) => l.classList.toggle('active', i === activeIdx));
+    }
+
+    window.addEventListener('scroll', updateActive, { passive: true });
+    updateActive();
+
+    links.forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) window.scrollTo({ top: target.offsetTop - 20, behavior: 'smooth' });
+      });
+    });
+  }
+
+  // ===== 3. Back to Top Button (bottom-right) =====
+  const topBtn = document.createElement('button');
+  topBtn.className = 'nav-top-btn';
+  topBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>';
+  topBtn.title = '回到顶部';
+  document.body.appendChild(topBtn);
+
+  function toggleTopBtn() {
+    topBtn.classList.toggle('show', window.scrollY > 400);
+  }
+  window.addEventListener('scroll', toggleTopBtn, { passive: true });
+  toggleTopBtn();
+  topBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+  // ===== 4. Copy Button for Code Blocks =====
+  document.querySelectorAll('pre').forEach(pre => {
+    if (pre.querySelector('.code-copy-btn')) return;
+    const btn = document.createElement('button');
+    btn.className = 'code-copy-btn';
+    btn.innerHTML = copyIcon();
+    btn.title = '复制代码';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code');
+      const text = code ? code.textContent : pre.textContent;
+      const done = () => {
+        btn.classList.add('copied');
+        btn.innerHTML = checkIcon();
+        setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = copyIcon(); }, 1500);
+      };
+      navigator.clipboard.writeText(text).then(done).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+        document.body.removeChild(ta); done();
+      });
+    });
+    pre.appendChild(btn);
+  });
+
+  // ===== 5. Global Search (top-right) =====
+  const searchWrap = document.createElement('div');
+  searchWrap.className = 'search-wrap';
+  searchWrap.innerHTML = `
+    <div class="search-box">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input" type="text" placeholder="搜索算法 (Ctrl+K)" autocomplete="off">
+      <div class="search-results"></div>
+    </div>
+  `;
+  document.body.appendChild(searchWrap);
+
+  const searchInput = searchWrap.querySelector('.search-input');
+  const searchResults = searchWrap.querySelector('.search-results');
+  let searchIndex = null;
+  let searchLoaded = false;
+
+  // Load search index lazily
+  function loadSearchIndex() {
+    if (searchLoaded) return;
+    searchLoaded = true;
+    const script = document.createElement('script');
+    script.src = BASE + 'search-index.js';
+    script.onload = () => { searchIndex = typeof SEARCH_INDEX !== 'undefined' ? SEARCH_INDEX : []; };
+    document.head.appendChild(script);
+  }
+
+  searchInput.addEventListener('focus', loadSearchIndex);
+
+  function doSearch(query) {
+    if (!searchIndex || !query.trim()) { searchResults.innerHTML = ''; searchResults.classList.remove('show'); return; }
+    const q = query.toLowerCase();
+    const matched = searchIndex.filter(item =>
+      item.title.toLowerCase().includes(q) ||
+      item.keywords.toLowerCase().includes(q) ||
+      item.cat.toLowerCase().includes(q)
+    ).slice(0, 10);
+
+    if (!matched.length) {
+      searchResults.innerHTML = '<div class="search-empty">未找到相关内容</div>';
+    } else {
+      searchResults.innerHTML = matched.map(item => {
+        const href = BASE + item.url;
+        return `<a class="search-result-item" href="${href}">
+          <span class="search-result-cat">${item.cat}</span>
+          <span class="search-result-title">${item.title}</span>
+        </a>`;
+      }).join('');
+    }
+    searchResults.classList.add('show');
+  }
+
+  searchInput.addEventListener('input', () => doSearch(searchInput.value));
+
+  // Ctrl+K shortcut
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      searchInput.focus();
+      loadSearchIndex();
+    }
+    if (e.key === 'Escape') {
+      searchInput.blur();
+      searchResults.classList.remove('show');
+    }
+  });
+
+  // Close on outside click
+  document.addEventListener('click', e => {
+    if (!searchWrap.contains(e.target)) searchResults.classList.remove('show');
+  });
+
+  // ===== 6. Theme Toggle =====
+  const themeBtn = document.createElement('button');
+  themeBtn.className = 'theme-toggle-btn';
+  themeBtn.title = '切换亮色/暗色主题';
+  const savedTheme = localStorage.getItem('algo-notes-theme') || 'dark';
+  if (savedTheme === 'light') document.documentElement.classList.add('light-theme');
+  updateThemeIcon();
+
+  function updateThemeIcon() {
+    const isLight = document.documentElement.classList.contains('light-theme');
+    themeBtn.innerHTML = isLight
+      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+  }
+
+  themeBtn.addEventListener('click', () => {
+    document.documentElement.classList.toggle('light-theme');
+    const theme = document.documentElement.classList.contains('light-theme') ? 'light' : 'dark';
+    localStorage.setItem('algo-notes-theme', theme);
+    updateThemeIcon();
+  });
+  document.body.appendChild(themeBtn);
+
+  // ===== 7. Cross-links (related algorithms) =====
+  const RELATIONS = {
+    'binary-search.html':   ['prefix-sum.html', 'greedy.html', 'stl.html'],
+    'prefix-sum.html':      ['binary-search.html', 'bit-fenwick.html', 'monotone-queue.html'],
+    'greedy.html':          ['binary-search.html', 'interval-dp.html', 'mst.html'],
+    'divide-conquer.html':  ['segment-tree.html', 'linear-dp.html', 'quick-sort'],
+    'bit.html':             ['bitmask-dp.html', 'bit-fenwick.html', 'trie.html'],
+    'stl.html':             ['binary-search.html', 'priority-queue', 'monotone-queue.html'],
+    'dfs.html':             ['bfs.html', 'backtracking.html', 'scc.html'],
+    'bfs.html':             ['dfs.html', 'shortest-path.html', 'topo-sort.html'],
+    'idastar.html':         ['dfs.html', 'bfs.html', 'backtracking.html'],
+    'backtracking.html':    ['dfs.html', 'bitmask-dp.html', 'bit.html'],
+    'linear-dp.html':       ['knapsack.html', 'greedy.html', 'bit-fenwick.html'],
+    'knapsack.html':        ['linear-dp.html', 'greedy.html', 'bitmask-dp.html'],
+    'interval-dp.html':     ['tree-dp.html', 'knapsack.html', 'dp-opt.html'],
+    'tree-dp.html':         ['interval-dp.html', 'lca.html', 'union-find.html'],
+    'digit-dp.html':        ['bitmask-dp.html', 'linear-dp.html', 'backtracking.html'],
+    'bitmask-dp.html':      ['bit.html', 'digit-dp.html', 'knapsack.html'],
+    'dp-opt.html':          ['monotone-queue.html', 'interval-dp.html', 'linear-dp.html'],
+    'graph-rep.html':       ['shortest-path.html', 'mst.html', 'dfs.html'],
+    'shortest-path.html':   ['mst.html', 'topo-sort.html', 'network-flow.html'],
+    'mst.html':             ['shortest-path.html', 'union-find.html', 'greedy.html'],
+    'topo-sort.html':       ['scc.html', 'shortest-path.html', 'bfs.html'],
+    'scc.html':             ['topo-sort.html', 'bipartite.html', 'tarjan'],
+    'bipartite.html':       ['network-flow.html', 'hungarian', 'dfs.html'],
+    'network-flow.html':    ['bipartite.html', 'shortest-path.html', 'dfs.html'],
+    'lca.html':             ['tree-dp.html', 'union-find.html', 'dfs.html'],
+    'euler.html':           ['dfs.html', 'graph-rep.html', 'scc.html'],
+    'kmp.html':             ['hash.html', 'trie.html', 'manacher.html'],
+    'hash.html':            ['kmp.html', 'trie.html', 'manacher.html'],
+    'trie.html':            ['hash.html', 'ac-automaton.html', 'kmp.html'],
+    'ac-automaton.html':    ['trie.html', 'kmp.html', 'suffix-array.html'],
+    'suffix-array.html':    ['ac-automaton.html', 'manacher.html', 'hash.html'],
+    'manacher.html':        ['kmp.html', 'hash.html', 'suffix-array.html'],
+    'union-find.html':      ['mst.html', 'lca.html', 'bipartite.html'],
+    'segment-tree.html':    ['bit-fenwick.html', 'persistent.html', 'monotone-stack.html'],
+    'bit-fenwick.html':     ['segment-tree.html', 'prefix-sum.html', 'monotone-queue.html'],
+    'st-table.html':        ['segment-tree.html', 'sparse-table', 'lca.html'],
+    'monotone-stack.html':  ['monotone-queue.html', 'segment-tree.html', 'dp-opt.html'],
+    'monotone-queue.html':  ['monotone-stack.html', 'dp-opt.html', 'bfs.html'],
+    'persistent.html':      ['segment-tree.html', 'trie.html', 'bit-fenwick.html'],
+    'prime.html':           ['gcd.html', 'combinatorics.html', 'matrix.html'],
+    'gcd.html':             ['prime.html', 'combinatorics.html', 'matrix.html'],
+    'combinatorics.html':   ['gcd.html', 'prime.html', 'sg.html'],
+    'matrix.html':          ['gcd.html', 'fft.html', 'gauss.html'],
+    'sg.html':              ['bitmask-dp.html', 'combinatorics.html', 'greedy.html'],
+    'gauss.html':           ['matrix.html', 'fft.html', 'gcd.html'],
+    'fft.html':             ['matrix.html', 'gauss.html', 'ntt'],
+    'basic-geo.html':       ['convex-hull.html', 'two-pointer.html', 'bit.html'],
+    'convex-hull.html':     ['basic-geo.html', 'two-pointer.html', 'divide-conquer.html'],
+    'two-pointer.html':     ['binary-search.html', 'monotone-queue.html', 'greedy.html'],
+    'mo.html':              ['two-pointer.html', 'bit-fenwick.html', 'sqrt'],
+    'tricks.html':          ['stl.html', 'binary-search.html', 'bit.html'],
+  };
+
+  const currentFile = window.location.pathname.split('/').pop();
+  const related = RELATIONS[currentFile];
+  if (related && searchIndex === null) {
+    // Load search index for cross-links
+    const script = document.createElement('script');
+    script.src = BASE + 'search-index.js';
+    script.onload = () => {
+      if (typeof SEARCH_INDEX === 'undefined') return;
+      const crossLinks = related
+        .map(f => SEARCH_INDEX.find(item => item.url.endsWith(f)))
+        .filter(Boolean);
+      if (!crossLinks.length) return;
+
+      const section = document.createElement('div');
+      section.className = 'section cross-links-section';
+      section.innerHTML = `
+        <h2>相关算法</h2>
+        <div class="cross-links-grid">
+          ${crossLinks.map(item => `
+            <a class="cross-link-card" href="${BASE}${item.url}">
+              <span class="cross-link-cat">${item.cat}</span>
+              <span class="cross-link-title">${item.title}</span>
+            </a>
+          `).join('')}
+        </div>
+      `;
+      const container = document.querySelector('.container');
+      if (container) container.appendChild(section);
+    };
+    document.head.appendChild(script);
+  }
+
+  // ===== SVG helpers =====
+  function copyIcon() {
+    return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  }
+  function checkIcon() {
+    return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  }
+
+  // ===== Helper: get relative base path =====
+  function getBasePath() {
+    const path = window.location.pathname;
+    if (/\/\d{2}-[^/]+\//.test(path)) return '../';
+    return '';
+  }
+})();

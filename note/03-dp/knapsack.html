@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>背包问题 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+<!-- 面包屑导航 -->
+<div class="breadcrumb">
+  <a href="../index.html">首页</a> &gt;
+  <a href="../index.html#03-dp">动态规划</a> &gt;
+  <span>背包问题</span>
+</div>
+
+<!-- 页面标题 -->
+<div class="page-header">
+  <h1>背包问题</h1>
+  <p class="subtitle">Knapsack Problems &mdash; 动态规划中最经典的问题模型</p>
+  <div class="tags">
+    <span class="tag tag-dp">动态规划</span>
+    <span class="tag tag-mid">中等</span>
+    <span class="tag tag-base">基础</span>
+  </div>
+</div>
+
+<!-- 目录 -->
+<div class="toc">
+  <h3>目录</h3>
+  <ul>
+    <li><a href="#overview">背包问题概述</a></li>
+    <li><a href="#knapsack-01">01 背包 (0/1 Knapsack)</a></li>
+    <li><a href="#knapsack-complete">完全背包 (Complete Knapsack)</a></li>
+    <li><a href="#knapsack-multiple">多重背包 (Multiple Knapsack)</a></li>
+    <li><a href="#knapsack-group">分组背包 (Group Knapsack)</a></li>
+    <li><a href="#knapsack-variants">背包问题变体</a></li>
+    <li><a href="#summary">总结与对比</a></li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- 1. 背包问题概述 -->
+<!-- ============================================================ -->
+<div class="section" id="overview">
+  <h2>背包问题概述</h2>
+  <p>背包问题是组合优化中的一类经典问题：给定一组物品，每件物品有重量和价值，在限定的总重量内，选择若干物品使得总价值最大。背包问题是动态规划的入门经典，也是理解状态转移方程的绝佳模型。</p>
+
+  <h3>核心要素</h3>
+  <ul>
+    <li><strong>物品集合</strong>：n 件物品，第 i 件物品的重量为 <code>w[i]</code>，价值为 <code>v[i]</code></li>
+    <li><strong>背包容量</strong>：背包能承受的最大总重量为 W</li>
+    <li><strong>决策</strong>：对每件物品选择"选"或"不选"（或选几个）</li>
+    <li><strong>目标</strong>：在不超过背包容量的前提下，使所选物品的总价值最大</li>
+  </ul>
+
+  <h3>分类总览</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>类型</th>
+          <th>每件物品可选次数</th>
+          <th>时间复杂度</th>
+          <th>核心特征</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>01 背包</strong></td>
+          <td>最多选 1 次</td>
+          <td>O(nW)</td>
+          <td>每件物品只有选/不选两种状态</td>
+        </tr>
+        <tr>
+          <td><strong>完全背包</strong></td>
+          <td>无限次</td>
+          <td>O(nW)</td>
+          <td>每件物品可以重复选取</td>
+        </tr>
+        <tr>
+          <td><strong>多重背包</strong></td>
+          <td>最多选 s[i] 次</td>
+          <td>O(nW log s) / O(nW)</td>
+          <td>每件物品有数量限制</td>
+        </tr>
+        <tr>
+          <td><strong>分组背包</strong></td>
+          <td>每组最多选 1 件</td>
+          <td>O(nW)</td>
+          <td>物品被分为若干组，每组选一件</td>
+        </tr>
+        <tr>
+          <td><strong>混合背包</strong></td>
+          <td>以上混合</td>
+          <td>视组合而定</td>
+          <td>不同物品有不同的选取规则</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>DP 思维框架</h3>
+  <div class="diagram">
+    <pre>
+    状态定义        状态转移方程        计算顺序        空间优化
+    ┌──────┐       ┌──────────┐       ┌──────┐       ┌──────┐
+    │ dp[i][w]│ ──&gt; │ 选/不选决策 │ ──&gt; │ 正序/逆序│ ──&gt; │ 一维数组│
+    └──────┘       └──────────┘       └──────┘       └──────┘
+     i: 考虑前i件    max(选, 不选)      先物品后容量     滚动数组
+     w: 当前容量                                      或原地更新
+    </pre>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 2. 01 背包 -->
+<!-- ============================================================ -->
+<div class="section" id="knapsack-01">
+  <h2>01 背包 (0/1 Knapsack)</h2>
+  <p>最基础的背包模型。有 n 件物品和容量为 W 的背包，第 i 件物品重量为 <code>w[i]</code>，价值为 <code>v[i]</code>。每件物品只能选一次，求背包能装的最大价值。</p>
+
+  <h3>状态定义</h3>
+  <div class="box box-info">
+    <div class="box-title">状态定义</div>
+    <p><code>dp[i][j]</code> 表示：从前 i 件物品中选取，背包容量为 j 时能获得的最大价值。</p>
+    <ul>
+      <li><code>i</code>：考虑的物品范围，0 到 n</li>
+      <li><code>j</code>：当前背包剩余容量，0 到 W</li>
+    </ul>
+  </div>
+
+  <h3>状态转移方程</h3>
+  <div class="box box-tip">
+    <div class="box-title">转移方程</div>
+    <p>对于第 i 件物品，有两种选择：</p>
+    <ul>
+      <li><strong>不选第 i 件</strong>：<code>dp[i][j] = dp[i-1][j]</code></li>
+      <li><strong>选第 i 件</strong>（前提：j &gt;= w[i]）：<code>dp[i][j] = dp[i-1][j - w[i]] + v[i]</code></li>
+    </ul>
+    <p>取两者较大值：</p>
+    <p><code>dp[i][j] = max(dp[i-1][j], dp[i-1][j - w[i]] + v[i])</code></p>
+  </div>
+
+  <h3>转移方程详解</h3>
+  <div class="steps">
+    <div class="step">
+      <strong>不选第 i 件物品</strong>：当前背包容量 j 不变，价值等于"从前 i-1 件物品中选、容量为 j"的最大价值，即 <code>dp[i-1][j]</code>。
+    </div>
+    <div class="step">
+      <strong>选第 i 件物品</strong>：需要先预留 w[i] 的容量给第 i 件，剩余容量为 <code>j - w[i]</code>。在"从前 i-1 件物品中选、容量为 j-w[i]"的基础上，加上第 i 件的价值 v[i]，即 <code>dp[i-1][j-w[i]] + v[i]</code>。
+    </div>
+    <div class="step">
+      <strong>取最优</strong>：两种决策取较大值，得到 <code>dp[i][j]</code> 的最终答案。
+    </div>
+  </div>
+
+  <h3>DP 表填表过程</h3>
+  <p>以 n=4, W=5 为例，物品信息如下：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>物品 i</th><th>重量 w[i]</th><th>价值 v[i]</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>2</td><td>3</td></tr>
+        <tr><td>2</td><td>1</td><td>2</td></tr>
+        <tr><td>3</td><td>3</td><td>4</td></tr>
+        <tr><td>4</td><td>2</td><td>5</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>DP 表（行为物品，列为容量）：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>i \ j</th><th>j=0</th><th>j=1</th><th>j=2</th><th>j=3</th><th>j=4</th><th>j=5</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>i=0</strong></td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td><strong>i=1</strong> (w=2,v=3)</td><td>0</td><td>0</td><td>3</td><td>3</td><td>3</td><td>3</td></tr>
+        <tr><td><strong>i=2</strong> (w=1,v=2)</td><td>0</td><td>2</td><td>3</td><td>5</td><td>5</td><td>5</td></tr>
+        <tr><td><strong>i=3</strong> (w=3,v=4)</td><td>0</td><td>2</td><td>3</td><td>5</td><td>6</td><td>7</td></tr>
+        <tr><td><strong>i=4</strong> (w=2,v=5)</td><td>0</td><td>2</td><td>5</td><td>7</td><td>8</td><td>10</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>最终答案：<code>dp[4][5] = 10</code>，选择物品 2 和物品 4（价值 2+5=7，重量 1+2=3... 实际最优为物品 1+2+4 或 3+4）。读者可自行回溯验证。</p>
+
+  <h3>填表示例详解</h3>
+  <div class="box box-info">
+    <div class="box-title">dp[4][5] 的计算过程</div>
+    <p>考虑第 4 件物品（w=2, v=5），容量 j=5：</p>
+    <ul>
+      <li>不选物品 4：<code>dp[3][5] = 7</code></li>
+      <li>选物品 4（j=5 &gt;= w[4]=2）：<code>dp[3][5-2] + 5 = dp[3][3] + 5 = 5 + 5 = 10</code></li>
+      <li><code>dp[4][5] = max(7, 10) = 10</code></li>
+    </ul>
+  </div>
+
+  <h3>空间优化：一维数组</h3>
+  <p>观察转移方程，<code>dp[i][j]</code> 只依赖于 <code>dp[i-1][...]</code>，即上一行的值。因此可以用一维数组滚动更新。</p>
+
+  <div class="box box-warn">
+    <div class="box-title">关键：逆序遍历容量</div>
+    <p>更新一维数组 <code>dp[j]</code> 时，必须 <strong>从 W 到 w[i] 逆序遍历</strong>。原因：正序遍历时，<code>dp[j-w[i]]</code> 可能已经在本轮被更新过（即已经考虑了第 i 件物品），导致同一件物品被重复选取——这就变成了完全背包。</p>
+    <p>逆序保证了 <code>dp[j-w[i]]</code> 仍是上一轮（i-1）的值。</p>
+  </div>
+
+  <div class="diagram">
+    <pre>
+    逆序遍历示意（i=4, w[4]=2, v[4]=5）:
+
+    j:    5     4     3     2     1     0
+          |     |     |     |     |     |
+          v     v     v     v     v     v
+    dp: [ ? ] [ ? ] [ ? ] [ ? ] [ 2 ] [ 0 ]
+
+    从 j=5 到 j=2 逆序更新:
+      dp[5] = max(dp[5], dp[5-2] + 5)  -- dp[3] 来自上一轮
+      dp[4] = max(dp[4], dp[4-2] + 5)  -- dp[2] 来自上一轮
+      dp[3] = max(dp[3], dp[3-2] + 5)  -- dp[1] 来自上一轮
+      dp[2] = max(dp[2], dp[2-2] + 5)  -- dp[0] 来自上一轮
+    </pre>
+  </div>
+
+  <h3>完整代码模板</h3>
+  <pre><code><span class="cm">// 01 背包 - 二维写法</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, W;
+    cin &gt;&gt; n &gt;&gt; W;
+    vector&lt;<span class="ty">int</span>&gt; w(n + <span class="num">1</span>), v(n + <span class="num">1</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        cin &gt;&gt; w[i] &gt;&gt; v[i];
+
+    <span class="cm">// dp[i][j]: 前i件物品, 容量j的最大价值</span>
+    vector&lt;vector&lt;<span class="ty">int</span>&gt;&gt; dp(n + <span class="num">1</span>, vector&lt;<span class="ty">int</span>&gt;(W + <span class="num">1</span>, <span class="num">0</span>));
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt;= W; j++) {
+            dp[i][j] = dp[i - <span class="num">1</span>][j];  <span class="cm">// 不选</span>
+            <span class="kw">if</span> (j &gt;= w[i])
+                dp[i][j] = max(dp[i][j], dp[i - <span class="num">1</span>][j - w[i]] + v[i]);  <span class="cm">// 选</span>
+        }
+    }
+    cout &lt;&lt; dp[n][W] &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}
+</code></pre>
+
+  <pre><code><span class="cm">// 01 背包 - 一维空间优化（推荐写法）</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, W;
+    cin &gt;&gt; n &gt;&gt; W;
+    vector&lt;<span class="ty">int</span>&gt; w(n + <span class="num">1</span>), v(n + <span class="num">1</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        cin &gt;&gt; w[i] &gt;&gt; v[i];
+
+    vector&lt;<span class="ty">int</span>&gt; dp(W + <span class="num">1</span>, <span class="num">0</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="kw">for</span> (<span class="ty">int</span> j = W; j &gt;= w[i]; j--) {  <span class="cm">// 逆序！</span>
+            dp[j] = max(dp[j], dp[j - w[i]] + v[i]);
+        }
+    }
+    cout &lt;&lt; dp[W] &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}
+</code></pre>
+
+  <h3>复杂度分析</h3>
+  <div class="complexity">
+    <span class="label">时间复杂度：</span>
+    <span class="value">O(n * W)</span>
+  </div>
+  <div class="complexity">
+    <span class="label">空间复杂度：</span>
+    <span class="value">O(W) 一维优化后</span>
+  </div>
+
+  <h3>经典问题</h3>
+  <div class="problem">
+    <div class="problem-title">洛谷 P1048 采药</div>
+    <p>辰辰是个天资聪颖的孩子，他的梦想是成为世界上最伟大的医师。他采到了若干株药材，每株药材需要一定时间采摘并有一定价值，在有限时间内使总价值最大。</p>
+    <p><strong>思路</strong>：标准 01 背包模型，时间为容量，价值为价值。</p>
+  </div>
+  <div class="problem">
+    <div class="problem-title">洛谷 P1060 开心的金明</div>
+    <p>金明有 N 元预算，想买若干物品使每件物品的价格与重要度的乘积之和最大。</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3. 完全背包 -->
+<!-- ============================================================ -->
+<div class="section" id="knapsack-complete">
+  <h2>完全背包 (Complete Knapsack)</h2>
+  <p>与 01 背包的区别：每件物品可以选取<strong>无限次</strong>（只要背包容量允许）。</p>
+
+  <h3>与 01 背包的区别</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>对比项</th><th>01 背包</th><th>完全背包</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>每件物品选取次数</td><td>最多 1 次</td><td>无限次</td></tr>
+        <tr><td>二维转移</td><td>dp[i-1][j-w[i]]</td><td>dp[i][j-w[i]]</td></tr>
+        <tr><td>一维遍历顺序</td><td>逆序（W to w[i]）</td><td>正序（w[i] to W）</td></tr>
+        <tr><td>原因</td><td>保证每件物品只用一次</td><td>允许重复使用同一物品</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>状态转移方程</h3>
+  <div class="box box-tip">
+    <div class="box-title">完全背包转移方程</div>
+    <p>二维写法：</p>
+    <p><code>dp[i][j] = max(dp[i-1][j], dp[i][j - w[i]] + v[i])</code></p>
+    <p>注意第二个分支用的是 <code>dp[i][j-w[i]]</code>（同一行），而非 <code>dp[i-1][j-w[i]]</code>。这表示"在已经考虑过第 i 件物品的基础上，再选一次"。</p>
+  </div>
+
+  <h3>为什么正序遍历</h3>
+  <div class="box box-info">
+    <div class="box-title">正序遍历的直觉理解</div>
+    <p>01 背包逆序是为了"只选一次"——保证更新 dp[j] 时用的是上一行的值。</p>
+    <p>完全背包正序是为了"可选多次"——更新 dp[j] 时，dp[j-w[i]] 可能已经在本轮被更新（即已经选过第 i 件物品），在此基础上再选一次，等价于选了多次。</p>
+  </div>
+
+  <div class="diagram">
+    <pre>
+    完全背包正序遍历示意（i=1, w[1]=2, v[1]=3）:
+
+    j:    0     1     2     3     4     5
+          |     |     |     |     |     |
+          v     v     v     v     v     v
+    dp: [ 0 ] [ 0 ] [ 0 ] [ 0 ] [ 0 ] [ 0 ]
+
+    正序更新 j=2,3,4,5:
+      dp[2] = max(dp[2], dp[0] + 3) = 3   <span class="cm">// 选了1次物品1</span>
+      dp[3] = max(dp[3], dp[1] + 3) = 3   <span class="cm">// dp[1]未更新=0, 选1次</span>
+      dp[4] = max(dp[4], dp[2] + 3) = 6   <span class="cm">// dp[2]已更新=3, 选2次</span>
+      dp[5] = max(dp[5], dp[3] + 3) = 6   <span class="cm">// dp[3]已更新=3, 选2次</span>
+
+    dp[4]=6 的含义: 选了2次物品1（重量2+2=4, 价值3+3=6）
+    </pre>
+  </div>
+
+  <h3>完整代码模板</h3>
+  <pre><code><span class="cm">// 完全背包 - 一维空间优化</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, W;
+    cin &gt;&gt; n &gt;&gt; W;
+    vector&lt;<span class="ty">int</span>&gt; w(n + <span class="num">1</span>), v(n + <span class="num">1</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        cin &gt;&gt; w[i] &gt;&gt; v[i];
+
+    vector&lt;<span class="ty">int</span>&gt; dp(W + <span class="num">1</span>, <span class="num">0</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="kw">for</span> (<span class="ty">int</span> j = w[i]; j &lt;= W; j++) {  <span class="cm">// 正序！</span>
+            dp[j] = max(dp[j], dp[j - w[i]] + v[i]);
+        }
+    }
+    cout &lt;&lt; dp[W] &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}
+</code></pre>
+
+  <h3>复杂度分析</h3>
+  <div class="complexity">
+    <span class="label">时间复杂度：</span>
+    <span class="value">O(n * W)</span>
+  </div>
+  <div class="complexity">
+    <span class="label">空间复杂度：</span>
+    <span class="value">O(W)</span>
+  </div>
+
+  <h3>经典问题</h3>
+  <div class="problem">
+    <div class="problem-title">洛谷 P1616 疯狂的采药</div>
+    <p>与"采药"类似，但每种药材可以无限采摘。标准完全背包问题。</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4. 多重背包 -->
+<!-- ============================================================ -->
+<div class="section" id="knapsack-multiple">
+  <h2>多重背包 (Multiple Knapsack)</h2>
+  <p>每件物品有<strong>数量限制</strong>：第 i 件物品最多选 <code>s[i]</code> 次。是 01 背包和完全背包的推广。</p>
+
+  <h3>朴素做法</h3>
+  <p>将第 i 件物品拆成 s[i] 个独立的 01 背包物品，然后用 01 背包求解。时间复杂度 <code>O(W * sum(s[i]))</code>，当 s[i] 较大时效率低下。</p>
+
+  <h3>优化一：二进制拆分</h3>
+  <div class="box box-tip">
+    <div class="box-title">二进制拆分思想</div>
+    <p>将数量 s 拆分为若干组，使得这些组能组合出 0 到 s 的任意整数。</p>
+    <p>拆分方式：1, 2, 4, 8, ..., 2^k, remainder，其中 remainder = s - (1 + 2 + 4 + ... + 2^k)。</p>
+    <p>例如 s=10 拆分为 1, 2, 4, 3（因为 1+2+4=7, remainder=10-7=3）。</p>
+    <p>拆分后每个组作为一个 01 背包物品，总物品数从 s 降到 <code>log(s)</code>。</p>
+  </div>
+
+  <div class="diagram">
+    <pre>
+    二进制拆分示意（s=10）:
+
+    原始: 10个相同物品 ──拆分──&gt; 4个不同物品（大小为1,2,4,3）
+
+    组合验证:
+      1 = 1
+      2 = 2
+      3 = 1+2 或 3
+      4 = 4
+      5 = 1+4
+      6 = 2+4
+      7 = 1+2+4
+      8 = 1+2+4+1(remainder?)  ← 实际: 3+4+1?
+      9 = ...                   ← 需要组合验证
+      10 = 1+2+4+3
+
+    每种数量都能由这些组的子集和表示
+    </pre>
+  </div>
+
+  <h3>二进制拆分代码</h3>
+  <pre><code><span class="cm">// 多重背包 - 二进制拆分优化</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, W;
+    cin &gt;&gt; n &gt;&gt; W;
+    vector&lt;<span class="ty">int</span>&gt; w(n), v(n), s(n);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        cin &gt;&gt; w[i] &gt;&gt; v[i] &gt;&gt; s[i];
+
+    <span class="cm">// 二进制拆分，生成新的物品列表</span>
+    vector&lt;<span class="ty">int</span>&gt; nw, nv;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="ty">int</span> k = <span class="num">1</span>, rem = s[i];
+        <span class="kw">while</span> (k &lt;= rem) {
+            nw.push_back(w[i] * k);
+            nv.push_back(v[i] * k);
+            rem -= k;
+            k *= <span class="num">2</span>;
+        }
+        <span class="kw">if</span> (rem &gt; <span class="num">0</span>) {
+            nw.push_back(w[i] * rem);
+            nv.push_back(v[i] * rem);
+        }
+    }
+
+    <span class="cm">// 01 背包求解</span>
+    vector&lt;<span class="ty">int</span>&gt; dp(W + <span class="num">1</span>, <span class="num">0</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; (<span class="ty">int</span>)nw.size(); i++) {
+        <span class="kw">for</span> (<span class="ty">int</span> j = W; j &gt;= nw[i]; j--) {
+            dp[j] = max(dp[j], dp[j - nw[i]] + nv[i]);
+        }
+    }
+    cout &lt;&lt; dp[W] &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}
+</code></pre>
+
+  <h3>优化二：单调队列优化</h3>
+  <div class="box box-hard">
+    <div class="box-title">单调队列优化（进阶）</div>
+    <p>对于每件物品 i，将容量 j 按 <code>j % w[i]</code> 分组。同组内的转移可以用单调队列在 O(W) 时间内完成。</p>
+    <p>总时间复杂度优化为 <code>O(nW)</code>，与二进制拆分的 <code>O(nW log s)</code> 相比更优。</p>
+  </div>
+
+  <div class="box box-info">
+    <div class="box-title">单调队列优化核心思路</div>
+    <p>令 <code>r = j % w[i]</code>，则 <code>j = k * w[i] + r</code>。转移方程可以改写为：</p>
+    <p><code>dp[j] = max{ dp[r + t*w[i]] + (k-t)*v[i] } for t in [max(0, k-s[i]), k]</code></p>
+    <p>这是一个滑动窗口最大值问题，可用单调队列在 O(1) 均摊时间内求解。</p>
+  </div>
+
+  <pre><code><span class="cm">// 多重背包 - 单调队列优化</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, W;
+    cin &gt;&gt; n &gt;&gt; W;
+    vector&lt;<span class="ty">int</span>&gt; w(n + <span class="num">1</span>), v(n + <span class="num">1</span>), s(n + <span class="num">1</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        cin &gt;&gt; w[i] &gt;&gt; v[i] &gt;&gt; s[i];
+
+    vector&lt;<span class="ty">int</span>&gt; dp(W + <span class="num">1</span>, <span class="num">0</span>), ndp(W + <span class="num">1</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        ndp = dp;
+        <span class="kw">for</span> (<span class="ty">int</span> r = <span class="num">0</span>; r &lt; w[i]; r++) {
+            <span class="cm">// 对余数 r 的分组使用单调队列</span>
+            deque&lt;<span class="ty">int</span>&gt; q;
+            <span class="kw">for</span> (<span class="ty">int</span> k = <span class="num">0</span>; r + k * w[i] &lt;= W; k++) {
+                <span class="ty">int</span> j = r + k * w[i];
+                <span class="cm">// 维护窗口大小 s[i]</span>
+                <span class="kw">while</span> (!q.empty() &amp;&amp; k - q.front() &gt; s[i])
+                    q.pop_front();
+                <span class="cm">// 维护单调递减</span>
+                <span class="ty">int</span> val = dp[j] - k * v[i];
+                <span class="kw">while</span> (!q.empty() &amp;&amp;
+                       dp[r + q.back() * w[i]] - q.back() * v[i] &lt;= val)
+                    q.pop_back();
+                q.push_back(k);
+                ndp[j] = dp[r + q.front() * w[i]] + (k - q.front()) * v[i];
+            }
+        }
+        dp = ndp;
+    }
+    cout &lt;&lt; dp[W] &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}
+</code></pre>
+
+  <h3>复杂度对比</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>方法</th><th>时间复杂度</th><th>空间复杂度</th><th>适用场景</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>朴素拆分</td><td>O(W * sum(s))</td><td>O(W)</td><td>s[i] 较小</td></tr>
+        <tr><td>二进制拆分</td><td>O(W * sum(log s))</td><td>O(W)</td><td>通用，最常用</td></tr>
+        <tr><td>单调队列</td><td>O(nW)</td><td>O(W)</td><td>s[i] 较大，追求最优复杂度</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>经典问题</h3>
+  <div class="problem">
+    <div class="problem-title">洛谷 P1776 宝物筛选</div>
+    <p>多重背包裸题，有 n 种宝物，每种有重量、价值和数量限制，求最大价值。</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5. 分组背包 -->
+<!-- ============================================================ -->
+<div class="section" id="knapsack-group">
+  <h2>分组背包 (Group Knapsack)</h2>
+  <p>物品被分为若干组，每组内有若干物品。<strong>每组最多选择一件物品</strong>。目标是使总价值最大。</p>
+
+  <h3>状态定义与转移</h3>
+  <div class="box box-info">
+    <div class="box-title">分组背包状态</div>
+    <p><code>dp[k][j]</code>：考虑前 k 组物品，容量为 j 时的最大价值。</p>
+    <p>转移时，对第 k 组的每件物品 i，选择其中一件（或不选）：</p>
+    <p><code>dp[k][j] = max(dp[k-1][j], max over i in group k { dp[k-1][j-w[i]] + v[i] })</code></p>
+  </div>
+
+  <h3>关键：遍历顺序</h3>
+  <div class="box box-warn">
+    <div class="box-title">三重循环的顺序</div>
+    <p>分组背包的循环顺序为：<strong>先枚举组，再枚举容量，最后枚举组内物品</strong>。</p>
+    <p>即：for k (组) &rarr; for j (容量, 逆序) &rarr; for i (组内物品)</p>
+    <p>注意容量 j 必须在组内物品 i 之前枚举，否则同组物品可能被同时选取。</p>
+  </div>
+
+  <div class="diagram">
+    <pre>
+    分组背包循环结构:
+
+    for (k = 1; k &lt;= K; k++)           <span class="cm">// 枚举每一组</span>
+      for (j = W; j &gt;= 0; j--)         <span class="cm">// 枚举容量（逆序）</span>
+        for (i in group[k])             <span class="cm">// 枚举组内物品</span>
+          if (j &gt;= w[i])
+            dp[j] = max(dp[j], dp[j - w[i]] + v[i]);
+
+    为什么容量在组内物品之前？
+    ─ 如果先枚举物品再枚举容量，相当于组内每件物品独立做01背包，
+      可能选到多件同组物品，违背"每组最多选一件"的约束。
+    </pre>
+  </div>
+
+  <h3>完整代码模板</h3>
+  <pre><code><span class="cm">// 分组背包</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, W;
+    cin &gt;&gt; n &gt;&gt; W;
+
+    <span class="cm">// 读入分组，group[k] 存储第 k 组的物品索引</span>
+    <span class="ty">int</span> K;
+    cin &gt;&gt; K;
+    vector&lt;<span class="ty">int</span>&gt; w(n + <span class="num">1</span>), v(n + <span class="num">1</span>);
+    vector&lt;vector&lt;<span class="ty">int</span>&gt;&gt; group(K + <span class="num">1</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="ty">int</span> g;
+        cin &gt;&gt; w[i] &gt;&gt; v[i] &gt;&gt; g;
+        group[g].push_back(i);
+    }
+
+    vector&lt;<span class="ty">int</span>&gt; dp(W + <span class="num">1</span>, <span class="num">0</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> k = <span class="num">1</span>; k &lt;= K; k++) {
+        <span class="kw">for</span> (<span class="ty">int</span> j = W; j &gt;= <span class="num">0</span>; j--) {       <span class="cm">// 容量逆序</span>
+            <span class="kw">for</span> (<span class="ty">int</span> idx : group[k]) {         <span class="cm">// 组内物品</span>
+                <span class="kw">if</span> (j &gt;= w[idx])
+                    dp[j] = max(dp[j], dp[j - w[idx]] + v[idx]);
+            }
+        }
+    }
+    cout &lt;&lt; dp[W] &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}
+</code></pre>
+
+  <h3>复杂度分析</h3>
+  <div class="complexity">
+    <span class="label">时间复杂度：</span>
+    <span class="value">O(K * W * max_group_size)</span>
+  </div>
+  <div class="complexity">
+    <span class="label">空间复杂度：</span>
+    <span class="value">O(W)</span>
+  </div>
+
+  <h3>经典问题</h3>
+  <div class="problem">
+    <div class="problem-title">洛谷 P1757 通天之分组背包</div>
+    <p>物品被分组，每组只能选一件，求最大价值。分组背包裸题。</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6. 背包问题变体 -->
+<!-- ============================================================ -->
+<div class="section" id="knapsack-variants">
+  <h2>背包问题变体</h2>
+
+  <!-- 6.1 求方案数 -->
+  <h3>6.1 求方案数</h3>
+  <p>问题变体：不求最大价值，而是求"恰好装满容量 W"的方案数（或使价值恰好为某值的方案数）。</p>
+
+  <div class="box box-tip">
+    <div class="box-title">方案数转移</div>
+    <p>将 <code>max</code> 操作替换为 <code>+</code> 操作：</p>
+    <p><code>dp[j] += dp[j - w[i]]</code></p>
+    <p>初始条件：<code>dp[0] = 1</code>（容量为 0 时有 1 种方案：什么都不选）</p>
+  </div>
+
+  <pre><code><span class="cm">// 01 背包求方案数</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, W;
+    cin &gt;&gt; n &gt;&gt; W;
+    vector&lt;<span class="ty">int</span>&gt; w(n + <span class="num">1</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) cin &gt;&gt; w[i];
+
+    <span class="ty">int</span> MOD = <span class="num">1e9</span> + <span class="num">7</span>;
+    vector&lt;<span class="ty">int</span>&gt; dp(W + <span class="num">1</span>, <span class="num">0</span>);
+    dp[<span class="num">0</span>] = <span class="num">1</span>;  <span class="cm">// 容量为0有1种方案</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="kw">for</span> (<span class="ty">int</span> j = W; j &gt;= w[i]; j--) {
+            dp[j] = (dp[j] + dp[j - w[i]]) % MOD;
+        }
+    }
+    cout &lt;&lt; dp[W] &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}
+</code></pre>
+
+  <div class="problem">
+    <div class="problem-title">洛谷 P1164 小A点菜</div>
+    <p>小A有 M 元钱，N 种菜，每种菜有价格。问花光 M 元钱的点菜方案数。</p>
+  </div>
+
+  <!-- 6.2 求具体方案 -->
+  <h3>6.2 求具体方案（方案回溯）</h3>
+  <p>有时不仅需要最优值，还需要知道具体选了哪些物品。需要记录每一步的决策，然后从终点回溯。</p>
+
+  <div class="box box-info">
+    <div class="box-title">方案回溯思路</div>
+    <p>使用二维 DP 表，从 <code>dp[n][W]</code> 出发：</p>
+    <ul>
+      <li>如果 <code>dp[i][j] == dp[i-1][j]</code>，说明第 i 件物品没有选</li>
+      <li>如果 <code>dp[i][j] == dp[i-1][j-w[i]] + v[i]</code>，说明第 i 件物品被选中</li>
+    </ul>
+    <p>逆序回溯 i 从 n 到 1，记录所有被选中的物品。</p>
+  </div>
+
+  <pre><code><span class="cm">// 01 背包 - 求具体方案</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, W;
+    cin &gt;&gt; n &gt;&gt; W;
+    vector&lt;<span class="ty">int</span>&gt; w(n + <span class="num">1</span>), v(n + <span class="num">1</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        cin &gt;&gt; w[i] &gt;&gt; v[i];
+
+    <span class="cm">// 二维 DP</span>
+    vector&lt;vector&lt;<span class="ty">int</span>&gt;&gt; dp(n + <span class="num">1</span>, vector&lt;<span class="ty">int</span>&gt;(W + <span class="num">1</span>, <span class="num">0</span>));
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt;= W; j++) {
+            dp[i][j] = dp[i - <span class="num">1</span>][j];
+            <span class="kw">if</span> (j &gt;= w[i])
+                dp[i][j] = max(dp[i][j], dp[i - <span class="num">1</span>][j - w[i]] + v[i]);
+        }
+    }
+
+    <span class="cm">// 回溯方案</span>
+    vector&lt;<span class="ty">int</span>&gt; chosen;
+    <span class="ty">int</span> j = W;
+    <span class="kw">for</span> (<span class="ty">int</span> i = n; i &gt;= <span class="num">1</span>; i--) {
+        <span class="kw">if</span> (j &gt;= w[i] &amp;&amp; dp[i][j] == dp[i - <span class="num">1</span>][j - w[i]] + v[i]) {
+            chosen.push_back(i);  <span class="cm">// 选了第 i 件</span>
+            j -= w[i];
+        }
+    }
+    reverse(chosen.begin(), chosen.end());
+
+    cout &lt;&lt; dp[n][W] &lt;&lt; endl;
+    cout &lt;&lt; <span class="str">"选择的物品: "</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> idx : chosen) cout &lt;&lt; idx &lt;&lt; <span class="str">" "</span>;
+    cout &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}
+</code></pre>
+
+  <div class="box box-warn">
+    <div class="box-title">注意事项</div>
+    <p>方案回溯通常需要保留完整的二维 DP 表，空间复杂度为 O(nW)。如果需要在空间优化后回溯，需要额外记录每步决策。</p>
+  </div>
+
+  <!-- 6.3 混合背包 -->
+  <h3>6.3 混合背包</h3>
+  <p>有些物品只能选一次（01 背包），有些能选无限次（完全背包），有些有数量限制（多重背包）。将三种背包混合在一起。</p>
+
+  <div class="box box-tip">
+    <div class="box-title">混合背包处理策略</div>
+    <p>对每件物品根据其类型分别处理：</p>
+    <ul>
+      <li><strong>01 背包物品</strong>：容量逆序遍历</li>
+      <li><strong>完全背包物品</strong>：容量正序遍历</li>
+      <li><strong>多重背包物品</strong>：二进制拆分后按 01 背包处理</li>
+    </ul>
+    <p>在同一个 DP 数组上，对不同类型物品使用不同的遍历方向即可。</p>
+  </div>
+
+  <pre><code><span class="cm">// 混合背包</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">struct</span> <span class="ty">Item</span> {
+    <span class="ty">int</span> w, v, s;  <span class="cm">// 重量, 价值, 数量 (-1=无限)</span>
+};
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, W;
+    cin &gt;&gt; n &gt;&gt; W;
+
+    vector&lt;<span class="ty">Item</span>&gt; items;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="ty">int</span> w, v, s;
+        cin &gt;&gt; w &gt;&gt; v &gt;&gt; s;
+        <span class="kw">if</span> (s == <span class="num">-1</span>) {
+            <span class="cm">// 01 背包：拆成1个物品</span>
+            items.push_back({w, v, <span class="num">1</span>});
+        } <span class="kw">else if</span> (s == <span class="num">0</span>) {
+            <span class="cm">// 完全背包</span>
+            items.push_back({w, v, <span class="num">0</span>});
+        } <span class="kw">else</span> {
+            <span class="cm">// 多重背包：二进制拆分</span>
+            <span class="ty">int</span> k = <span class="num">1</span>, rem = s;
+            <span class="kw">while</span> (k &lt;= rem) {
+                items.push_back({w * k, v * k, <span class="num">1</span>});
+                rem -= k;
+                k *= <span class="num">2</span>;
+            }
+            <span class="kw">if</span> (rem &gt; <span class="num">0</span>)
+                items.push_back({w * rem, v * rem, <span class="num">1</span>});
+        }
+    }
+
+    vector&lt;<span class="ty">int</span>&gt; dp(W + <span class="num">1</span>, <span class="num">0</span>);
+    <span class="kw">for</span> (<span class="kw">auto</span>&amp; it : items) {
+        <span class="kw">if</span> (it.s == <span class="num">0</span>) {
+            <span class="cm">// 完全背包：正序</span>
+            <span class="kw">for</span> (<span class="ty">int</span> j = it.w; j &lt;= W; j++)
+                dp[j] = max(dp[j], dp[j - it.w] + it.v);
+        } <span class="kw">else</span> {
+            <span class="cm">// 01背包（含拆分后）：逆序</span>
+            <span class="kw">for</span> (<span class="ty">int</span> j = W; j &gt;= it.w; j--)
+                dp[j] = max(dp[j], dp[j - it.w] + it.v);
+        }
+    }
+    cout &lt;&lt; dp[W] &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}
+</code></pre>
+
+  <div class="problem">
+    <div class="problem-title">洛谷 P1833 樱花</div>
+    <p>混合背包问题，有些物品只能选一次，有些可以选无限次，有些有数量限制。</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 7. 总结 -->
+<!-- ============================================================ -->
+<div class="section" id="summary">
+  <h2>总结与对比</h2>
+
+  <h3>核心对比表</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>背包类型</th>
+          <th>转移方程</th>
+          <th>一维遍历</th>
+          <th>关键区别</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>01 背包</strong></td>
+          <td>dp[j] = max(dp[j], dp[j-w]+v)</td>
+          <td>逆序 j: W&rarr;w[i]</td>
+          <td>每件物品最多选 1 次</td>
+        </tr>
+        <tr>
+          <td><strong>完全背包</strong></td>
+          <td>dp[j] = max(dp[j], dp[j-w]+v)</td>
+          <td>正序 j: w[i]&rarr;W</td>
+          <td>每件物品可选无限次</td>
+        </tr>
+        <tr>
+          <td><strong>多重背包</strong></td>
+          <td>01背包 + 拆分</td>
+          <td>逆序（拆分后）</td>
+          <td>二进制拆分 / 单调队列</td>
+        </tr>
+        <tr>
+          <td><strong>分组背包</strong></td>
+          <td>dp[j] = max(dp[j], dp[j-w]+v)</td>
+          <td>组&rarr;容量(逆序)&rarr;物品</td>
+          <td>每组最多选 1 件</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>一维数组遍历方向速记</h3>
+  <div class="array-vis">
+    <div class="cell hi">01<span class="idx">逆序</span></div>
+    <div class="cell active">完全<span class="idx">正序</span></div>
+    <div class="cell done">多重<span class="idx">逆序</span></div>
+    <div class="cell hi">分组<span class="idx">逆序</span></div>
+  </div>
+
+  <div class="box box-tip">
+    <div class="box-title">记忆口诀</div>
+    <p><strong>"只有完全背包正序，其余都逆序"</strong>。正序意味着同一物品可被多次使用（完全背包特性），逆序保证每件物品只使用一次。</p>
+  </div>
+
+  <h3>背包问题解题步骤</h3>
+  <div class="steps">
+    <div class="step">
+      <strong>识别背包类型</strong>：判断每件物品的选取次数限制（01 / 完全 / 多重 / 分组）。
+    </div>
+    <div class="step">
+      <strong>确定状态定义</strong>：<code>dp[j]</code> 表示容量为 j 时的最优值（一维），或 <code>dp[i][j]</code> 表示考虑前 i 件物品（二维）。
+    </div>
+    <div class="step">
+      <strong>写出转移方程</strong>：根据选取次数确定用 max/加法，确定参考上一行还是当前行。
+    </div>
+    <div class="step">
+      <strong>确定遍历顺序</strong>：01/多重/分组背包用逆序，完全背包用正序。
+    </div>
+    <div class="step">
+      <strong>初始化与边界</strong>：一般初始化 dp 全为 0；若要求"恰好装满"，则 dp[0]=0，其余初始化为 -INF。
+    </div>
+    <div class="step">
+      <strong>输出答案</strong>：<code>dp[W]</code> 即为最大价值。若需方案回溯，用二维 DP 并反向追踪。
+    </div>
+  </div>
+
+  <h3>常见变体总结</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>变体</th><th>修改点</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>求方案数</td><td>max &rarr; +</td><td>dp[j] += dp[j-w[i]]，初始 dp[0]=1</td></tr>
+        <tr><td>求具体方案</td><td>二维 DP + 回溯</td><td>从 dp[n][W] 反向追踪决策</td></tr>
+        <tr><td>恰好装满</td><td>初始化变化</td><td>dp[0]=0, 其余=-INF</td></tr>
+        <tr><td>最小背包</td><td>max &rarr; min</td><td>dp[j] = min(dp[j], dp[j-w]+cost)</td></tr>
+        <tr><td>二维费用</td><td>加一维状态</td><td>dp[i][j][k] 两个容量限制</td></tr>
+        <tr><td>依赖背包</td><td>树形 DP + 背包</td><td>物品有依赖关系，先选父再选子</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>复杂度对比总表</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>算法</th>
+          <th>时间复杂度</th>
+          <th>空间复杂度</th>
+          <th>备注</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>01 背包（二维）</td>
+          <td>O(nW)</td>
+          <td>O(nW)</td>
+          <td>便于方案回溯</td>
+        </tr>
+        <tr>
+          <td>01 背包（一维）</td>
+          <td>O(nW)</td>
+          <td>O(W)</td>
+          <td>推荐写法</td>
+        </tr>
+        <tr>
+          <td>完全背包</td>
+          <td>O(nW)</td>
+          <td>O(W)</td>
+          <td>正序遍历</td>
+        </tr>
+        <tr>
+          <td>多重背包（二进制）</td>
+          <td>O(nW log s)</td>
+          <td>O(W)</td>
+          <td>最常用优化</td>
+        </tr>
+        <tr>
+          <td>多重背包（单调队列）</td>
+          <td>O(nW)</td>
+          <td>O(W)</td>
+          <td>最优复杂度</td>
+        </tr>
+        <tr>
+          <td>分组背包</td>
+          <td>O(KW * max_g)</td>
+          <td>O(W)</td>
+          <td>K=组数, max_g=最大组内物品数</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>更多练习题</h3>
+  <div class="problem">
+    <div class="problem-title">洛谷 P1049 装箱问题</div>
+    <p>01 背包的变形：求装完若干物品后剩余的最小容量。</p>
+  </div>
+  <div class="problem">
+    <div class="problem-title">洛谷 P2918 [USACO08NOV] Buying Hay</div>
+    <p>完全背包变体：以最小代价购买至少 H 磅干草。</p>
+  </div>
+  <div class="problem">
+    <div class="problem-title">洛谷 P5322 [BJOI2019] 排兵布阵</div>
+    <p>分组背包 + 排序预处理的综合应用。</p>
+  </div>
+  <div class="problem">
+    <div class="problem-title">洛谷 P1020 导弹拦截</div>
+    <p>结合最长不上升子序列和最少系统数（Dilworth 定理），可与背包思维类比理解。</p>
+  </div>
+</div>
+
+</div> <!-- .container -->
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

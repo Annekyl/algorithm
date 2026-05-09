@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>强连通分量 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt; <a href="../index.html#04">图论</a> &gt; 强连通分量
+  </div>
+
+  <div class="page-header">
+    <h1>强连通分量</h1>
+    <p class="subtitle">Strongly Connected Components &mdash; Tarjan / Kosaraju / 缩点</p>
+    <div class="tags">
+      <span class="tag tag-graph">图论</span>
+      <span class="tag tag-hard">困难</span>
+      <span class="tag tag-base">基础算法</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 强连通分量概述</a></li>
+      <li><a href="#sec2">2. Tarjan 算法</a></li>
+      <li><a href="#sec3">3. Kosaraju 算法</a></li>
+      <li><a href="#sec4">4. 缩点 — 构建 DAG</a></li>
+      <li><a href="#sec5">5. 缩点后 DAG 上的 DP</a></li>
+      <li><a href="#sec6">6. 完整 C++ 模板</a></li>
+      <li><a href="#sec7">7. 复杂度分析</a></li>
+      <li><a href="#sec8">8. 经典题目</a></li>
+    </ul>
+  </div>
+
+  <!-- ==================== 1. 概述 ==================== -->
+  <div class="section" id="sec1">
+    <h2>1. 强连通分量概述</h2>
+    <p>在有向图中，如果顶点 <code>u</code> 和 <code>v</code> 互相可达（即存在 <code>u → v</code> 和 <code>v → u</code> 的路径），则称 <code>u</code> 和 <code>v</code> <strong>强连通</strong>。</p>
+
+    <div class="box box-info">
+      <div class="box-title">定义</div>
+      <p><strong>强连通分量 (SCC, Strongly Connected Component)</strong> 是有向图中的极大强连通子图。即：分量内任意两点互相可达，且不能再加入更多顶点使其仍保持强连通。</p>
+    </div>
+
+    <h3>直观理解</h3>
+    <div class="diagram">
+      <pre>
+  有向图:                 强连通分量:
+
+    1 → 2 → 3            SCC1 = {1, 2, 3}  (1→2→3→1)
+    ↑   ↓   ↓            SCC2 = {4, 5}     (4→5→4)
+    └───┘   ↓            SCC3 = {6}
+    4 → 5 → 6
+
+  分量间关系:  SCC1 → SCC3, SCC2 → SCC1
+      </pre>
+    </div>
+
+    <h3>缩点 (Condensation)</h3>
+    <p>将每个 SCC 缩成一个点，得到的新图称为<strong>缩点图</strong>（Condensation Graph）。缩点图一定是 <strong>DAG</strong>（有向无环图）。</p>
+    <p>这个性质非常重要：它将复杂的有向图问题转化为 DAG 上的问题，可以利用拓扑排序和 DAG 上的 DP 来解决。</p>
+
+    <div class="box box-tip">
+      <div class="box-title">为什么缩点图一定是 DAG?</div>
+      <p>假设缩点图中存在环，则环上的所有 SCC 可以合并为一个更大的 SCC（因为 SCC 之间互相可达），与 SCC 的极大性矛盾。</p>
+    </div>
+
+    <h3>SCC 算法对比</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>算法</th><th>遍历次数</th><th>实现难度</th><th>特点</th></tr>
+        <tr><td>Tarjan</td><td>1 次 DFS</td><td>中等</td><td>一次 DFS 同时求出所有 SCC，效率高</td></tr>
+        <tr><td>Kosaraju</td><td>2 次 DFS</td><td>简单</td><td>思路直观，需建反向图</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== 2. Tarjan 算法 ==================== -->
+  <div class="section" id="sec2">
+    <h2>2. Tarjan 算法</h2>
+    <p>Tarjan 算法由 Robert Tarjan 于 1972 年提出，通过一次 DFS 即可求出所有强连通分量。</p>
+
+    <h3>核心概念</h3>
+
+    <h4>dfn[u] — 时间戳</h4>
+    <p>表示顶点 <code>u</code> 被 DFS 访问的<strong>时间顺序</strong>（第几个被访问）。<code>dfn</code> 值是全局递增的。</p>
+
+    <h4>low[u] — 能回溯到的最小 dfn</h4>
+    <p>表示从 <code>u</code> 出发，经过 <code>u</code> 的子树中的节点，再通过<strong>一条反向边</strong>（非树边）所能到达的最小 <code>dfn</code> 值。</p>
+
+    <h4>栈 — 存储当前搜索路径</h4>
+    <p>用栈记录当前 DFS 路径上的节点。当发现某个节点是 SCC 的根时，将栈中该节点以上的所有节点弹出，构成一个 SCC。</p>
+
+    <h4>判断 SCC 根的条件</h4>
+    <p><code>dfn[u] == low[u]</code> 时，<code>u</code> 是当前 SCC 的"根"（栈底元素）。此时栈中从 <code>u</code> 到栈顶的所有节点构成一个 SCC。</p>
+
+    <div class="box box-warn">
+      <div class="box-title">重要理解</div>
+      <p><code>low[u]</code> 不是简单地取所有子节点 <code>low[v]</code> 的最小值。对于树边 <code>u → v</code>，<code>low[u] = min(low[u], low[v])</code>；但对于非树边（反向边、横叉边），<code>low[u] = min(low[u], dfn[v])</code>（注意用的是 <code>dfn[v]</code> 而非 <code>low[v]</code>，且要求 <code>v</code> 在栈中）。</p>
+    </div>
+
+    <h3>算法步骤</h3>
+    <div class="steps">
+      <div class="step">对图进行 DFS，为每个节点分配 <code>dfn</code> 和初始 <code>low</code>（<code>low[u] = dfn[u] = ++timer</code>），并将 <code>u</code> 入栈，标记 <code>in_stack[u] = true</code>。</div>
+      <div class="step">遍历 <code>u</code> 的每个邻居 <code>v</code>：
+        <ul>
+          <li>若 <code>v</code> 未访问：递归 DFS(v)，回溯后 <code>low[u] = min(low[u], low[v])</code>。</li>
+          <li>若 <code>v</code> 在栈中：<code>low[u] = min(low[u], dfn[v])</code>（找到了一条反向边）。</li>
+          <li>若 <code>v</code> 已访问但不在栈中：<code>v</code> 属于已处理的 SCC，忽略。</li>
+        </ul>
+      </div>
+      <div class="step">当 <code>dfn[u] == low[u]</code> 时，<code>u</code> 是 SCC 根。不断弹栈直到弹出 <code>u</code>，弹出的节点构成一个 SCC。</div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+  Tarjan 算法执行过程:
+
+  图: 1→2→3→1, 3→4→5→4
+
+  DFS(1): dfn[1]=low[1]=1, 入栈 [1]
+    DFS(2): dfn[2]=low[2]=2, 入栈 [1,2]
+      DFS(3): dfn[3]=low[3]=3, 入栈 [1,2,3]
+        3→1: 1在栈中, low[3]=min(3,dfn[1])=1
+        3→4: DFS(4)
+          dfn[4]=low[4]=4, 入栈 [1,2,3,4]
+          4→5: DFS(5)
+            dfn[5]=low[5]=5, 入栈 [1,2,3,4,5]
+            5→4: 4在栈中, low[5]=min(5,dfn[4])=4
+          回溯: low[4]=min(4,low[5])=4
+          dfn[4]==low[4]? YES → 弹栈直到4: {5,4} → SCC2
+        回溯: low[3]=min(1,low[4])=1
+      回溯: low[2]=min(2,low[3])=1
+    回溯: low[1]=min(1,low[2])=1
+    dfn[1]==low[1]? YES → 弹栈直到1: {3,2,1} → SCC1
+      </pre>
+    </div>
+
+    <h3>Tarjan 算法模板</h3>
+    <pre><code><span class="cm">// Tarjan 求强连通分量</span>
+<span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; adj;
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; dfn, low, in_stack, scc_id;
+<span class="ty">stack</span>&lt;<span class="ty">int</span>&gt; stk;
+<span class="ty">int</span> timer, scc_cnt;
+
+<span class="kw">void</span> <span class="fn">tarjan</span>(<span class="ty">int</span> u) {
+    dfn[u] = low[u] = ++timer;
+    stk.<span class="fn">push</span>(u);
+    in_stack[u] = <span class="num">1</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> v : adj[u]) {
+        <span class="kw">if</span> (!dfn[v]) {
+            <span class="cm">// 树边: v 未访问</span>
+            <span class="fn">tarjan</span>(v);
+            low[u] = <span class="fn">min</span>(low[u], low[v]);
+        } <span class="kw">else if</span> (in_stack[v]) {
+            <span class="cm">// 反向边: v 在栈中 (属于当前搜索路径)</span>
+            low[u] = <span class="fn">min</span>(low[u], dfn[v]);
+        }
+        <span class="cm">// 若 v 已访问且不在栈中, 说明 v 属于已处理的 SCC, 忽略</span>
+    }
+
+    <span class="kw">if</span> (dfn[u] == low[u]) {
+        <span class="cm">// u 是 SCC 的根, 弹出整个 SCC</span>
+        scc_cnt++;
+        <span class="kw">while</span> (<span class="kw">true</span>) {
+            <span class="ty">int</span> x = stk.<span class="fn">top</span>(); stk.<span class="fn">pop</span>();
+            in_stack[x] = <span class="num">0</span>;
+            scc_id[x] = scc_cnt;
+            <span class="kw">if</span> (x == u) <span class="kw">break</span>;
+        }
+    }
+}
+
+<span class="cm">// 初始化并求解</span>
+<span class="kw">void</span> <span class="fn">solve_scc</span>(<span class="ty">int</span> n) {
+    dfn.<span class="fn">assign</span>(n + <span class="num">1</span>, <span class="num">0</span>);
+    low.<span class="fn">assign</span>(n + <span class="num">1</span>, <span class="num">0</span>);
+    in_stack.<span class="fn">assign</span>(n + <span class="num">1</span>, <span class="num">0</span>);
+    scc_id.<span class="fn">assign</span>(n + <span class="num">1</span>, <span class="num">0</span>);
+    timer = scc_cnt = <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        <span class="kw">if</span> (!dfn[i]) <span class="fn">tarjan</span>(i);
+}</code></pre>
+  </div>
+
+  <!-- ==================== 3. Kosaraju 算法 ==================== -->
+  <div class="section" id="sec3">
+    <h2>3. Kosaraju 算法</h2>
+    <p>Kosaraju 算法通过两次 DFS 求出所有强连通分量，思路直观且易于理解。</p>
+
+    <h3>核心思想</h3>
+    <p>Kosaraju 算法的关键洞察：在原图的<strong>反向图</strong>上，从 DFS 退出时间最晚的节点开始搜索，能够精确地探索一个完整的 SCC。</p>
+
+    <h3>算法步骤</h3>
+    <div class="steps">
+      <div class="step"><strong>第一次 DFS</strong>：对原图进行 DFS，记录每个节点的<strong>退出时间</strong>（后序遍历顺序）。退出时间越晚的节点排在越后面。</div>
+      <div class="step"><strong>构建反向图</strong>：将原图的所有边反向。</div>
+      <div class="step"><strong>第二次 DFS</strong>：按退出时间<strong>从大到小</strong>的顺序，在反向图上进行 DFS。每次 DFS 能访问到的所有节点构成一个 SCC。</div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+  Kosaraju 算法过程:
+
+  原图: 1→2, 2→3, 3→1, 3→4, 4→5, 5→4
+
+  第一次 DFS (原图, 记录后序):
+    DFS(1)→DFS(2)→DFS(3)→DFS(4)→DFS(5)
+    后序: [5, 4, 3, 2, 1]
+
+  反向图: 2→1, 3→2, 1→3, 4→3, 5→4, 4→5
+
+  第二次 DFS (反向图, 按后序逆序):
+    访问 1: DFS(1)→3→2→{1,3,2} → SCC1
+    访问 2: 已访问
+    访问 3: 已访问
+    访问 4: DFS(4)→5→{4,5} → SCC2
+    访问 5: 已访问
+      </pre>
+    </div>
+
+    <h3>为什么 Kosaraju 是正确的?</h3>
+    <p>关键在于反向图的性质。假设在原图中有一个 SCC = {A, B, C}，那么在反向图中它们仍然互相可达。</p>
+    <p>第一次 DFS 确保：如果 SCC X 中的节点能到达 SCC Y 中的节点（原图中），则 X 中节点的退出时间一定晚于 Y。在反向图中按逆序访问，恰好保证了每次从"最上游"的 SCC 开始搜索，不会跨越 SCC 边界。</p>
+
+    <h3>Kosaraju 算法模板</h3>
+    <pre><code><span class="cm">// Kosaraju 求强连通分量</span>
+<span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; adj, radj;  <span class="cm">// 原图, 反向图</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; order, scc_id, vis;
+<span class="ty">int</span> scc_cnt;
+
+<span class="cm">// 第一次 DFS: 后序遍历</span>
+<span class="kw">void</span> <span class="fn">dfs1</span>(<span class="ty">int</span> u) {
+    vis[u] = <span class="num">1</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> v : adj[u])
+        <span class="kw">if</span> (!vis[v]) <span class="fn">dfs1</span>(v);
+    order.<span class="fn">push_back</span>(u);  <span class="cm">// 退出时加入</span>
+}
+
+<span class="cm">// 第二次 DFS: 在反向图上标记 SCC</span>
+<span class="kw">void</span> <span class="fn">dfs2</span>(<span class="ty">int</span> u, <span class="ty">int</span> id) {
+    scc_id[u] = id;
+    <span class="kw">for</span> (<span class="ty">int</span> v : radj[u])
+        <span class="kw">if</span> (!scc_id[v]) <span class="fn">dfs2</span>(v, id);
+}
+
+<span class="kw">void</span> <span class="fn">kosaraju</span>(<span class="ty">int</span> n) {
+    vis.<span class="fn">assign</span>(n + <span class="num">1</span>, <span class="num">0</span>);
+    order.<span class="fn">clear</span>();
+
+    <span class="cm">// 第一次 DFS</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        <span class="kw">if</span> (!vis[i]) <span class="fn">dfs1</span>(i);
+
+    <span class="cm">// 第二次 DFS (按后序逆序)</span>
+    scc_id.<span class="fn">assign</span>(n + <span class="num">1</span>, <span class="num">0</span>);
+    scc_cnt = <span class="num">0</span>;
+    <span class="fn">reverse</span>(order.<span class="fn">begin</span>(), order.<span class="fn">end</span>());
+    <span class="kw">for</span> (<span class="ty">int</span> u : order)
+        <span class="kw">if</span> (!scc_id[u])
+            <span class="fn">dfs2</span>(u, ++scc_cnt);
+}</code></pre>
+
+    <div class="box box-info">
+      <div class="box-title">Tarjan vs Kosaraju 选择建议</div>
+      <ul>
+        <li><strong>竞赛中</strong>推荐 Tarjan：只需一次 DFS，无需建反向图，空间更优。</li>
+        <li><strong>学习理解</strong>推荐 Kosaraju：思路直观，容易理解正确性。</li>
+        <li>两者时间复杂度相同，均为 <code>O(V + E)</code>。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ==================== 4. 缩点 ==================== -->
+  <div class="section" id="sec4">
+    <h2>4. 缩点 — 构建 DAG</h2>
+    <p>缩点 (Condensation) 是将每个 SCC 视为一个超级节点，SCC 之间的有向边保留，从而将原图转化为 DAG 的过程。</p>
+
+    <h3>缩点步骤</h3>
+    <div class="steps">
+      <div class="step">使用 Tarjan 或 Kosaraju 算法求出所有 SCC，为每个节点标记 <code>scc_id[u]</code>。</div>
+      <div class="step">遍历原图中的每条边 <code>(u, v)</code>：若 <code>scc_id[u] != scc_id[v]</code>，则在缩点图中添加边 <code>scc_id[u] → scc_id[v]</code>。</div>
+      <div class="step">可选：去重（若不需要重边）。</div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+  缩点过程:
+
+  原图:  1→2→3→1, 2→4, 4→5→6→4, 6→7
+
+  Tarjan 求 SCC:
+    SCC1 = {1,2,3}   scc_id = 1
+    SCC2 = {4,5,6}   scc_id = 2
+    SCC3 = {7}        scc_id = 3
+
+  原边映射:
+    1→2: 1==1 (忽略)
+    2→3: 1==1 (忽略)
+    3→1: 1==1 (忽略)
+    2→4: 1≠2 → 缩点图边 1→2
+    4→5: 2==2 (忽略)
+    5→6: 2==2 (忽略)
+    6→4: 2==2 (忽略)
+    6→7: 2≠3 → 缩点图边 2→3
+
+  缩点图 (DAG): 1 → 2 → 3
+      </pre>
+    </div>
+
+    <h3>缩点模板</h3>
+    <pre><code><span class="cm">// 缩点: 从原图构建 DAG</span>
+<span class="cm">// adj: 原图邻接表, scc_id: Tarjan 求出的 SCC 编号</span>
+<span class="cm">// 返回: 缩点图邻接表 (0-indexed SCC 编号)</span>
+<span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; <span class="fn">condensation</span>(<span class="ty">int</span> n, <span class="ty">int</span> scc_cnt,
+    <span class="ty">const</span> <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt;&amp; adj,
+    <span class="ty">const</span> <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; scc_id) {
+
+    <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; dag(scc_cnt + <span class="num">1</span>);
+    <span class="ty">set</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; seen;  <span class="cm">// 去重</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> u = <span class="num">1</span>; u &lt;= n; u++) {
+        <span class="kw">for</span> (<span class="ty">int</span> v : adj[u]) {
+            <span class="ty">int</span> su = scc_id[u], sv = scc_id[v];
+            <span class="kw">if</span> (su != sv &amp;&amp; seen.<span class="fn">insert</span>({su, sv}).second)
+                dag[su].<span class="fn">push_back</span>(sv);
+        }
+    }
+    <span class="kw">return</span> dag;
+}</code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">SCC 内的信息聚合</div>
+      <p>缩点时通常需要对 SCC 内的节点信息进行聚合，例如：SCC 内所有节点的权值之和、SCC 的大小、SCC 内是否包含特殊节点等。在标记 <code>scc_id</code> 的同时或之后进行统计即可。</p>
+    </div>
+  </div>
+
+  <!-- ==================== 5. DAG 上的 DP ==================== -->
+  <div class="section" id="sec5">
+    <h2>5. 缩点后 DAG 上的 DP</h2>
+    <p>缩点后得到 DAG，可以利用拓扑排序进行各种 DP 问题的求解。这是 SCC 问题中最常见的应用模式。</p>
+
+    <h3>典型问题模型</h3>
+    <p>给定有向图，每个点有权值 <code>w[u]</code>，求一条路径使得经过的节点权值之和最大。</p>
+
+    <h3>解题思路</h3>
+    <div class="steps">
+      <div class="step">用 Tarjan 算法求 SCC，得到 <code>scc_id[]</code>。</div>
+      <div class="step">对每个 SCC 内的权值求和：<code>scc_w[id] += w[u]</code>。</div>
+      <div class="step">缩点构建 DAG，同时记录每个 SCC 的聚合权值。</div>
+      <div class="step">在 DAG 上按拓扑序 DP：<code>dp[v] = max(dp[v], dp[u] + scc_w[v])</code>。</div>
+      <div class="step">答案为 <code>max(dp[i])</code>。</div>
+    </div>
+
+    <h3>缩点 + DAG DP 完整代码</h3>
+    <pre><code><span class="cm">// 缩点 + DAG 最长路 DP</span>
+<span class="cm">// 问题: 求有向图中经过节点权值之和最大的路径</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">10010</span>;
+
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; adj[N];
+<span class="ty">int</span> dfn[N], low[N], scc_id[N], in_stack[N];
+<span class="ty">int</span> w[N], scc_w[N];  <span class="cm">// 节点权值, SCC 聚合权值</span>
+<span class="ty">stack</span>&lt;<span class="ty">int</span>&gt; stk;
+<span class="ty">int</span> timer, scc_cnt, n;
+
+<span class="kw">void</span> <span class="fn">tarjan</span>(<span class="ty">int</span> u) {
+    dfn[u] = low[u] = ++timer;
+    stk.<span class="fn">push</span>(u);
+    in_stack[u] = <span class="num">1</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> v : adj[u]) {
+        <span class="kw">if</span> (!dfn[v]) {
+            <span class="fn">tarjan</span>(v);
+            low[u] = <span class="fn">min</span>(low[u], low[v]);
+        } <span class="kw">else if</span> (in_stack[v]) {
+            low[u] = <span class="fn">min</span>(low[u], dfn[v]);
+        }
+    }
+
+    <span class="kw">if</span> (dfn[u] == low[u]) {
+        scc_cnt++;
+        <span class="kw">while</span> (<span class="kw">true</span>) {
+            <span class="ty">int</span> x = stk.<span class="fn">top</span>(); stk.<span class="fn">pop</span>();
+            in_stack[x] = <span class="num">0</span>;
+            scc_id[x] = scc_cnt;
+            scc_w[scc_cnt] += w[x];  <span class="cm">// 聚合权值</span>
+            <span class="kw">if</span> (x == u) <span class="kw">break</span>;
+        }
+    }
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> m;
+    <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;n, &amp;m);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;w[i]);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; m; i++) {
+        <span class="ty">int</span> u, v; <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;u, &amp;v);
+        adj[u].<span class="fn">push_back</span>(v);
+    }
+
+    <span class="cm">// 1. Tarjan 求 SCC</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        <span class="kw">if</span> (!dfn[i]) <span class="fn">tarjan</span>(i);
+
+    <span class="cm">// 2. 缩点构建 DAG</span>
+    <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; dag(scc_cnt + <span class="num">1</span>);
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; indeg(scc_cnt + <span class="num">1</span>, <span class="num">0</span>);
+    <span class="ty">set</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; seen;
+    <span class="kw">for</span> (<span class="ty">int</span> u = <span class="num">1</span>; u &lt;= n; u++) {
+        <span class="kw">for</span> (<span class="ty">int</span> v : adj[u]) {
+            <span class="ty">int</span> su = scc_id[u], sv = scc_id[v];
+            <span class="kw">if</span> (su != sv &amp;&amp; seen.<span class="fn">insert</span>({su, sv}).second) {
+                dag[su].<span class="fn">push_back</span>(sv);
+                indeg[sv]++;
+            }
+        }
+    }
+
+    <span class="cm">// 3. 拓扑排序 + DP</span>
+    <span class="ty">queue</span>&lt;<span class="ty">int</span>&gt; q;
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; dp(scc_cnt + <span class="num">1</span>, <span class="num">0</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= scc_cnt; i++) {
+        dp[i] = scc_w[i];
+        <span class="kw">if</span> (!indeg[i]) q.<span class="fn">push</span>(i);
+    }
+
+    <span class="ty">int</span> ans = <span class="num">0</span>;
+    <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+        <span class="ty">int</span> u = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+        ans = <span class="fn">max</span>(ans, dp[u]);
+        <span class="kw">for</span> (<span class="ty">int</span> v : dag[u]) {
+            dp[v] = <span class="fn">max</span>(dp[v], dp[u] + scc_w[v]);
+            <span class="kw">if</span> (--indeg[v] == <span class="num">0</span>) q.<span class="fn">push</span>(v);
+        }
+    }
+
+    <span class="fn">printf</span>(<span class="str">"%d\n"</span>, ans);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <div class="box box-hard">
+      <div class="box-title">常见 DP 转移</div>
+      <ul>
+        <li><strong>最长路</strong>：<code>dp[v] = max(dp[v], dp[u] + val[v])</code></li>
+        <li><strong>最短路</strong>：<code>dp[v] = min(dp[v], dp[u] + val[v])</code></li>
+        <li><strong>路径计数</strong>：<code>dp[v] = (dp[v] + dp[u]) % MOD</code></li>
+        <li><strong>方案判定</strong>：<code>dp[v] |= dp[u]</code> (可达性)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ==================== 6. 完整模板 ==================== -->
+  <div class="section" id="sec6">
+    <h2>6. 完整 C++ 模板</h2>
+
+    <h3>6.1 Tarjan 链式前向星版</h3>
+    <pre><code><span class="cm">// Tarjan SCC — 链式前向星存储</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">10010</span>, M = <span class="num">100010</span>;
+
+<span class="kw">struct</span> <span class="ty">Edge</span> { <span class="ty">int</span> to, nxt; } e[M];
+<span class="ty">int</span> head[N], cnt;
+<span class="ty">int</span> dfn[N], low[N], scc_id[N], in_stack[N];
+<span class="ty">stack</span>&lt;<span class="ty">int</span>&gt; stk;
+<span class="ty">int</span> timer, scc_cnt, n, m;
+
+<span class="kw">void</span> <span class="fn">add</span>(<span class="ty">int</span> u, <span class="ty">int</span> v) {
+    e[++cnt] = {v, head[u]};
+    head[u] = cnt;
+}
+
+<span class="kw">void</span> <span class="fn">tarjan</span>(<span class="ty">int</span> u) {
+    dfn[u] = low[u] = ++timer;
+    stk.<span class="fn">push</span>(u);
+    in_stack[u] = <span class="num">1</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = head[u]; i; i = e[i].nxt) {
+        <span class="ty">int</span> v = e[i].to;
+        <span class="kw">if</span> (!dfn[v]) {
+            <span class="fn">tarjan</span>(v);
+            low[u] = <span class="fn">min</span>(low[u], low[v]);
+        } <span class="kw">else if</span> (in_stack[v]) {
+            low[u] = <span class="fn">min</span>(low[u], dfn[v]);
+        }
+    }
+
+    <span class="kw">if</span> (dfn[u] == low[u]) {
+        scc_cnt++;
+        <span class="kw">while</span> (<span class="kw">true</span>) {
+            <span class="ty">int</span> x = stk.<span class="fn">top</span>(); stk.<span class="fn">pop</span>();
+            in_stack[x] = <span class="num">0</span>;
+            scc_id[x] = scc_cnt;
+            <span class="kw">if</span> (x == u) <span class="kw">break</span>;
+        }
+    }
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;n, &amp;m);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; m; i++) {
+        <span class="ty">int</span> u, v; <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;u, &amp;v);
+        <span class="fn">add</span>(u, v);
+    }
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        <span class="kw">if</span> (!dfn[i]) <span class="fn">tarjan</span>(i);
+
+    <span class="fn">printf</span>(<span class="str">"SCC 数量: %d\n"</span>, scc_cnt);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        <span class="fn">printf</span>(<span class="str">"节点 %d 属于 SCC %d\n"</span>, i, scc_id[i]);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <h3>6.2 Kosaraju 完整模板</h3>
+    <pre><code><span class="cm">// Kosaraju SCC — 完整模板</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">10010</span>;
+
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; adj[N], radj[N];
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; order, scc_id, vis;
+<span class="ty">int</span> scc_cnt, n, m;
+
+<span class="kw">void</span> <span class="fn">dfs1</span>(<span class="ty">int</span> u) {
+    vis[u] = <span class="num">1</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> v : adj[u])
+        <span class="kw">if</span> (!vis[v]) <span class="fn">dfs1</span>(v);
+    order.<span class="fn">push_back</span>(u);
+}
+
+<span class="kw">void</span> <span class="fn">dfs2</span>(<span class="ty">int</span> u, <span class="ty">int</span> id) {
+    scc_id[u] = id;
+    <span class="kw">for</span> (<span class="ty">int</span> v : radj[u])
+        <span class="kw">if</span> (!scc_id[v]) <span class="fn">dfs2</span>(v, id);
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;n, &amp;m);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; m; i++) {
+        <span class="ty">int</span> u, v; <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;u, &amp;v);
+        adj[u].<span class="fn">push_back</span>(v);
+        radj[v].<span class="fn">push_back</span>(u);  <span class="cm">// 反向边</span>
+    }
+
+    <span class="cm">// 第一次 DFS</span>
+    vis.<span class="fn">assign</span>(n + <span class="num">1</span>, <span class="num">0</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        <span class="kw">if</span> (!vis[i]) <span class="fn">dfs1</span>(i);
+
+    <span class="cm">// 第二次 DFS</span>
+    scc_id.<span class="fn">assign</span>(n + <span class="num">1</span>, <span class="num">0</span>);
+    scc_cnt = <span class="num">0</span>;
+    <span class="fn">reverse</span>(order.<span class="fn">begin</span>(), order.<span class="fn">end</span>());
+    <span class="kw">for</span> (<span class="ty">int</span> u : order)
+        <span class="kw">if</span> (!scc_id[u])
+            <span class="fn">dfs2</span>(u, ++scc_cnt);
+
+    <span class="fn">printf</span>(<span class="str">"SCC 数量: %d\n"</span>, scc_cnt);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <h3>6.3 2-SAT 中的 SCC 应用</h3>
+    <p>2-SAT 问题是 SCC 的经典应用之一。对于布尔变量 <code>x_i</code>，每个变量拆成两个节点（<code>x_i</code> 和 <code>¬x_i</code>），根据约束建边，然后用 Tarjan 判断是否有解。</p>
+
+    <pre><code><span class="cm">// 2-SAT 判定 (利用 SCC)</span>
+<span class="cm">// 若 x_i 和 ¬x_i 在同一个 SCC 中, 则无解</span>
+<span class="cm">// 否则按 SCC 拓扑序贪心取值即可</span>
+<span class="kw">bool</span> <span class="fn">check_2sat</span>(<span class="ty">int</span> n) {
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        <span class="kw">if</span> (scc_id[i] == scc_id[i + n])
+            <span class="kw">return</span> <span class="kw">false</span>;  <span class="cm">// x 和 ¬x 在同一 SCC, 矛盾</span>
+    <span class="kw">return</span> <span class="kw">true</span>;
+}</code></pre>
+  </div>
+
+  <!-- ==================== 7. 复杂度分析 ==================== -->
+  <div class="section" id="sec7">
+    <h2>7. 复杂度分析</h2>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>算法/操作</th><th>时间复杂度</th><th>空间复杂度</th><th>备注</th></tr>
+        <tr><td>Tarjan SCC</td><td><code>O(V + E)</code></td><td><code>O(V)</code></td><td>一次 DFS，栈空间 O(V)</td></tr>
+        <tr><td>Kosaraju SCC</td><td><code>O(V + E)</code></td><td><code>O(V + E)</code></td><td>两次 DFS + 反向图</td></tr>
+        <tr><td>缩点建图</td><td><code>O(V + E)</code></td><td><code>O(V + E)</code></td><td>遍历所有边</td></tr>
+        <tr><td>缩点 + 去重</td><td><code>O(E log E)</code></td><td><code>O(V + E)</code></td><td>使用 set 去重</td></tr>
+        <tr><td>DAG 上 DP</td><td><code>O(V' + E')</code></td><td><code>O(V')</code></td><td>V', E' 为缩点后规模</td></tr>
+      </table>
+    </div>
+
+    <div class="complexity">
+      <span class="label">Tarjan 时间:</span>
+      <span class="value">O(V + E)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">Kosaraju 时间:</span>
+      <span class="value">O(V + E)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">Tarjan 空间:</span>
+      <span class="value">O(V)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">缩点后 DP:</span>
+      <span class="value">O(V' + E')</span>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">关于 low 数组的实现细节</div>
+      <p>不同教材对 <code>low[u]</code> 的更新方式有微小差异：有的用 <code>dfn[v]</code>，有的用 <code>low[v]</code>。对于 Tarjan SCC 算法，两种写法结果一致（都能正确求出 SCC）。但在求割点和桥时，必须严格区分 <code>dfn[v]</code> 和 <code>low[v]</code>。</p>
+    </div>
+  </div>
+
+  <!-- ==================== 8. 经典题目 ==================== -->
+  <div class="section" id="sec8">
+    <h2>8. 经典题目</h2>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3387" target="_blank">P3387 【模板】缩点</a></div>
+      <p>经典缩点 + DAG 最长路 DP 模板题。给定有向图和点权，求路径上点权和的最大值。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2863" target="_blank">P2863 [USACO06JAN] The Cow Prom S</a></div>
+      <p>求大小大于 1 的 SCC 数量。直接 Tarjan 模板应用。</p>
+      <span class="tag tag-easy">简单</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2341" target="_blank">P2341 [USACO03FALL / HAOI2006] 受欢迎的牛 G</a></div>
+      <p>缩点后，出度为 0 的 SCC 若唯一则其中所有牛都受欢迎。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2746" target="_blank">P2746 [USACO5.3] Network of Schools</a></div>
+      <p>缩点后统计入度为 0 和出度为 0 的 SCC 数量，求最少添加边数使图强连通。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1407" target="_blank">P1407 [国家集训队] 稳定婚姻</a></div>
+      <p>2-SAT 问题，利用 SCC 判断婚姻匹配是否存在矛盾。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4782" target="_blank">P4782 【模板】2-SAT</a></div>
+      <p>2-SAT 模板题。利用 Tarjan SCC 判定并输出方案。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3275" target="_blank">P3275 [SCOI2011] 糖果</a></div>
+      <p>差分约束 + Tarjan SCC + 拓扑排序 DP，综合性强。</p>
+      <span class="tag tag-hard">困难</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/1239/D" target="_blank">CF 1239D - Catowice City</a></div>
+      <p>利用 SCC 的性质构造合法方案，思维题。</p>
+      <span class="tag tag-hard">困难</span>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

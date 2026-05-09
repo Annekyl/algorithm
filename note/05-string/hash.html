@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>字符串哈希 - ACM算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#05-string">字符串篇</a> &gt;
+    字符串哈希
+  </div>
+
+  <div class="page-header">
+    <h1>字符串哈希</h1>
+    <p class="subtitle">将字符串映射为哈希值，实现 O(1) 子串比较</p>
+    <div class="tags">
+      <span class="tag tag-str">字符串</span>
+      <span class="tag tag-base">基础算法</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#principle">1. 字符串哈希原理</a></li>
+      <li><a href="#hash-func">2. 哈希函数选择</a></li>
+      <li><a href="#prefix-hash">3. 子串哈希O(1)查询</a></li>
+      <li><a href="#double-hash">4. 双哈希</a></li>
+      <li><a href="#applications">5. 应用</a></li>
+      <li><a href="#template">6. 完整C++模板</a></li>
+      <li><a href="#problems">7. 经典题目</a></li>
+    </ul>
+  </div>
+
+  <!-- Section 1: 字符串哈希原理 -->
+  <div class="section" id="principle">
+    <h2>1. 字符串哈希原理</h2>
+
+    <h3>1.1 什么是字符串哈希</h3>
+    <p>字符串哈希是一种将任意长度的字符串映射为一个<strong>固定长度整数</strong>的方法。如果两个字符串的哈希值不同，则它们一定不同；如果哈希值相同，则它们<strong>大概率</strong>相同（存在哈希冲突的可能）。</p>
+
+    <p>字符串哈希的核心优势在于：通过预处理，可以在 <strong>O(1) 时间</strong>内比较任意两个子串是否相等。</p>
+
+    <h3>1.2 多项式滚动哈希（Polynomial Rolling Hash）</h3>
+    <p>最常用的字符串哈希方法是<strong>多项式滚动哈希</strong>。对于字符串 <code>S</code>，其哈希值定义为：</p>
+
+    <div class="box box-info">
+      <div class="box-title">多项式哈希公式</div>
+      <p><code>H(S) = (S[0] * B^(n-1) + S[1] * B^(n-2) + ... + S[n-1] * B^0) mod M</code></p>
+      <p>其中 B 是<strong>基数</strong>（base），M 是<strong>模数</strong>（mod），n 是字符串长度。</p>
+    </div>
+
+    <div class="diagram">
+<pre>
+字符串: "abc"
+哈希值: (a * B^2 + b * B^1 + c * B^0) mod M
+
+其中 a=97, b=98, c=99 (ASCII码)
+B = 131, M = 10^9 + 7
+
+H("abc") = (97 * 131^2 + 98 * 131^1 + 99 * 131^0) mod M
+</pre>
+    </div>
+
+    <h3>1.3 滚动的思想</h3>
+    <p>所谓"滚动"，是指当我们从左到右扫描字符串时，可以利用前一个位置的哈希值，通过一次乘法和一次加法快速计算出当前位置的哈希值，而不需要从头计算：</p>
+
+    <div class="box box-tip">
+      <div class="box-title">滚动递推公式</div>
+      <p><code>H[i] = (H[i-1] * B + S[i]) mod M</code></p>
+      <p>其中 <code>H[i]</code> 表示前缀 <code>S[0..i]</code> 的哈希值。</p>
+    </div>
+  </div>
+
+  <!-- Section 2: 哈希函数选择 -->
+  <div class="section" id="hash-func">
+    <h2>2. 哈希函数选择</h2>
+
+    <h3>2.1 基数 B 的选择</h3>
+    <p>基数 B 应该大于字符集的大小。常用选择：</p>
+    <ul>
+      <li>小写字母：B = 131 或 B = 233</li>
+      <li>大小写字母+数字：B = 131 或 B = 13331</li>
+      <li>通用：B = 131</li>
+    </ul>
+
+    <div class="box box-warn">
+      <div class="box-title">注意</div>
+      <p>B 不应太小（容易冲突），也不应太大（可能导致溢出）。选择一个<strong>质数</strong>作为 B 通常效果较好。</p>
+    </div>
+
+    <h3>2.2 模数 M 的选择</h3>
+    <p>模数 M 通常选择一个大质数。常用选择：</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>模数 M</th><th>特点</th><th>适用场景</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>10^9 + 7</code></td><td>常用大质数</td><td>一般场景</td></tr>
+          <tr><td><code>10^9 + 9</code></td><td>另一个大质数</td><td>双哈希中的第二个模数</td></tr>
+          <tr><td><code>2^64</code>（自然溢出）</td><td>利用 unsigned long long 自然溢出</td><td>速度快，但理论上有被 hack 的风险</td></tr>
+          <tr><td><code>998244353</code></td><td>NTT 友好质数</td><td>需要配合 NTT 时</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>2.3 自然溢出</h3>
+    <p>使用 <code>unsigned long long</code> 类型存储哈希值，利用 C++ 的自然溢出（相当于对 2^64 取模）。这种方法速度最快，但在竞赛中存在被构造数据 hack 的风险。如果题目允许，可以使用；如果是提交答案类题目，建议使用显式取模或双哈希。</p>
+
+    <pre><span class="cm">// 自然溢出版本</span>
+<span class="kw">typedef</span> <span class="ty">unsigned long long</span> <span class="ty">ull</span>;
+<span class="kw">const</span> <span class="ty">ull</span> B = <span class="num">131</span>;
+<span class="ty">vector</span>&lt;<span class="ty">ull</span>&gt; <span class="fn">buildHash</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; s) {
+    <span class="ty">int</span> n = s.<span class="fn">size</span>();
+    <span class="ty">vector</span>&lt;<span class="ty">ull</span>&gt; h(n + <span class="num">1</span>, <span class="num">0</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        h[i + <span class="num">1</span>] = h[i] * B + s[i];  <span class="cm">// 自动 mod 2^64</span>
+    <span class="kw">return</span> h;
+}</pre>
+  </div>
+
+  <!-- Section 3: 子串哈希O(1)查询 -->
+  <div class="section" id="prefix-hash">
+    <h2>3. 子串哈希O(1)查询</h2>
+
+    <h3>3.1 前缀哈希数组</h3>
+    <p>预处理前缀哈希数组 <code>H[]</code> 和幂数组 <code>powB[]</code>：</p>
+
+    <div class="box box-info">
+      <div class="box-title">前缀哈希定义</div>
+      <p><code>H[i]</code> = 字符串 S 的前缀 <code>S[0..i-1]</code> 的哈希值（H[0] = 0）</p>
+      <p><code>H[i] = (H[i-1] * B + S[i-1]) mod M</code></p>
+    </div>
+
+    <h3>3.2 子串哈希公式</h3>
+    <p>要计算子串 <code>S[l..r]</code>（0-indexed，闭区间）的哈希值，可以利用前缀哈希的差值：</p>
+
+    <div class="box box-tip">
+      <div class="box-title">子串哈希公式</div>
+      <p><code>hash(S[l..r]) = H[r+1] - H[l] * B^(r-l+1) mod M</code></p>
+      <p>注意取模后可能出现负数，需要加 M 再取模：<code>((H[r+1] - H[l] * powB[r-l+1]) % M + M) % M</code></p>
+    </div>
+
+    <div class="diagram">
+<pre>
+前缀哈希数组:
+H[0] = 0
+H[1] = H[0]*B + S[0]              = hash("a")
+H[2] = H[1]*B + S[1]              = hash("ab")
+H[3] = H[2]*B + S[2]              = hash("abc")
+H[4] = H[3]*B + S[3]              = hash("abcd")
+
+子串哈希 hash(S[1..3]) = hash("bcd"):
+= H[4] - H[1] * B^3
+= hash("abcd") - hash("a") * B^3
+= a*B^3 + b*B^2 + c*B^1 + d*B^0 - a*B^3
+= b*B^2 + c*B^1 + d*B^0
+= hash("bcd")  ✓
+</pre>
+    </div>
+
+    <h3>3.3 推导过程</h3>
+    <p>为什么子串哈希公式成立？展开来看：</p>
+    <ul>
+      <li><code>H[r+1] = S[0]*B^r + S[1]*B^(r-1) + ... + S[r]*B^0</code></li>
+      <li><code>H[l] * B^(r-l+1) = (S[0]*B^(l-1) + ... + S[l-1]*B^0) * B^(r-l+1)</code></li>
+      <li>相减后，<code>S[0]</code> 到 <code>S[l-1]</code> 的项被完全抵消</li>
+      <li>剩余部分恰好是 <code>S[l]*B^(r-l) + S[l+1]*B^(r-l-1) + ... + S[r]*B^0</code>，即子串 <code>S[l..r]</code> 的哈希值</li>
+    </ul>
+
+    <pre><span class="cm">// 子串哈希查询</span>
+<span class="ty">ull</span> <span class="fn">getHash</span>(<span class="kw">const</span> <span class="ty">vector</span>&lt;<span class="ty">ull</span>&gt;&amp; h, <span class="kw">const</span> <span class="ty">vector</span>&lt;<span class="ty">ull</span>&gt;&amp; pw,
+            <span class="ty">int</span> l, <span class="ty">int</span> r) {
+    <span class="cm">// 返回 S[l..r] 的哈希值 (0-indexed)</span>
+    <span class="kw">return</span> h[r + <span class="num">1</span>] - h[l] * pw[r - l + <span class="num">1</span>];
+}</pre>
+  </div>
+
+  <!-- Section 4: 双哈希 -->
+  <div class="section" id="double-hash">
+    <h2>4. 双哈希</h2>
+
+    <h3>4.1 为什么需要双哈希</h3>
+    <p>单哈希存在<strong>哈希冲突</strong>的风险：两个不同的字符串可能恰好产生相同的哈希值。在竞赛中，出题人可能会构造专门的数据来卡单哈希。双哈希通过使用<strong>两个不同的哈希函数</strong>，将冲突概率降到极低。</p>
+
+    <div class="box box-info">
+      <div class="box-title">双哈希策略</div>
+      <p>同时使用两组 (B, M) 计算两个哈希值。只有当两个哈希值都相等时，才认为两个字符串相等。</p>
+      <p>常用组合：<code>(B1=131, M1=10^9+7)</code> 和 <code>(B2=13331, M2=10^9+9)</code></p>
+    </div>
+
+    <h3>4.2 冲突概率分析</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>方法</th><th>冲突概率</th><th>安全性</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>单哈希 (mod 10^9+7)</td><td>约 10^-9</td><td>一般</td></tr>
+          <tr><td>单哈希 (自然溢出 2^64)</td><td>约 10^-19（理论），但可被构造攻击</td><td>不安全（竞赛中）</td></tr>
+          <tr><td>双哈希</td><td>约 10^-18 到 10^-28</td><td>非常安全</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>4.3 双哈希实现</h3>
+    <pre><span class="kw">struct</span> <span class="ty">DoubleHash</span> {
+    <span class="kw">static</span> <span class="kw">const</span> <span class="ty">ull</span> B1 = <span class="num">131</span>, B2 = <span class="num">13331</span>;
+    <span class="kw">static</span> <span class="kw">const</span> <span class="ty">ull</span> M1 = <span class="num">1e9</span> + <span class="num">7</span>, M2 = <span class="num">1e9</span> + <span class="num">9</span>;
+
+    <span class="ty">vector</span>&lt;<span class="ty">ull</span>&gt; h1, h2, pw1, pw2;
+
+    <span class="fn">DoubleHash</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; s) {
+        <span class="ty">int</span> n = s.<span class="fn">size</span>();
+        h1.<span class="fn">resize</span>(n + <span class="num">1</span>, <span class="num">0</span>);
+        h2.<span class="fn">resize</span>(n + <span class="num">1</span>, <span class="num">0</span>);
+        pw1.<span class="fn">resize</span>(n + <span class="num">1</span>, <span class="num">1</span>);
+        pw2.<span class="fn">resize</span>(n + <span class="num">1</span>, <span class="num">1</span>);
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+            h1[i + <span class="num">1</span>] = (h1[i] * B1 + s[i]) % M1;
+            h2[i + <span class="num">1</span>] = (h2[i] * B2 + s[i]) % M2;
+            pw1[i + <span class="num">1</span>] = pw1[i] * B1 % M1;
+            pw2[i + <span class="num">1</span>] = pw2[i] * B2 % M2;
+        }
+    }
+
+    <span class="cm">// 返回双哈希对 (h1, h2)</span>
+    <span class="ty">pair</span>&lt;<span class="ty">ull</span>, <span class="ty">ull</span>&gt; <span class="fn">get</span>(<span class="ty">int</span> l, <span class="ty">int</span> r) {
+        <span class="ty">ull</span> a = (h1[r + <span class="num">1</span>] - h1[l] * pw1[r - l + <span class="num">1</span>] % M1 + M1) % M1;
+        <span class="ty">ull</span> b = (h2[r + <span class="num">1</span>] - h2[l] * pw2[r - l + <span class="num">1</span>] % M2 + M2) % M2;
+        <span class="kw">return</span> {a, b};
+    }
+
+    <span class="cm">// 比较两个子串是否相等</span>
+    <span class="ty">bool</span> <span class="fn">equal</span>(<span class="ty">int</span> l1, <span class="ty">int</span> r1, <span class="ty">int</span> l2, <span class="ty">int</span> r2) {
+        <span class="kw">return</span> <span class="fn">get</span>(l1, r1) == <span class="fn">get</span>(l2, r2);
+    }
+};</pre>
+  </div>
+
+  <!-- Section 5: 应用 -->
+  <div class="section" id="applications">
+    <h2>5. 应用</h2>
+
+    <h3>5.1 最长公共子串</h3>
+    <p>给定两个字符串 A 和 B，求它们的最长公共子串长度。</p>
+    <p><strong>思路：</strong>二分答案 + 哈希。二分公共子串长度 L，将 A 的所有长度为 L 的子串哈希值存入 set，然后检查 B 是否有相同哈希值的子串。</p>
+
+    <pre><span class="cm">// 最长公共子串 - 二分 + 哈希</span>
+<span class="ty">int</span> <span class="fn">longestCommonSubstring</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; a, <span class="kw">const</span> <span class="ty">string</span>&amp; b) {
+    <span class="ty">StringHash</span> <span class="fn">ha</span>(a), <span class="fn">hb</span>(b);
+    <span class="ty">int</span> lo = <span class="num">0</span>, hi = <span class="fn">min</span>(a.<span class="fn">size</span>(), b.<span class="fn">size</span>());
+    <span class="kw">while</span> (lo &lt; hi) {
+        <span class="ty">int</span> mid = (lo + hi + <span class="num">1</span>) / <span class="num">2</span>;
+        <span class="ty">set</span>&lt;<span class="ty">ull</span>&gt; st;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i + mid - <span class="num">1</span> &lt; (<span class="ty">int</span>)a.<span class="fn">size</span>(); i++)
+            st.<span class="fn">insert</span>(ha.<span class="fn">get</span>(i, i + mid - <span class="num">1</span>));
+        <span class="ty">bool</span> found = <span class="kw">false</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i + mid - <span class="num">1</span> &lt; (<span class="ty">int</span>)b.<span class="fn">size</span>(); i++) {
+            <span class="kw">if</span> (st.<span class="fn">count</span>(hb.<span class="fn">get</span>(i, i + mid - <span class="num">1</span>))) {
+                found = <span class="kw">true</span>;
+                <span class="kw">break</span>;
+            }
+        }
+        <span class="kw">if</span> (found) lo = mid;
+        <span class="kw">else</span> hi = mid - <span class="num">1</span>;
+    }
+    <span class="kw">return</span> lo;
+}</pre>
+
+    <h3>5.2 回文串判断</h3>
+    <p>利用字符串哈希可以 O(1) 判断任意子串是否为回文串。维护正序哈希和逆序哈希，子串是回文串当且仅当其正序哈希值等于逆序哈希值。</p>
+
+    <pre><span class="cm">// 回文串判断 - 双向哈希</span>
+<span class="kw">struct</span> <span class="ty">PalinHash</span> {
+    <span class="ty">StringHash</span> fwd, rev;  <span class="cm">// 正序和逆序哈希</span>
+    <span class="ty">int</span> n;
+
+    <span class="fn">PalinHash</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; s) : n(s.<span class="fn">size</span>()) {
+        fwd = <span class="ty">StringHash</span>(s);
+        <span class="ty">string</span> r = s;
+        <span class="fn">reverse</span>(r.<span class="fn">begin</span>(), r.<span class="fn">end</span>());
+        rev = <span class="ty">StringHash</span>(r);
+    }
+
+    <span class="cm">// 判断 S[l..r] 是否为回文串</span>
+    <span class="ty">bool</span> <span class="fn">isPalin</span>(<span class="ty">int</span> l, <span class="ty">int</span> r) {
+        <span class="cm">// 在逆序串中，S[l..r] 对应的位置是 [n-1-r, n-1-l]</span>
+        <span class="kw">return</span> fwd.<span class="fn">get</span>(l, r) == rev.<span class="fn">get</span>(n - <span class="num">1</span> - r, n - <span class="num">1</span> - l);
+    }
+};</pre>
+
+    <h3>5.3 字符串去重</h3>
+    <p>给定 n 个字符串，统计有多少种不同的字符串。将每个字符串的哈希值存入 set，set 的大小即为答案。</p>
+
+    <h3>5.4 子串出现次数</h3>
+    <p>统计某个子串在文本串中出现的次数。可以将所有长度为 L 的子串哈希值存入 map，然后查询目标子串的哈希值出现次数。</p>
+
+    <h3>5.5 最长回文子串（二分+哈希）</h3>
+    <p>对每个位置，二分以该位置为中心的最长回文子串半径，用哈希 O(1) 判断是否回文。总复杂度 O(n log n)。</p>
+  </div>
+
+  <!-- Section 6: 完整C++模板 -->
+  <div class="section" id="template">
+    <h2>6. 完整C++模板</h2>
+
+    <h3>6.1 单哈希模板</h3>
+    <pre><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">typedef</span> <span class="ty">unsigned long long</span> <span class="ty">ull</span>;
+
+<span class="kw">struct</span> <span class="ty">StringHash</span> {
+    <span class="kw">static</span> <span class="kw">const</span> <span class="ty">ull</span> B = <span class="num">131</span>;
+    <span class="ty">vector</span>&lt;<span class="ty">ull</span>&gt; h, pw;
+
+    <span class="fn">StringHash</span>() {}
+    <span class="fn">StringHash</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; s) { <span class="fn">init</span>(s); }
+
+    <span class="ty">void</span> <span class="fn">init</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; s) {
+        <span class="ty">int</span> n = s.<span class="fn">size</span>();
+        h.<span class="fn">assign</span>(n + <span class="num">1</span>, <span class="num">0</span>);
+        pw.<span class="fn">assign</span>(n + <span class="num">1</span>, <span class="num">1</span>);
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+            h[i + <span class="num">1</span>] = h[i] * B + s[i];
+            pw[i + <span class="num">1</span>] = pw[i] * B;
+        }
+    }
+
+    <span class="cm">// S[l..r] 的哈希值 (0-indexed, 闭区间)</span>
+    <span class="ty">ull</span> <span class="fn">get</span>(<span class="ty">int</span> l, <span class="ty">int</span> r) <span class="kw">const</span> {
+        <span class="kw">return</span> h[r + <span class="num">1</span>] - h[l] * pw[r - l + <span class="num">1</span>];
+    }
+
+    <span class="cm">// 比较 S[l1..r1] 和 S[l2..r2]</span>
+    <span class="ty">bool</span> <span class="fn">equal</span>(<span class="ty">int</span> l1, <span class="ty">int</span> r1, <span class="ty">int</span> l2, <span class="ty">int</span> r2) <span class="kw">const</span> {
+        <span class="kw">return</span> <span class="fn">get</span>(l1, r1) == <span class="fn">get</span>(l2, r2);
+    }
+
+    <span class="cm">// 拼接两个子串的哈希: hash(S[l1..r1] + S[l2..r2])</span>
+    <span class="ty">ull</span> <span class="fn">concat</span>(<span class="ty">int</span> l1, <span class="ty">int</span> r1, <span class="ty">int</span> l2, <span class="ty">int</span> r2) <span class="kw">const</span> {
+        <span class="kw">return</span> <span class="fn">get</span>(l1, r1) * pw[r2 - l2 + <span class="num">1</span>] + <span class="fn">get</span>(l2, r2);
+    }
+};</pre>
+
+    <h3>6.2 双哈希模板</h3>
+    <pre><span class="kw">struct</span> <span class="ty">DoubleStringHash</span> {
+    <span class="kw">static</span> <span class="kw">const</span> <span class="ty">ull</span> B1 = <span class="num">131</span>, B2 = <span class="num">13331</span>;
+    <span class="kw">static</span> <span class="kw">const</span> <span class="ty">ull</span> M1 = <span class="num">1e9</span> + <span class="num">7</span>, M2 = <span class="num">1e9</span> + <span class="num">9</span>;
+
+    <span class="ty">vector</span>&lt;<span class="ty">ull</span>&gt; h1, h2, pw1, pw2;
+
+    <span class="fn">DoubleStringHash</span>() {}
+    <span class="fn">DoubleStringHash</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; s) { <span class="fn">init</span>(s); }
+
+    <span class="ty">void</span> <span class="fn">init</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; s) {
+        <span class="ty">int</span> n = s.<span class="fn">size</span>();
+        h1.<span class="fn">assign</span>(n + <span class="num">1</span>, <span class="num">0</span>); h2.<span class="fn">assign</span>(n + <span class="num">1</span>, <span class="num">0</span>);
+        pw1.<span class="fn">assign</span>(n + <span class="num">1</span>, <span class="num">1</span>); pw2.<span class="fn">assign</span>(n + <span class="num">1</span>, <span class="num">1</span>);
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+            h1[i + <span class="num">1</span>] = (h1[i] * B1 + s[i]) % M1;
+            h2[i + <span class="num">1</span>] = (h2[i] * B2 + s[i]) % M2;
+            pw1[i + <span class="num">1</span>] = pw1[i] * B1 % M1;
+            pw2[i + <span class="num">1</span>] = pw2[i] * B2 % M2;
+        }
+    }
+
+    <span class="ty">pair</span>&lt;<span class="ty">ull</span>, <span class="ty">ull</span>&gt; <span class="fn">get</span>(<span class="ty">int</span> l, <span class="ty">int</span> r) <span class="kw">const</span> {
+        <span class="ty">ull</span> a = (h1[r + <span class="num">1</span>] - h1[l] * pw1[r - l + <span class="num">1</span>] % M1 + M1) % M1;
+        <span class="ty">ull</span> b = (h2[r + <span class="num">1</span>] - h2[l] * pw2[r - l + <span class="num">1</span>] % M2 + M2) % M2;
+        <span class="kw">return</span> {a, b};
+    }
+
+    <span class="ty">bool</span> <span class="fn">equal</span>(<span class="ty">int</span> l1, <span class="ty">int</span> r1, <span class="ty">int</span> l2, <span class="ty">int</span> r2) <span class="kw">const</span> {
+        <span class="kw">return</span> <span class="fn">get</span>(l1, r1) == <span class="fn">get</span>(l2, r2);
+    }
+};</pre>
+
+    <div class="box box-warn">
+      <div class="box-title">注意事项</div>
+      <ul>
+        <li>自然溢出版本不需要取模，但要注意使用 <code>unsigned long long</code> 类型</li>
+        <li>显式取模版本在减法后要加 M 再取模，防止负数</li>
+        <li>幂数组 <code>pw[]</code> 要预分配到与字符串长度相同的空间</li>
+        <li>双哈希使用 <code>pair</code> 作为返回值，可以直接用 <code>==</code> 比较</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Section 7: 经典题目 -->
+  <div class="section" id="problems">
+    <h2>7. 经典题目</h2>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P3370" target="_blank">P3370 [模板] 字符串哈希</a>
+      </div>
+      <p>字符串去重模板题。对每个字符串计算哈希值，存入 set，输出 set 大小。</p>
+      <span class="tag tag-base">模板题</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P4391" target="_blank">P3375 后缀也可以用哈希做</a>
+      </div>
+      <p>可以用字符串哈希替代 KMP 进行子串匹配，但时间复杂度为 O(n+m log m) 或 O(n+m)。</p>
+      <span class="tag tag-base">模板题</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P1381" target="_blank">P1381 单词背诵</a>
+      </div>
+      <p>滑动窗口 + 哈希。将所有单词哈希化，用滑动窗口找包含所有单词的最短区间。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P2852" target="_blank">P2852 [USACO06DEC] Milk Patterns G</a>
+      </div>
+      <p>二分答案 + 哈希。求至少出现 K 次的最长公共子串长度。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P5018" target="_blank">P5018 [NOIP2018 提高组] 对称二叉树</a>
+      </div>
+      <p>树上哈希。对每棵子树计算哈希值，判断是否存在对称的子树。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P5043" target="_blank">P5043 [模板] 树同构</a>
+      </div>
+      <p>树哈希的经典应用。判断两棵树是否同构，使用树哈希将树映射为哈希值。</p>
+      <span class="tag tag-hard">困难</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://codeforces.com/contest/19/problem/C" target="_blank">CF 19C Deletion of Repeats</a>
+      </div>
+      <p>利用字符串哈希找到重复子串并删除，需要贪心策略配合哈希。</p>
+      <span class="tag tag-hard">困难</span>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BFS 广度优先搜索 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#02-search">搜索篇</a> &gt;
+    BFS 广度优先搜索
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>BFS 广度优先搜索</h1>
+    <p class="subtitle">Breadth-First Search &mdash; 层层推进，逐层扩展</p>
+    <div class="tags">
+      <span class="tag tag-base">搜索</span>
+      <span class="tag tag-graph">图论</span>
+      <span class="tag tag-easy">基础</span>
+      <span class="tag tag-mid">最短路</span>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#sec1">BFS 基础 &mdash; 队列与层序遍历</a></li>
+      <li><a href="#sec2">BFS 求最短路 &mdash; 无权图最短路径</a></li>
+      <li><a href="#sec3">多源 BFS &mdash; 多起点同时扩展</a></li>
+      <li><a href="#sec4">双端队列 BFS (0-1 BFS)</a></li>
+      <li><a href="#sec5">BFS 状态搜索 &mdash; 状态空间搜索</a></li>
+      <li><a href="#sec6">BFS 与 DFS 对比</a></li>
+      <li><a href="#sec7">经典例题汇总</a></li>
+    </ul>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 1: BFS 基础 -->
+  <!-- ============================================================ -->
+  <div class="section" id="sec1">
+    <h2>1. BFS 基础 &mdash; 队列与层序遍历</h2>
+
+    <h3>1.1 核心思想</h3>
+    <p>
+      BFS（广度优先搜索）是一种从起点出发，<strong>逐层扩展</strong>的搜索策略。
+      它使用<strong>队列（queue）</strong>来维护待访问的节点：每次从队首取出一个节点，
+      将其所有未访问的邻居加入队尾，如此反复直到队列为空。
+    </p>
+
+    <div class="box box-info">
+      <div class="box-title">BFS 的关键性质</div>
+      <ul>
+        <li>BFS 天然按照"距离起点的步数"分层访问节点</li>
+        <li>第一次到达某个节点时，一定是经过<strong>最少步数</strong>的路径</li>
+        <li>BFS 适用于<strong>无权图</strong>或<strong>边权相同</strong>的图的最短路问题</li>
+      </ul>
+    </div>
+
+    <h3>1.2 BFS 执行流程图解</h3>
+    <p>以一个 4&times;4 网格迷宫为例，起点为 S，终点为 E，# 为障碍物，. 为可通行区域：</p>
+
+    <div class="diagram">
+      <pre>
+初始网格:                    第1层扩展:                  第2层扩展:
+  S . # .                      S1. # .                      S1. # .
+  . # . .                      1# . .                      22# . .
+  . . . #                      . . . #                      3. . . #
+  . . . E                      . . . E                      4. . . E
+
+队列: [(0,0,0)]              队列: [(1,0,1),(0,1,1)]     队列: [(2,0,2),(1,2,2),(3,0,2),(0,2,2)]
+dist[0][0] = 0               dist 更新到 1               dist 更新到 2
+
+第3层扩展:                    第4层扩展:                   最终到达 E:
+  S1. # .                      S1. # .                      S1. # .
+  22# . .                      22# . .                      22# . .
+  33. . #                      333. #                      333. #
+  4. . . E                      44. . E                      444. E*
+dist 更新到 3               dist 更新到 4               最短距离 = 4</pre>
+    </div>
+
+    <h3>1.3 BFS 基本代码模板</h3>
+    <pre><code><span class="cm">// 通用 BFS 模板（网格/图均适用）</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> dx[] = {<span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>, -<span class="num">1</span>};
+<span class="kw">const</span> <span class="ty">int</span> dy[] = {<span class="num">1</span>, -<span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span>};
+<span class="ty">int</span> n, m;
+<span class="ty">char</span> grid[<span class="num">1005</span>][<span class="num">1005</span>];      <span class="cm">// 网格地图</span>
+<span class="ty">int</span> dist[<span class="num">1005</span>][<span class="num">1005</span>];        <span class="cm">// 距离数组，-1 表示未访问</span>
+
+<span class="ty">int</span> <span class="fn">bfs</span>(<span class="ty">int</span> sx, <span class="ty">int</span> sy, <span class="ty">int</span> ex, <span class="ty">int</span> ey) {
+    <span class="fn">memset</span>(dist, -<span class="num">1</span>, <span class="kw">sizeof</span>(dist));
+    queue&lt;pair&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; q;
+    q.<span class="fn">push</span>({sx, sy});
+    dist[sx][sy] = <span class="num">0</span>;
+
+    <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+        <span class="kw">auto</span> [x, y] = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+
+        <span class="cm">// 到达终点，返回最短距离</span>
+        <span class="kw">if</span> (x == ex && y == ey) <span class="kw">return</span> dist[x][y];
+
+        <span class="cm">// 遍历四个方向</span>
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; <span class="num">4</span>; i++) {
+            <span class="ty">int</span> nx = x + dx[i], ny = y + dy[i];
+            <span class="cm">// 边界检查 + 可通行检查 + 未访问检查</span>
+            <span class="kw">if</span> (nx &gt;= <span class="num">0</span> && nx &lt; n && ny &gt;= <span class="num">0</span> && ny &lt; m
+                && grid[nx][ny] != <span class="str">'#'</span> && dist[nx][ny] == -<span class="num">1</span>) {
+                dist[nx][ny] = dist[x][y] + <span class="num">1</span>;
+                q.<span class="fn">push</span>({nx, ny});
+            }
+        }
+    }
+    <span class="kw">return</span> -<span class="num">1</span>;  <span class="cm">// 无法到达终点</span>
+}</code></pre>
+
+    <h3>1.4 层序遍历（按层处理）</h3>
+    <p>有时我们需要区分每一层的节点（例如二叉树的层序遍历），可以用以下两种方式：</p>
+
+    <h4>方法一：记录队列大小</h4>
+    <pre><code><span class="cm">// 按层 BFS：每次处理当前层的所有节点</span>
+<span class="ty">int</span> level = <span class="num">0</span>;
+<span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+    <span class="ty">int</span> sz = q.<span class="fn">size</span>();  <span class="cm">// 当前层的节点数</span>
+    <span class="kw">while</span> (sz--) {
+        <span class="kw">auto</span> cur = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+        <span class="cm">// 处理当前节点...</span>
+        <span class="cm">// 将邻居加入队列</span>
+    }
+    level++;  <span class="cm">// 进入下一层</span>
+}</code></pre>
+
+    <h4>方法二：存储 (节点, 层数) 对</h4>
+    <pre><code><span class="cm">// 使用 pair 存储节点和层数</span>
+queue&lt;pair&lt;Node, <span class="ty">int</span>&gt;&gt; q;
+q.<span class="fn">push</span>({start, <span class="num">0</span>});
+<span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+    <span class="kw">auto</span> [cur, level] = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+    <span class="cm">// level 即为当前层数</span>
+}</code></pre>
+
+    <h3>1.5 复杂度分析</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>场景</th><th>时间复杂度</th><th>空间复杂度</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>网格 BFS (n&times;m)</td><td>O(n&times;m)</td><td>O(n&times;m)</td><td>每个格子最多入队一次</td></tr>
+          <tr><td>图 BFS (V 个点, E 条边)</td><td>O(V + E)</td><td>O(V)</td><td>邻接表遍历所有边</td></tr>
+          <tr><td>邻接矩阵图 BFS</td><td>O(V&sup2;)</td><td>O(V)</td><td>每个点需扫描所有邻居</td></tr>
+          <tr><td>二叉树层序遍历</td><td>O(n)</td><td>O(n)</td><td>n 为节点数</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 2: BFS 求最短路 -->
+  <!-- ============================================================ -->
+  <div class="section" id="sec2">
+    <h2>2. BFS 求最短路 &mdash; 无权图最短路径</h2>
+
+    <h3>2.1 为什么 BFS 能求最短路？</h3>
+    <p>
+      在<strong>无权图</strong>中（或所有边权相同的图），BFS 从起点开始逐层扩展。
+      第 k 层的所有节点恰好是距离起点为 k 的所有节点。由于 BFS 按层访问，
+      每个节点<strong>第一次被访问</strong>时，一定走的是最短路径。
+    </p>
+
+    <div class="box box-tip">
+      <div class="box-title">关键证明</div>
+      <p>假设节点 v 第一次被访问时经过的路径长度为 d，如果存在一条更短路径长度 d' &lt; d，
+      那么在 BFS 扩展到第 d' 层时就会访问到 v，与"第一次在第 d 层被访问"矛盾。因此第一次访问即为最短路。</p>
+    </div>
+
+    <div class="diagram">
+      <pre>
+BFS 逐层扩展示意图：
+
+            [S]              第 0 层：起点 S
+           / | \
+         [A] [B] [C]         第 1 层：距离起点 1 的所有节点
+         /|    |    \
+       [D] [E] [F] [G]       第 2 层：距离起点 2 的所有节点
+          \  |      |
+          [H] [I]  [J]       第 3 层：距离起点 3 的所有节点
+
+队列变化过程：
+初始:  [S]
+       [A, B, C]              &lt;- 出 S，入 A B C
+       [B, C, D, E]           &lt;- 出 A，入 D E
+       [C, D, E, F]           &lt;- 出 B，入 F
+       [D, E, F, G]           &lt;- 出 C，入 G
+       [E, F, G, H]           &lt;- 出 D，入 H
+       ...                    逐层扩展，直到目标节点出队</pre>
+    </div>
+
+    <h3>2.2 图的 BFS 最短路模板</h3>
+    <pre><code><span class="cm">// 邻接表存储图，求单源最短路（无权图）</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> N = <span class="num">1e5</span> + <span class="num">5</span>;
+vector&lt;<span class="ty">int</span>&gt; g[N];           <span class="cm">// 邻接表</span>
+<span class="ty">int</span> dist[N];                 <span class="cm">// dist[i] = 起点到 i 的最短距离</span>
+
+<span class="ty">void</span> <span class="fn">bfs_shortest</span>(<span class="ty">int</span> s, <span class="ty">int</span> n) {
+    <span class="fn">memset</span>(dist, -<span class="num">1</span>, <span class="kw">sizeof</span>(<span class="ty">int</span>) * (n + <span class="num">1</span>));
+    queue&lt;<span class="ty">int</span>&gt; q;
+    q.<span class="fn">push</span>(s);
+    dist[s] = <span class="num">0</span>;
+
+    <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+        <span class="ty">int</span> u = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+        <span class="kw">for</span> (<span class="ty">int</span> v : g[u]) {
+            <span class="kw">if</span> (dist[v] == -<span class="num">1</span>) {
+                dist[v] = dist[u] + <span class="num">1</span>;
+                q.<span class="fn">push</span>(v);
+            }
+        }
+    }
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, m;
+    <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &n, &m);
+    <span class="kw">while</span> (m--) {
+        <span class="ty">int</span> u, v;
+        <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &u, &v);
+        g[u].<span class="fn">push_back</span>(v);
+        g[v].<span class="fn">push_back</span>(u);  <span class="cm">// 无向图</span>
+    }
+    <span class="fn">bfs_shortest</span>(<span class="num">1</span>, n);
+    <span class="fn">printf</span>(<span class="str">"到节点 %d 的最短距离: %d\n"</span>, n, dist[n]);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <h3>2.3 经典例题：迷宫最短路径</h3>
+    <div class="problem">
+      <div class="problem-title">迷宫最短路径（典型网格 BFS）</div>
+      <p><strong>题意：</strong>给定 n&times;m 的网格迷宫，S 为起点，E 为终点，# 为墙壁，. 为通道。
+      每次可以向上下左右移动一步，求从 S 到 E 的最短步数。</p>
+      <p><strong>思路：</strong>直接对网格进行 BFS，每个格子为一个节点，相邻可通行格子之间有边。</p>
+      <p><strong>复杂度：</strong>时间 O(n&times;m)，空间 O(n&times;m)</p>
+    </div>
+
+    <pre><code><span class="cm">// 洛谷 P1162 / LeetCode 1091 - 像此类网格最短路径问题</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="ty">int</span> n, m;
+<span class="ty">char</span> a[<span class="num">1005</span>][<span class="num">1005</span>];
+<span class="ty">int</span> d[<span class="num">1005</span>][<span class="num">1005</span>];
+<span class="kw">const</span> <span class="ty">int</span> dx[] = {<span class="num">0</span>,<span class="num">0</span>,<span class="num">1</span>,-<span class="num">1</span>};
+<span class="kw">const</span> <span class="ty">int</span> dy[] = {<span class="num">1</span>,-<span class="num">1</span>,<span class="num">0</span>,<span class="num">0</span>};
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &n, &m);
+    <span class="ty">int</span> sx, sy, ex, ey;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="fn">scanf</span>(<span class="str">"%s"</span>, a[i]);
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; m; j++) {
+            <span class="kw">if</span> (a[i][j] == <span class="str">'S'</span>) sx = i, sy = j;
+            <span class="kw">if</span> (a[i][j] == <span class="str">'E'</span>) ex = i, ey = j;
+        }
+    }
+
+    <span class="fn">memset</span>(d, -<span class="num">1</span>, <span class="kw">sizeof</span>(d));
+    queue&lt;pair&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; q;
+    q.<span class="fn">push</span>({sx, sy});
+    d[sx][sy] = <span class="num">0</span>;
+
+    <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+        <span class="kw">auto</span> [x,y] = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+        <span class="kw">for</span> (<span class="ty">int</span> k = <span class="num">0</span>; k &lt; <span class="num">4</span>; k++) {
+            <span class="ty">int</span> nx = x+dx[k], ny = y+dy[k];
+            <span class="kw">if</span> (nx&gt;=<span class="num">0</span> && nx&lt;n && ny&gt;=<span class="num">0</span> && ny&lt;m
+                && a[nx][ny]!=<span class="str">'#'</span> && d[nx][ny]==-<span class="num">1</span>) {
+                d[nx][ny] = d[x][y] + <span class="num">1</span>;
+                q.<span class="fn">push</span>({nx, ny});
+            }
+        }
+    }
+    <span class="fn">printf</span>(<span class="str">"%d\n"</span>, d[ex][ey]);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 3: 多源 BFS -->
+  <!-- ============================================================ -->
+  <div class="section" id="sec3">
+    <h2>3. 多源 BFS &mdash; 多起点同时扩展</h2>
+
+    <h3>3.1 什么是多源 BFS？</h3>
+    <p>
+      多源 BFS 是指<strong>同时从多个起点开始</strong>进行 BFS。将所有起点同时加入队列，
+      它们在第一层一起扩展，第二层继续一起扩展...每个节点的距离是它到<strong>最近起点</strong>的最短距离。
+    </p>
+
+    <div class="box box-info">
+      <div class="box-title">适用场景</div>
+      <ul>
+        <li>求每个点到最近的某个特殊点的距离（如到最近的 1 的距离）</li>
+        <li>多个火源同时蔓延，问人能否逃出（多源 BFS 的典型变形）</li>
+        <li>多个人从不同位置出发，问最短的汇合时间</li>
+      </ul>
+    </div>
+
+    <h3>3.2 多源 BFS 流程图解</h3>
+    <div class="diagram">
+      <pre>
+多源 BFS 示例：3 个源点同时扩展
+
+初始状态 (第0层):              第1层扩展:                   第2层扩展:
+  1 . . . .                      1 1 . . .                    1 1 2 . .
+  . . . . .                      1 . . . .                    1 2 . . .
+  . . 1 . .          -->         . 1 1 . .        -->         2 1 1 2 .
+  . . . . .                      . 1 . 1 .                    . 1 2 . .
+  . . . . 1                      . . . . 1                    . . . . 1
+
+源点: (0,0), (2,2), (4,4)     每个源点各扩展一层          各区域"汇合"
+
+队列初始化: [(0,0,0), (2,2,0), (4,4,0)]  -- 所有源点同时入队</pre>
+    </div>
+
+    <h3>3.3 多源 BFS 代码模板</h3>
+    <pre><code><span class="cm">// 多源 BFS：求每个格子到最近源点的距离</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="ty">int</span> n, m;
+<span class="ty">int</span> a[<span class="num">1005</span>][<span class="num">1005</span>];     <span class="cm">// 原始地图，1 表示源点</span>
+<span class="ty">int</span> dist[<span class="num">1005</span>][<span class="num">1005</span>];   <span class="cm">// 到最近源点的距离</span>
+<span class="kw">const</span> <span class="ty">int</span> dx[] = {<span class="num">0</span>,<span class="num">0</span>,<span class="num">1</span>,-<span class="num">1</span>};
+<span class="kw">const</span> <span class="ty">int</span> dy[] = {<span class="num">1</span>,-<span class="num">1</span>,<span class="num">0</span>,<span class="num">0</span>};
+
+<span class="ty">void</span> <span class="fn">multi_source_bfs</span>() {
+    <span class="fn">memset</span>(dist, -<span class="num">1</span>, <span class="kw">sizeof</span>(dist));
+    queue&lt;pair&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; q;
+
+    <span class="cm">// 步骤1: 将所有源点同时加入队列</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; m; j++)
+            <span class="kw">if</span> (a[i][j] == <span class="num">1</span>) {
+                q.<span class="fn">push</span>({i, j});
+                dist[i][j] = <span class="num">0</span>;
+            }
+
+    <span class="cm">// 步骤2: 正常 BFS，所有源点一起扩展</span>
+    <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+        <span class="kw">auto</span> [x, y] = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+        <span class="kw">for</span> (<span class="ty">int</span> k = <span class="num">0</span>; k &lt; <span class="num">4</span>; k++) {
+            <span class="ty">int</span> nx = x + dx[k], ny = y + dy[k];
+            <span class="kw">if</span> (nx &gt;= <span class="num">0</span> && nx &lt; n && ny &gt;= <span class="num">0</span> && ny &lt; m
+                && dist[nx][ny] == -<span class="num">1</span>) {
+                dist[nx][ny] = dist[x][y] + <span class="num">1</span>;
+                q.<span class="fn">push</span>({nx, ny});
+            }
+        }
+    }
+}</code></pre>
+
+    <h3>3.4 经典例题：LeetCode 542 - 01 矩阵</h3>
+    <div class="problem">
+      <div class="problem-title">LeetCode 542: <a href="https://leetcode.cn/problems/01-matrix/">01 矩阵</a></div>
+      <p><strong>题意：</strong>给定一个由 0 和 1 组成的矩阵，求每个元素到最近的 0 的距离。</p>
+      <p><strong>思路：</strong>将所有值为 0 的格子作为源点，进行多源 BFS，dist 数组即为答案。</p>
+    </div>
+
+    <pre><code><span class="cm">// LeetCode 542 - 01 矩阵 (多源 BFS)</span>
+<span class="kw">class</span> Solution {
+<span class="kw">public</span>:
+    <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; <span class="fn">updateMatrix</span>(<span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt;& mat) {
+        <span class="ty">int</span> n = mat.<span class="fn">size</span>(), m = mat[<span class="num">0</span>].<span class="fn">size</span>();
+        <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; dist(n, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;(m, -<span class="num">1</span>));
+        queue&lt;pair&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; q;
+
+        <span class="cm">// 所有 0 入队作为源点</span>
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+            <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; m; j++)
+                <span class="kw">if</span> (mat[i][j] == <span class="num">0</span>) {
+                    q.<span class="fn">push</span>({i, j});
+                    dist[i][j] = <span class="num">0</span>;
+                }
+
+        <span class="ty">int</span> dx[] = {<span class="num">0</span>,<span class="num">0</span>,<span class="num">1</span>,-<span class="num">1</span>}, dy[] = {<span class="num">1</span>,-<span class="num">1</span>,<span class="num">0</span>,<span class="num">0</span>};
+        <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+            <span class="kw">auto</span> [x,y] = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+            <span class="kw">for</span> (<span class="ty">int</span> k = <span class="num">0</span>; k &lt; <span class="num">4</span>; k++) {
+                <span class="ty">int</span> nx = x+dx[k], ny = y+dy[k];
+                <span class="kw">if</span> (nx&gt;=<span class="num">0</span> && nx&lt;n && ny&gt;=<span class="num">0</span> && ny&lt;m
+                    && dist[nx][ny]==-<span class="num">1</span>) {
+                    dist[nx][ny] = dist[x][y] + <span class="num">1</span>;
+                    q.<span class="fn">push</span>({nx, ny});
+                }
+            }
+        }
+        <span class="kw">return</span> dist;
+    }
+};</code></pre>
+
+    <h3>3.5 复杂度分析</h3>
+    <div class="complexity">
+      <span class="label">时间：</span>
+      <span class="value">O(n &times; m)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间：</span>
+      <span class="value">O(n &times; m)</span>
+    </div>
+    <p>多源 BFS 与单源 BFS 的时间复杂度完全相同，因为每个节点仍然只入队一次。
+    多个源点只是在初始化时同时入队，并不增加总遍历次数。</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 4: 0-1 BFS -->
+  <!-- ============================================================ -->
+  <div class="section" id="sec4">
+    <h2>4. 双端队列 BFS (0-1 BFS)</h2>
+
+    <h3>4.1 什么是 0-1 BFS？</h3>
+    <p>
+      当图的边权只有 0 和 1 两种时，可以使用<strong>双端队列（deque）</strong>来优化 BFS：
+    </p>
+    <ul>
+      <li>如果经过权为 0 的边到达邻居节点，将该邻居<strong>插入队首</strong>（相当于"免费"扩展）</li>
+      <li>如果经过权为 1 的边到达邻居节点，将该邻居<strong>插入队尾</strong>（正常扩展）</li>
+    </ul>
+    <p>这样保证了队列中节点按距离单调不减排列，每次从队首取出的节点就是当前距离最小的。</p>
+
+    <div class="box box-info">
+      <div class="box-title">与 Dijkstra 的关系</div>
+      <p>0-1 BFS 本质上是 Dijkstra 算法在边权只有 0/1 时的特化。Dijkstra 用优先队列维护最小距离，
+      而 0-1 BFS 用双端队列替代，因为只有 0/1 两种边权，所以可以用队首/队尾区分。</p>
+    </div>
+
+    <h3>4.2 0-1 BFS 流程图解</h3>
+    <div class="diagram">
+      <pre>
+示例图：边权为 0 或 1
+
+    0       1
+[S] ---&gt; [A] ---&gt; [T]
+ |                   ^
+ |   1       0       |
+ +---&gt; [B] ---&gt; [C]--+
+       (权1)   (权0)
+
+执行过程：
+步骤  双端队列 (左=队首)        出队节点   dist[] 更新
+ 0    [S]                       --         dist[S]=0
+ 1    [A, B]                    S          dist[A]=0(权0,队首), dist[B]=1(权1,队尾)
+ 2    [B, T]                    A          dist[T]=1(权1,队尾)
+ 3    [C, T]                    B          dist[C]=1+0=1(权0,队首)
+ 4    [T]                       C          (T 已在队列中, dist[T]=1 已是最优)
+ 5    []                        T          完成! dist[T]=1
+
+关键: A 通过权 0 边到达，插队首; B 通过权 1 边到达，排队尾</pre>
+    </div>
+
+    <h3>4.3 0-1 BFS 代码模板</h3>
+    <pre><code><span class="cm">// 0-1 BFS 双端队列模板</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> INF = <span class="num">1e9</span>;
+<span class="kw">const</span> <span class="ty">int</span> N = <span class="num">1e5</span> + <span class="num">5</span>;
+
+<span class="kw">struct</span> Edge { <span class="ty">int</span> to, w; };
+vector&lt;Edge&gt; g[N];
+<span class="ty">int</span> dist[N];
+
+<span class="ty">void</span> <span class="fn">bfs_01</span>(<span class="ty">int</span> s, <span class="ty">int</span> n) {
+    <span class="fn">fill</span>(dist, dist + n + <span class="num">1</span>, INF);
+    deque&lt;<span class="ty">int</span>&gt; dq;
+    dq.<span class="fn">push_front</span>(s);
+    dist[s] = <span class="num">0</span>;
+
+    <span class="kw">while</span> (!dq.<span class="fn">empty</span>()) {
+        <span class="ty">int</span> u = dq.<span class="fn">front</span>(); dq.<span class="fn">pop_front</span>();
+
+        <span class="kw">for</span> (<span class="kw">auto</span>& [v, w] : g[u]) {
+            <span class="kw">if</span> (dist[u] + w &lt; dist[v]) {
+                dist[v] = dist[u] + w;
+                <span class="kw">if</span> (w == <span class="num">0</span>)
+                    dq.<span class="fn">push_front</span>(v);  <span class="cm">// 权 0: 插队首</span>
+                <span class="kw">else</span>
+                    dq.<span class="fn">push_back</span>(v);   <span class="cm">// 权 1: 排队尾</span>
+            }
+        }
+    }
+}</code></pre>
+
+    <h3>4.4 网格 0-1 BFS：带代价的移动</h3>
+    <p>在网格问题中，有时候移动到某个格子有不同代价。例如：在 LeetCode 1368 中，
+    不同方向的移动代价不同（0 或 1），就可以用 0-1 BFS。</p>
+
+    <pre><code><span class="cm">// 网格 0-1 BFS 模板</span>
+<span class="ty">int</span> <span class="fn">bfs_grid_01</span>(<span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt;& grid) {
+    <span class="ty">int</span> n = grid.<span class="fn">size</span>(), m = grid[<span class="num">0</span>].<span class="fn">size</span>();
+    <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; dist(n, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;(m, INF));
+    <span class="cm">// 四个方向: 右(1), 左(2), 下(3), 上(4)</span>
+    <span class="ty">int</span> dx[] = {<span class="num">0</span>,<span class="num">0</span>,<span class="num">1</span>,-<span class="num">1</span>};
+    <span class="ty">int</span> dy[] = {<span class="num">1</span>,-<span class="num">1</span>,<span class="num">0</span>,<span class="num">0</span>};
+
+    deque&lt;pair&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; dq;
+    dq.<span class="fn">push_front</span>({<span class="num">0</span>,<span class="num">0</span>});
+    dist[<span class="num">0</span>][<span class="num">0</span>] = <span class="num">0</span>;
+
+    <span class="kw">while</span> (!dq.<span class="fn">empty</span>()) {
+        <span class="kw">auto</span> [x,y] = dq.<span class="fn">front</span>(); dq.<span class="fn">pop_front</span>();
+        <span class="kw">for</span> (<span class="ty">int</span> k = <span class="num">0</span>; k &lt; <span class="num">4</span>; k++) {
+            <span class="ty">int</span> nx = x+dx[k], ny = y+dy[k];
+            <span class="kw">if</span> (nx&lt;<span class="num">0</span>||nx&gt;=n||ny&lt;<span class="num">0</span>||ny&gt;=m) <span class="kw">continue</span>;
+            <span class="cm">// 当前方向编号 k+1，与格子标记比较得出代价</span>
+            <span class="ty">int</span> cost = (grid[x][y] == k+<span class="num">1</span>) ? <span class="num">0</span> : <span class="num">1</span>;
+            <span class="kw">if</span> (dist[x][y] + cost &lt; dist[nx][ny]) {
+                dist[nx][ny] = dist[x][y] + cost;
+                <span class="kw">if</span> (cost == <span class="num">0</span>) dq.<span class="fn">push_front</span>({nx,ny});
+                <span class="kw">else</span> dq.<span class="fn">push_back</span>({nx,ny});
+            }
+        }
+    }
+    <span class="kw">return</span> dist[n-<span class="num">1</span>][m-<span class="num">1</span>];
+}</code></pre>
+
+    <h3>4.5 经典例题</h3>
+    <div class="problem">
+      <div class="problem-title">LeetCode 1368: <a href="https://leetcode.cn/problems/min-cost-to-make-at-least-one-valid-path-in-a-grid/">使网格图至少有一条有效路径的最小代价</a></div>
+      <p><strong>题意：</strong>网格中每个格子有方向箭头(1=右,2=左,3=下,4=上)。
+      沿箭头方向移动代价为 0，改变方向代价为 1。求从左上角到右下角的最小代价。</p>
+      <p><strong>思路：</strong>典型的 0-1 BFS。沿箭头方向走代价 0（插队首），逆箭头代价 1（排队尾）。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">Codeforces 1063B: <a href="https://codeforces.com/problemset/problem/1063/B">Labyrinth</a></div>
+      <p><strong>题意：</strong>网格迷宫中可以无限次向左/向右移动，但向右移动的次数有限制。求能到达的格子数。</p>
+      <p><strong>思路：</strong>向左/右移动代价为 0/1，上下移动代价为 0，使用 0-1 BFS 求解。</p>
+    </div>
+
+    <h3>4.6 复杂度分析</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>算法</th><th>时间复杂度</th><th>空间复杂度</th><th>适用条件</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>0-1 BFS</td><td>O(V + E)</td><td>O(V)</td><td>边权只有 0 和 1</td></tr>
+          <tr><td>Dijkstra</td><td>O((V+E) log V)</td><td>O(V)</td><td>边权为非负数</td></tr>
+          <tr><td>普通 BFS</td><td>O(V + E)</td><td>O(V)</td><td>边权相同（等价于全为 1）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 5: BFS 状态搜索 -->
+  <!-- ============================================================ -->
+  <div class="section" id="sec5">
+    <h2>5. BFS 状态搜索 &mdash; 状态空间搜索</h2>
+
+    <h3>5.1 什么是状态搜索？</h3>
+    <p>
+      在很多问题中，BFS 搜索的对象不是网格或图上的节点，而是<strong>问题的状态</strong>。
+      每个状态可以看作图中的一个节点，从一个状态通过某种操作转移到另一个状态就是一条边。
+      用 BFS 搜索状态空间，可以找到<strong>最少操作次数</strong>使初始状态变为目标状态。
+    </p>
+
+    <div class="box box-tip">
+      <div class="box-title">状态搜索的关键步骤</div>
+      <ol>
+        <li><strong>定义状态：</strong>用什么数据结构表示一个状态（整数编码、字符串、结构体等）</li>
+        <li><strong>状态转移：</strong>从当前状态可以进行哪些操作，产生哪些新状态</li>
+        <li><strong>判重：</strong>用 set、map 或标记数组记录已访问的状态，避免重复搜索</li>
+        <li><strong>终止条件：</strong>找到目标状态时返回步数</li>
+      </ol>
+    </div>
+
+    <h3>5.2 经典例题：八数码问题</h3>
+    <div class="problem">
+      <div class="problem-title">八数码 / 滑动拼图（LeetCode 773）</div>
+      <p><strong>题意：</strong>3&times;3 的网格中有 8 个数字块和一个空格，每次可以将空格与相邻数字交换。
+      求从初始状态到达目标状态的最少步数。</p>
+      <p><strong>思路：</strong>将棋盘状态编码为字符串，BFS 搜索所有可达状态。</p>
+    </div>
+
+    <div class="diagram">
+      <pre>
+八数码状态空间搜索示意：
+
+初始状态:           操作: 交换空格与相邻数字        目标状态:
++---+---+---+                                   +---+---+---+
+| 1 | 2 | 3 |      1 2 3      1 2 3             | 1 | 2 | 3 |
++---+---+---+      4   5  --> 4 5                +---+---+---+
+| 4 |   | 5 |      6 7 8      6 7 8             | 4 | 5 |   |
++---+---+---+                                   +---+---+---+
+| 6 | 7 | 8 |      空格下移    空格右移          | 6 | 7 | 8 |
++---+---+---+                                   +---+---+---+
+
+状态编码: "123456780" (0 表示空格)
+状态转移: 每次移动空格，产生最多 4 个新状态
+判重: 使用 unordered_set 记录已访问状态</pre>
+    </div>
+
+    <pre><code><span class="cm">// 八数码 BFS 状态搜索</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">slidingPuzzle</span>(<span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt;& board) {
+    <span class="ty">string</span> target = <span class="str">"123450"</span>;  <span class="cm">// 目标状态</span>
+    <span class="ty">string</span> start = <span class="str">""</span>;
+    <span class="kw">for</span> (<span class="kw">auto</span>& row : board)
+        <span class="kw">for</span> (<span class="ty">int</span> x : row)
+            start += <span class="fn">to_string</span>(x);
+
+    <span class="kw">if</span> (start == target) <span class="kw">return</span> <span class="num">0</span>;
+
+    <span class="cm">// 预计算每个位置的邻居（2x3 网格）</span>
+    <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; neighbors = {
+        {<span class="num">1</span>,<span class="num">3</span>}, {<span class="num">0</span>,<span class="num">2</span>,<span class="num">4</span>}, {<span class="num">1</span>,<span class="num">5</span>},
+        {<span class="num">0</span>,<span class="num">4</span>}, {<span class="num">1</span>,<span class="num">3</span>,<span class="num">5</span>}, {<span class="num">2</span>,<span class="num">4</span>}
+    };
+
+    queue&lt;pair&lt;<span class="ty">string</span>,<span class="ty">int</span>&gt;&gt; q;  <span class="cm">// (状态, 步数)</span>
+    unordered_set&lt;<span class="ty">string</span>&gt; vis;
+    q.<span class="fn">push</span>({start, <span class="num">0</span>});
+    vis.<span class="fn">insert</span>(start);
+
+    <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+        <span class="kw">auto</span> [state, steps] = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+        <span class="ty">int</span> pos = state.<span class="fn">find</span>(<span class="str">'0'</span>);  <span class="cm">// 找空格位置</span>
+
+        <span class="kw">for</span> (<span class="ty">int</span> next : neighbors[pos]) {
+            <span class="fn">swap</span>(state[pos], state[next]);
+            <span class="kw">if</span> (state == target) <span class="kw">return</span> steps + <span class="num">1</span>;
+            <span class="kw">if</span> (!vis.<span class="fn">count</span>(state)) {
+                vis.<span class="fn">insert</span>(state);
+                q.<span class="fn">push</span>({state, steps + <span class="num">1</span>});
+            }
+            <span class="fn">swap</span>(state[pos], state[next]);  <span class="cm">// 恢复状态</span>
+        }
+    }
+    <span class="kw">return</span> -<span class="num">1</span>;
+}</code></pre>
+
+    <h3>5.3 其他状态搜索经典问题</h3>
+
+    <h4>水壶问题</h4>
+    <div class="problem">
+      <div class="problem-title">LeetCode 365: <a href="https://leetcode.cn/problems/water-and-jug-problem/">水壶问题</a></div>
+      <p><strong>题意：</strong>有两个容量分别为 x 升和 y 升的水壶，可以通过装满、倒空、相互倒水操作，
+      判断是否可以得到恰好 z 升水。</p>
+      <p><strong>状态：</strong>(a, b) 表示两个水壶当前的水量。BFS 搜索所有可达状态。</p>
+    </div>
+
+    <h4>翻转游戏</h4>
+    <div class="problem">
+      <div class="problem-title">最小翻转次数使棋盘统一</div>
+      <p><strong>题意：</strong>n&times;m 的 01 矩阵，每次翻转一个格子会同时翻转其上下左右邻居。
+      求使所有格子变为 0 的最少翻转次数。</p>
+      <p><strong>思路：</strong>第一行的翻转方案确定后，后面每行的翻转方案被唯一确定（贪心），
+      枚举第一行的 2^m 种状态进行 BFS/DFS 搜索。</p>
+    </div>
+
+    <h3>5.4 状态编码技巧</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>编码方式</th><th>适用场景</th><th>示例</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>整数编码</td><td>状态可以用整数表示</td><td>位运算压缩棋盘状态</td></tr>
+          <tr><td>字符串编码</td><td>状态较复杂，整数不够用</td><td>八数码 "123456780"</td></tr>
+          <tr><td>pair/tuple</td><td>多维状态</td><td>水壶问题 (a, b)</td></tr>
+          <tr><td>哈希结构体</td><td>自定义状态</td><td>需要自定义 hash 函数</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 6: BFS 与 DFS 对比 -->
+  <!-- ============================================================ -->
+  <div class="section" id="sec6">
+    <h2>6. BFS 与 DFS 对比</h2>
+
+    <h3>6.1 核心区别</h3>
+    <div class="diagram">
+      <pre>
+BFS (广度优先)                       DFS (深度优先)
+
+     [S]                                  [S]
+    / | \                                 /
+  [A] [B] [C]                          [A]
+  /|   |    \                           /
+[D] [E] [F] [G]                      [D]
+                                      |
+                                    [E]  ... 回溯
+                                       \
+                                       [B]
+                                        |
+                                       [F]  ... 继续深入
+
+队列: 先进先出 (FIFO)                栈/递归: 后进先出 (LIFO)
+逐层扩展，像"水波扩散"                沿一条路走到底，再回溯</pre>
+    </div>
+
+    <h3>6.2 详细对比表</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>对比维度</th><th>BFS（广度优先）</th><th>DFS（深度优先）</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>数据结构</td><td>队列 (queue)</td><td>栈 (stack) / 递归</td></tr>
+          <tr><td>搜索顺序</td><td>逐层扩展，先广后深</td><td>沿路径深入，先深后广</td></tr>
+          <tr><td>最短路</td><td><strong>天然保证</strong>无权图最短路</td><td>不能保证最短路</td></tr>
+          <tr><td>空间复杂度</td><td>O(分支因子^深度)，较<strong>大</strong></td><td>O(深度)，较<strong>小</strong></td></tr>
+          <tr><td>完备性</td><td>有解一定找到（有限图）</td><td>可能陷入无限深分支</td></tr>
+          <tr><td>最优性</td><td>无权图中最优</td><td>不保证最优</td></tr>
+          <tr><td>实现方式</td><td>循环 + 队列</td><td>递归 / 循环 + 栈</td></tr>
+          <tr><td>适用问题</td><td>最短路、层序遍历、状态搜索</td><td>连通性、枚举方案、回溯</td></tr>
+          <tr><td>内存消耗</td><td>大（需存整层节点）</td><td>小（只需存当前路径）</td></tr>
+          <tr><td>递归深度</td><td>无限制</td><td>受递归栈深度限制</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>6.3 什么时候用 BFS？什么时候用 DFS？</h3>
+
+    <div class="box box-tip">
+      <div class="box-title">选择 BFS 的场景</div>
+      <ul>
+        <li>需要求<strong>最短路径/最少步数</strong>（无权图）</li>
+        <li>需要<strong>层序处理</strong>（如二叉树层序遍历）</li>
+        <li>图的<strong>深度很大</strong>而宽度有限（避免栈溢出）</li>
+        <li>需要找到<strong>第一个满足条件的解</strong>（最优性搜索）</li>
+        <li><strong>多源同时扩展</strong>的问题</li>
+      </ul>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">选择 DFS 的场景</div>
+      <ul>
+        <li>需要<strong>枚举所有方案</strong>（如全排列、子集）</li>
+        <li>需要判断<strong>连通性</strong>（不需要最短路）</li>
+        <li>搜索空间树的<strong>深度较小</strong>而分支很多</li>
+        <li>需要<strong>回溯</strong>的场景（如 N 皇后、数独）</li>
+        <li><strong>拓扑排序</strong>、<strong>强连通分量</strong>等图算法的基础</li>
+      </ul>
+    </div>
+
+    <h3>6.4 BFS 与 DFS 的典型对比示例</h3>
+    <div class="diagram">
+      <pre>
+问题：在一个无限大的二叉树中找目标节点
+
+BFS: 逐层搜索              DFS: 沿左子树一路深入
+层 0: [1]                  1 -> 2 -> 4 -> 8 -> 16 -> ...
+层 1: [2, 3]               如果目标在右子树深处，需要
+层 2: [4, 5, 6, 7]         很久才能回溯找到
+层 3: [8,9,10,11,12,13,14,15]
+
+如果目标在 15: BFS 用 O(2^d) 空间
+              DFS 用 O(d) 空间，但可能先遍历完整棵左子树
+
+结论:
+- 目标离根近 -> BFS 更快
+- 目标离根远 -> DFS 省空间，但可能慢
+- 无限图中 -> BFS 保证找到最短路径</pre>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 7: 经典例题汇总 -->
+  <!-- ============================================================ -->
+  <div class="section" id="sec7">
+    <h2>7. 经典例题汇总</h2>
+
+    <h3>7.1 基础 BFS</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>题目</th><th>来源</th><th>难度</th><th>核心考点</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>岛屿数量</td>
+            <td>LeetCode 200</td>
+            <td><span class="tag tag-easy">简单</span></td>
+            <td>BFS/DFS 求连通块数量</td>
+          </tr>
+          <tr>
+            <td>二叉树的层序遍历</td>
+            <td>LeetCode 102</td>
+            <td><span class="tag tag-easy">简单</span></td>
+            <td>按层 BFS</td>
+          </tr>
+          <tr>
+            <td>腐烂的橘子</td>
+            <td>LeetCode 994</td>
+            <td><span class="tag tag-mid">中等</span></td>
+            <td>多源 BFS</td>
+          </tr>
+          <tr>
+            <td>单词接龙</td>
+            <td>LeetCode 127</td>
+            <td><span class="tag tag-hard">困难</span></td>
+            <td>图上 BFS 最短路</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>7.2 最短路相关</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>题目</th><th>来源</th><th>难度</th><th>核心考点</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>迷宫最短路径</td>
+            <td>洛谷 P1162</td>
+            <td><span class="tag tag-easy">简单</span></td>
+            <td>网格 BFS 最短路</td>
+          </tr>
+          <tr>
+            <td>01 矩阵</td>
+            <td>LeetCode 542</td>
+            <td><span class="tag tag-mid">中等</span></td>
+            <td>多源 BFS</td>
+          </tr>
+          <tr>
+            <td>地图分析</td>
+            <td>LeetCode 1162</td>
+            <td><span class="tag tag-mid">中等</span></td>
+            <td>多源 BFS + 最远距离</td>
+          </tr>
+          <tr>
+            <td>最小代价使网格有效路径</td>
+            <td>LeetCode 1368</td>
+            <td><span class="tag tag-hard">困难</span></td>
+            <td>0-1 BFS</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>7.3 状态搜索</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>题目</th><th>来源</th><th>难度</th><th>核心考点</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>滑动谜题</td>
+            <td>LeetCode 773</td>
+            <td><span class="tag tag-hard">困难</span></td>
+            <td>状态编码 + BFS</td>
+          </tr>
+          <tr>
+            <td>打开转盘锁</td>
+            <td>LeetCode 752</td>
+            <td><span class="tag tag-mid">中等</span></td>
+            <td>字符串状态 BFS</td>
+          </tr>
+          <tr>
+            <td>水壶问题</td>
+            <td>LeetCode 365</td>
+            <td><span class="tag tag-mid">中等</span></td>
+            <td>双状态 BFS</td>
+          </tr>
+          <tr>
+            <td>骑士的最短路径</td>
+            <td>LintCode 611</td>
+            <td><span class="tag tag-mid">中等</span></td>
+            <td>棋盘 BFS</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>7.4 综合进阶</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>题目</th><th>来源</th><th>难度</th><th>核心考点</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Labyrinth</td>
+            <td>CF 1063B</td>
+            <td><span class="tag tag-hard">困难</span></td>
+            <td>0-1 BFS + 限制条件</td>
+          </tr>
+          <tr>
+            <td>逃离迷宫</td>
+            <td>洛谷 P1363</td>
+            <td><span class="tag tag-hard">困难</span></td>
+            <td>BFS + 无限图判环</td>
+          </tr>
+          <tr>
+            <td>双向 BFS</td>
+            <td>LeetCode 127 变体</td>
+            <td><span class="tag tag-hard">困难</span></td>
+            <td>两端同时 BFS，减少搜索空间</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>7.5 完整例题详解：腐烂的橘子 (多源 BFS)</h3>
+    <div class="problem">
+      <div class="problem-title">LeetCode 994: <a href="https://leetcode.cn/problems/rotting-oranges/">腐烂的橘子</a></div>
+      <p><strong>题意：</strong>网格中有新鲜橘子(1)、腐烂橘子(2)和空格(0)。每分钟腐烂橘子会感染上下左右的新鲜橘子。
+      求所有橘子腐烂的最少分钟数，如果有橘子永远不会腐烂返回 -1。</p>
+    </div>
+
+    <pre><code><span class="cm">// LeetCode 994 - 腐烂的橘子（经典多源 BFS）</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">class</span> Solution {
+<span class="kw">public</span>:
+    <span class="ty">int</span> <span class="fn">orangesRotting</span>(<span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt;& grid) {
+        <span class="ty">int</span> n = grid.<span class="fn">size</span>(), m = grid[<span class="num">0</span>].<span class="fn">size</span>();
+        queue&lt;pair&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; q;
+        <span class="ty">int</span> fresh = <span class="num">0</span>;
+
+        <span class="cm">// 步骤1: 将所有腐烂橘子入队，统计新鲜橘子数</span>
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+            <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; m; j++) {
+                <span class="kw">if</span> (grid[i][j] == <span class="num">2</span>) q.<span class="fn">push</span>({i, j});
+                <span class="kw">if</span> (grid[i][j] == <span class="num">1</span>) fresh++;
+            }
+
+        <span class="kw">if</span> (fresh == <span class="num">0</span>) <span class="kw">return</span> <span class="num">0</span>;
+
+        <span class="ty">int</span> dx[] = {<span class="num">0</span>,<span class="num">0</span>,<span class="num">1</span>,-<span class="num">1</span>};
+        <span class="ty">int</span> dy[] = {<span class="num">1</span>,-<span class="num">1</span>,<span class="num">0</span>,<span class="num">0</span>};
+        <span class="ty">int</span> minutes = <span class="num">0</span>;
+
+        <span class="cm">// 步骤2: 多源 BFS，逐层感染</span>
+        <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+            <span class="ty">int</span> sz = q.<span class="fn">size</span>();
+            <span class="ty">bool</span> spread = <span class="kw">false</span>;
+            <span class="kw">while</span> (sz--) {
+                <span class="kw">auto</span> [x, y] = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+                <span class="kw">for</span> (<span class="ty">int</span> k = <span class="num">0</span>; k &lt; <span class="num">4</span>; k++) {
+                    <span class="ty">int</span> nx = x+dx[k], ny = y+dy[k];
+                    <span class="kw">if</span> (nx&gt;=<span class="num">0</span> && nx&lt;n && ny&gt;=<span class="num">0</span> && ny&lt;m
+                        && grid[nx][ny] == <span class="num">1</span>) {
+                        grid[nx][ny] = <span class="num">2</span>;  <span class="cm">// 感染</span>
+                        fresh--;
+                        spread = <span class="kw">true</span>;
+                        q.<span class="fn">push</span>({nx, ny});
+                    }
+                }
+            }
+            <span class="kw">if</span> (spread) minutes++;
+        }
+
+        <span class="cm">// 步骤3: 检查是否还有新鲜橘子</span>
+        <span class="kw">return</span> fresh == <span class="num">0</span> ? minutes : -<span class="num">1</span>;
+    }
+};</code></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">BFS 常见陷阱</div>
+      <ul>
+        <li><strong>忘记判重：</strong>节点可能被多次加入队列，导致重复计算和超时。入队时就要标记已访问，而不是出队时才标记。</li>
+        <li><strong>边界检查遗漏：</strong>网格问题中要检查 nx, ny 是否越界。</li>
+        <li><strong>队列溢出：</strong>搜索空间过大时，BFS 队列可能消耗大量内存。考虑双向 BFS 或迭代加深。</li>
+        <li><strong>状态转移遗漏：</strong>状态搜索问题中，确保所有可能的操作都被考虑。</li>
+        <li><strong>多源 BFS 初始化错误：</strong>所有源点必须在 BFS 开始前全部入队，而不是一个一个入。</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

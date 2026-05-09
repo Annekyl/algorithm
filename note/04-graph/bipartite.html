@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>二分图 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="page-header">
+  <h1>二分图</h1>
+  <p class="subtitle">Bipartite Graph &mdash; 匈牙利算法、König 定理、Hall 定理</p>
+  <div class="tags">
+    <span class="tag tag-graph">图论</span>
+    <span class="tag tag-mid">中等</span>
+    <span class="tag tag-base">模板</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#04">图论篇</a> &gt;
+    二分图
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#overview">二分图概述</a></li>
+      <li><a href="#check">二分图判定（染色法）</a></li>
+      <li><a href="#hungarian">匈牙利算法</a></li>
+      <li><a href="#konig">König 定理</a></li>
+      <li><a href="#hall">Hall 定理</a></li>
+      <li><a href="#applications">应用与建模</a></li>
+      <li><a href="#template">C++ 完整模板</a></li>
+      <li><a href="#problems">经典题目</a></li>
+    </ul>
+  </div>
+
+  <!-- ==================== 1. 二分图概述 ==================== -->
+  <div class="section" id="overview">
+    <h2>1. 二分图概述</h2>
+
+    <h3>1.1 定义</h3>
+    <p>二分图（Bipartite Graph）是顶点集可以分割为两个互不相交的子集 U 和 V，使得图中每条边的两个端点分别属于 U 和 V 的图。换句话说，<strong>同一集合内部没有边相连</strong>。</p>
+
+    <div class="diagram">
+      <pre>
+  二分图结构示意：
+
+  集合 U (左部)          集合 V (右部)
+  ┌─────────┐            ┌─────────┐
+  │  u1 ──────────────── v1       │
+  │  u2 ──────┬───────── v2       │
+  │  u3 ──────┼───────── v3       │
+  │  u4 ──────┘          v4       │
+  └─────────┘            └─────────┘
+
+  特征：所有边都是 "跨集合" 的，同集合内无边
+      </pre>
+    </div>
+
+    <h3>1.2 核心性质</h3>
+    <ul>
+      <li>无向图 G 是二分图 <strong>当且仅当</strong> G 不含奇数长度的环（奇环）</li>
+      <li>树一定是二分图（无环，自然无奇环）</li>
+      <li>二分图的最大独立集 = 总顶点数 - 最大匹配数</li>
+      <li>二分图的最小顶点覆盖 = 最大匹配数（König 定理）</li>
+    </ul>
+
+    <div class="box box-info">
+      <div class="box-title">核心概念</div>
+      <p>二分图的研究核心围绕三个经典问题：<strong>判定</strong>（是否为二分图）、<strong>匹配</strong>（最大匹配）、<strong>覆盖</strong>（最小顶点覆盖）。这三者通过 König 定理紧密联系。</p>
+    </div>
+  </div>
+
+  <!-- ==================== 2. 二分图判定 ==================== -->
+  <div class="section" id="check">
+    <h2>2. 二分图判定（染色法）</h2>
+
+    <h3>2.1 原理</h3>
+    <p>使用 BFS 或 DFS 对图进行 2-染色（黑白染色）。若存在一种染色方案使得相邻顶点颜色不同，则图为二分图。若染色过程中发现相邻顶点同色，则图含奇环，不是二分图。</p>
+
+    <h3>2.2 BFS 染色</h3>
+    <div class="steps">
+      <div class="step">任选一个未染色的顶点，染为颜色 0（白色），加入队列</div>
+      <div class="step">取出队首顶点 u，遍历其所有邻居 v</div>
+      <div class="step">若 v 未染色：染为与 u 不同的颜色，入队</div>
+      <div class="step">若 v 已染色且与 u 同色：存在奇环，不是二分图</div>
+      <div class="step">队列为空则该连通分量染色成功；继续处理下一个未染色分量</div>
+    </div>
+
+    <h3>2.3 BFS 染色代码</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">100010</span>;
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; g[N];
+<span class="ty">int</span> color[N]; <span class="cm">// 0=未染色, 1=白色, -1=黑色</span>
+
+<span class="ty">bool</span> <span class="fn">bfs</span>(<span class="ty">int</span> start) {
+    <span class="ty">queue</span>&lt;<span class="ty">int</span>&gt; q;
+    color[start] = <span class="num">1</span>;
+    q.<span class="fn">push</span>(start);
+    <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+        <span class="ty">int</span> u = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+        <span class="kw">for</span> (<span class="ty">int</span> v : g[u]) {
+            <span class="kw">if</span> (color[v] == <span class="num">0</span>) {
+                color[v] = -color[u]; <span class="cm">// 染相反颜色</span>
+                q.<span class="fn">push</span>(v);
+            } <span class="kw">else if</span> (color[v] == color[u]) {
+                <span class="kw">return false</span>; <span class="cm">// 同色冲突，存在奇环</span>
+            }
+        }
+    }
+    <span class="kw">return true</span>;
+}
+
+<span class="ty">bool</span> <span class="fn">isBipartite</span>(<span class="ty">int</span> n) {
+    <span class="fn">memset</span>(color, <span class="num">0</span>, <span class="kw">sizeof</span>(color));
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        <span class="kw">if</span> (color[i] == <span class="num">0</span> &amp;&amp; !<span class="fn">bfs</span>(i))
+            <span class="kw">return false</span>;
+    <span class="kw">return true</span>;
+}</code></pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(V + E)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(V)</span>
+    </div>
+  </div>
+
+  <!-- ==================== 3. 匈牙利算法 ==================== -->
+  <div class="section" id="hungarian">
+    <h2>3. 匈牙利算法（Hungarian Algorithm）</h2>
+
+    <h3>3.1 问题定义</h3>
+    <p><strong>二分图最大匹配</strong>：给定二分图 G = (U, V, E)，找到一个边集 M，使得 M 中任意两条边没有公共端点，且 |M| 最大。</p>
+
+    <h3>3.2 核心概念</h3>
+    <ul>
+      <li><strong>匹配（Matching）</strong>：边集 M 中没有两条边共享同一个顶点</li>
+      <li><strong>匹配点</strong>：被匹配边覆盖的顶点</li>
+      <li><strong>非匹配点</strong>：未被匹配边覆盖的顶点</li>
+      <li><strong>增广路（Augmenting Path）</strong>：从 U 中非匹配点出发，交替经过非匹配边和匹配边，到达 V 中非匹配点的路径</li>
+      <li><strong>交错路</strong>：匹配边和非匹配边交替出现的路径</li>
+    </ul>
+
+    <h3>3.3 增广路定理（Berge's Theorem）</h3>
+    <div class="box box-info">
+      <div class="box-title">Berge 增广路定理</div>
+      <p>一个匹配 M 是最大匹配，当且仅当图中不存在关于 M 的增广路。</p>
+      <p>找到一条增广路后，将路径上匹配边和非匹配边互换，匹配数 +1。</p>
+    </div>
+
+    <h3>3.4 算法流程详解</h3>
+    <p>匈牙利算法的核心思想：对每个左部顶点 u，尝试为其寻找匹配。若目标顶点 v 已被匹配，则递归尝试为 v 的原匹配对象寻找新的匹配（"让路"操作）。</p>
+
+    <div class="diagram">
+      <pre>
+  匈牙利算法 —— 增广路示意
+
+  第 1 轮：u1 匹配 v1         第 2 轮：u2 想匹配 v1（已占用）
+  u1 ═══ v1  (匹配)           u2 ─── v1  (尝试)
+                               u1 ─── v2  (给 u1 找新匹配)
+                               u2 ═══ v1, u1 ═══ v2  (增广!)
+
+  交替路径: u2 → v1 → u1 → v2
+  匹配边与非匹配边互换，匹配数 +1
+      </pre>
+    </div>
+
+    <div class="steps">
+      <div class="step">初始化匹配数组 matchV[] = -1（表示未匹配）</div>
+      <div class="step">遍历每个左部顶点 u</div>
+      <div class="step">对 u 执行 DFS 寻找增广路：遍历 u 的邻居 v</div>
+      <div class="step">若 v 未被匹配：直接匹配 u-v，返回成功</div>
+      <div class="step">若 v 已被匹配：尝试为 matchV[v]（即 u'）找一个新匹配（递归 DFS），标记 v 为已访问避免重复</div>
+      <div class="step">若递归成功：更新 matchV[v] = u，返回成功</div>
+      <div class="step">若所有邻居都尝试失败：u 暂时无法匹配，返回失败</div>
+      <div class="step">最终 matchV[] 中非 -1 的数量即为最大匹配数</div>
+    </div>
+
+    <h3>3.5 逐步模拟</h3>
+    <p>以如下二分图为例：U = {1, 2, 3}, V = {a, b, c}，边为 1-a, 1-b, 2-b, 2-c, 3-a</p>
+
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>轮次</th>
+          <th>当前顶点 u</th>
+          <th>操作</th>
+          <th>匹配状态</th>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td>u1</td>
+          <td>尝试 a：a 未匹配 → 直接匹配</td>
+          <td>1-a</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>u2</td>
+          <td>尝试 b：b 未匹配 → 直接匹配</td>
+          <td>1-a, 2-b</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>u3</td>
+          <td>尝试 a：a 已匹配给 u1 → 尝试为 u1 找新匹配 → u1 尝试 b：b 已匹配给 u2 → 尝试为 u2 找新匹配 → u2 尝试 c：c 未匹配 → 成功！回溯更新</td>
+          <td>1-b, 2-c, 3-a</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(VE)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(V + E)</span>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">注意</div>
+      <p>匈牙利算法中每次 DFS 前需要重置 vis[] 数组。vis[] 的作用是标记本轮搜索中已经访问过的右部顶点，防止同一轮中重复访问。</p>
+    </div>
+  </div>
+
+  <!-- ==================== 4. König 定理 ==================== -->
+  <div class="section" id="konig">
+    <h2>4. König 定理</h2>
+
+    <h3>4.1 定理陈述</h3>
+    <div class="box box-info">
+      <div class="box-title">König 定理（1931）</div>
+      <p>在二分图中，<strong>最大匹配数 = 最小顶点覆盖数</strong>。</p>
+    </div>
+
+    <h3>4.2 基本概念</h3>
+    <ul>
+      <li><strong>顶点覆盖</strong>：选取一些顶点，使得图中每条边至少有一个端点被选中</li>
+      <li><strong>最小顶点覆盖</strong>：包含顶点数最少的顶点覆盖</li>
+      <li><strong>独立集</strong>：选取一些顶点，使得任意两个被选中的顶点之间没有边相连</li>
+      <li><strong>最大独立集</strong>：包含顶点数最多的独立集</li>
+    </ul>
+
+    <h3>4.3 推论</h3>
+    <p>对于二分图，有如下重要等式关系：</p>
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>概念</th>
+          <th>公式</th>
+        </tr>
+        <tr>
+          <td>最大匹配数</td>
+          <td>= 最小顶点覆盖数（König 定理）</td>
+        </tr>
+        <tr>
+          <td>最大独立集</td>
+          <td>= 总顶点数 - 最小顶点覆盖数 = 总顶点数 - 最大匹配数</td>
+        </tr>
+        <tr>
+          <td>最小边覆盖</td>
+          <td>= 总顶点数 - 最大匹配数（前提：无孤立顶点）</td>
+        </tr>
+        <tr>
+          <td>DAG 最小路径覆盖</td>
+          <td>= 总顶点数 - 拆点二分图最大匹配数</td>
+        </tr>
+      </table>
+    </div>
+
+    <h3>4.4 最小顶点覆盖的构造</h3>
+    <p>在匈牙利算法求出最大匹配后，可以通过以下步骤构造最小顶点覆盖：</p>
+    <div class="steps">
+      <div class="step">从左部所有非匹配点出发，沿交错路（非匹配边→匹配边→...）做 DFS/BFS 标记</div>
+      <div class="step">最小顶点覆盖 = (左部未标记的点) ∪ (右部已标记的点)</div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+  最小顶点覆盖构造示意：
+
+  最大匹配: u1-v1, u2-v2, u3-v3
+
+  交错路搜索（从左部非匹配点出发）：
+  u4 →(非匹配边) v1 →(匹配边) u1 →(非匹配边) v3 →(匹配边) u3
+
+  标记结果: 左部标记={u4,u1,u3}, 右部标记={v1,v3}
+
+  最小顶点覆盖 = 左部未标记 ∪ 右部已标记
+               = {u2} ∪ {v1, v3}
+               = {u2, v1, v3}  (大小 = 3 = 最大匹配数)
+      </pre>
+    </div>
+  </div>
+
+  <!-- ==================== 5. Hall 定理 ==================== -->
+  <div class="section" id="hall">
+    <h2>5. Hall 定理（婚姻定理）</h2>
+
+    <h3>5.1 定理陈述</h3>
+    <div class="box box-info">
+      <div class="box-title">Hall 定理（Philip Hall, 1935）</div>
+      <p>二分图 G = (U, V, E) 存在<strong>完美匹配</strong>（即 |U| 个左部顶点全部匹配）当且仅当：对于 U 的任意子集 S，有 |N(S)| >= |S|，其中 N(S) 是 S 中所有顶点的邻居集合。</p>
+    </div>
+
+    <h3>5.2 直观理解</h3>
+    <p>Hall 定理的本质是：<strong>任意 k 个左部顶点，至少要有 k 个不同的右部邻居可供选择</strong>。如果存在某个子集 S，其邻居数量少于 |S|，则 S 中必然有顶点无法匹配。</p>
+
+    <h3>5.3 推广形式</h3>
+    <p>对于不要求完美匹配的一般情况，Hall 定理可推广为：</p>
+    <p><strong>最大匹配数 = min(|U|, min over S⊆U of (|U| - |S| + |N(S)|))</strong></p>
+    <p>即最大匹配数 = |U| - max over S⊆U of (|S| - |N(S)|)</p>
+
+    <h3>5.4 应用场景</h3>
+    <ul>
+      <li><strong>棋盘覆盖问题</strong>：用 1x2 骨牌覆盖棋盘，判断能否完全覆盖</li>
+      <li><strong>任务分配</strong>：判断 n 个工人能否各分配一个不同任务</li>
+      <li><strong>集合系统</strong>：判断是否存在 SDR（不同代表系）</li>
+    </ul>
+  </div>
+
+  <!-- ==================== 6. 应用 ==================== -->
+  <div class="section" id="applications">
+    <h2>6. 应用与建模</h2>
+
+    <h3>6.1 指派问题（Assignment Problem）</h3>
+    <p>n 个工人，n 项任务，每个工人能胜任若干任务，求最大分配方案数。直接建模为二分图最大匹配问题。</p>
+
+    <h3>6.2 最小路径覆盖（DAG）</h3>
+    <p>在 DAG 上，用最少的不相交路径覆盖所有顶点。</p>
+    <div class="box box-tip">
+      <div class="box-title">建模方法</div>
+      <p>将每个顶点 v 拆成两个：v_in（左部）和 v_out（右部）。对于原图中的每条边 u→v，在二分图中连边 u_out → v_in。则最小路径覆盖 = n - 最大匹配数。</p>
+    </div>
+
+    <h3>6.3 二分图最小点覆盖</h3>
+    <p>选择最少的顶点，使得每条边至少有一个端点被选中。根据 König 定理，直接等于最大匹配数。</p>
+
+    <h3>6.4 二分图最大独立集</h3>
+    <p>选择最多的顶点，使得任意两个被选中的顶点之间没有边。最大独立集 = 总顶点数 - 最大匹配数。</p>
+
+    <h3>6.5 字符串匹配问题</h3>
+    <p>给定若干字符串，若两个字符串在某一位不同（汉明距离为 1），则建边。问题转化为二分图相关问题。</p>
+
+    <div class="diagram">
+      <pre>
+  问题建模思路总结：
+
+  ┌──────────────────┐     ┌──────────────────────┐
+  │  最大匹配         │ ←── │  匈牙利算法 / 网络流   │
+  └──────┬───────────┘     └──────────────────────┘
+         │
+    ┌────┴────┐
+    │ König    │
+    │ 定理     │
+    └────┬────┘
+         │
+  ┌──────┴──────────────────────────────┐
+  │                                      │
+  ▼                                      ▼
+  最小顶点覆盖                          最大独立集
+  = 最大匹配数                         = 总顶点数 - 最大匹配数
+      </pre>
+    </div>
+  </div>
+
+  <!-- ==================== 7. C++ 完整模板 ==================== -->
+  <div class="section" id="template">
+    <h2>7. C++ 完整模板</h2>
+
+    <h3>7.1 匈牙利算法模板（DFS 版）</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">510</span>, M = <span class="num">100010</span>;
+
+<span class="kw">struct</span> <span class="ty">Hungarian</span> {
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; g[N];   <span class="cm">// g[u]: 左部顶点 u 的邻接表（右部顶点）</span>
+    <span class="ty">int</span> matchV[N];       <span class="cm">// matchV[v]: 右部顶点 v 匹配的左部顶点，-1 表示未匹配</span>
+    <span class="ty">bool</span> vis[N];         <span class="cm">// 本轮 DFS 中已访问的右部顶点</span>
+    <span class="ty">int</span> n, m;            <span class="cm">// n: 左部顶点数, m: 右部顶点数</span>
+
+    <span class="kw">void</span> <span class="fn">init</span>(<span class="ty">int</span> _n, <span class="ty">int</span> _m) {
+        n = _n; m = _m;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) g[i].<span class="fn">clear</span>();
+        <span class="fn">memset</span>(matchV, -<span class="num">1</span>, <span class="kw">sizeof</span>(matchV));
+    }
+
+    <span class="kw">void</span> <span class="fn">addEdge</span>(<span class="ty">int</span> u, <span class="ty">int</span> v) {
+        g[u].<span class="fn">push_back</span>(v);
+    }
+
+    <span class="cm">// 为左部顶点 u 寻找增广路</span>
+    <span class="ty">bool</span> <span class="fn">dfs</span>(<span class="ty">int</span> u) {
+        <span class="kw">for</span> (<span class="ty">int</span> v : g[u]) {
+            <span class="kw">if</span> (vis[v]) <span class="kw">continue</span>;
+            vis[v] = <span class="kw">true</span>;
+            <span class="cm">// v 未匹配，或者 v 的原匹配对象能找到新匹配</span>
+            <span class="kw">if</span> (matchV[v] == -<span class="num">1</span> || <span class="fn">dfs</span>(matchV[v])) {
+                matchV[v] = u;
+                <span class="kw">return true</span>;
+            }
+        }
+        <span class="kw">return false</span>;
+    }
+
+    <span class="cm">// 求最大匹配数</span>
+    <span class="ty">int</span> <span class="fn">maxMatching</span>() {
+        <span class="ty">int</span> res = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> u = <span class="num">1</span>; u &lt;= n; u++) {
+            <span class="fn">memset</span>(vis, <span class="kw">false</span>, <span class="kw">sizeof</span>(vis));
+            <span class="kw">if</span> (<span class="fn">dfs</span>(u)) res++;
+        }
+        <span class="kw">return</span> res;
+    }
+
+    <span class="cm">// 获取匹配方案（左部 u 匹配的右部顶点）</span>
+    <span class="ty">int</span> <span class="fn">getMatch</span>(<span class="ty">int</span> u) {
+        <span class="kw">for</span> (<span class="ty">int</span> v = <span class="num">1</span>; v &lt;= m; v++)
+            <span class="kw">if</span> (matchV[v] == u) <span class="kw">return</span> v;
+        <span class="kw">return</span> -<span class="num">1</span>;
+    }
+} hung;</code></pre>
+
+    <h3>7.2 二分图判定模板</h3>
+    <pre><code><span class="kw">struct</span> <span class="ty">BipartiteCheck</span> {
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; g[N];
+    <span class="ty">int</span> color[N]; <span class="cm">// 0=未染色, 1=白色, -1=黑色</span>
+    <span class="ty">int</span> n;
+
+    <span class="kw">void</span> <span class="fn">init</span>(<span class="ty">int</span> _n) {
+        n = _n;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) g[i].<span class="fn">clear</span>();
+        <span class="fn">memset</span>(color, <span class="num">0</span>, <span class="kw">sizeof</span>(color));
+    }
+
+    <span class="ty">bool</span> <span class="fn">bfs</span>(<span class="ty">int</span> start) {
+        <span class="ty">queue</span>&lt;<span class="ty">int</span>&gt; q;
+        color[start] = <span class="num">1</span>;
+        q.<span class="fn">push</span>(start);
+        <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+            <span class="ty">int</span> u = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+            <span class="kw">for</span> (<span class="ty">int</span> v : g[u]) {
+                <span class="kw">if</span> (color[v] == <span class="num">0</span>) {
+                    color[v] = -color[u];
+                    q.<span class="fn">push</span>(v);
+                } <span class="kw">else if</span> (color[v] == color[u]) {
+                    <span class="kw">return false</span>;
+                }
+            }
+        }
+        <span class="kw">return true</span>;
+    }
+
+    <span class="ty">bool</span> <span class="fn">check</span>() {
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+            <span class="kw">if</span> (color[i] == <span class="num">0</span> &amp;&amp; !<span class="fn">bfs</span>(i))
+                <span class="kw">return false</span>;
+        <span class="kw">return true</span>;
+    }
+};</code></pre>
+
+    <h3>7.3 DAG 最小路径覆盖模板</h3>
+    <pre><code><span class="cm">// 将 DAG 上最小路径覆盖转化为二分图最大匹配</span>
+<span class="cm">// 建图：对于 DAG 中的边 u→v，连 u(左部) → v(右部)</span>
+<span class="cm">// 结果：最小路径覆盖 = n - 最大匹配数</span>
+<span class="ty">int</span> <span class="fn">minPathCover</span>(<span class="ty">int</span> n, <span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt;&amp; edges) {
+    Hungarian h;
+    h.<span class="fn">init</span>(n, n);
+    <span class="kw">for</span> (<span class="kw">auto</span>&amp; [u, v] : edges)
+        h.<span class="fn">addEdge</span>(u, v); <span class="cm">// u(左部) → v(右部)</span>
+    <span class="ty">int</span> match = h.<span class="fn">maxMatching</span>();
+    <span class="kw">return</span> n - match;
+}</code></pre>
+  </div>
+
+  <!-- ==================== 8. 经典题目 ==================== -->
+  <div class="section" id="problems">
+    <h2>8. 经典题目</h2>
+
+    <div class="problem">
+      <div class="problem-title">P3386 【模板】二分图最大匹配</div>
+      <p>给定二分图，求最大匹配数。匈牙利算法模板题。</p>
+      <p><strong>标签</strong>：匈牙利算法、二分图匹配</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">P2756 飞行员配对方案问题</div>
+      <p>n 个外籍飞行员和 m 个英国飞行员配对，给出可行配对关系，求最大配对数及方案。</p>
+      <p><strong>标签</strong>：匈牙利算法、输出方案</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">P1129 [ZJOI2007] 矩阵游戏</div>
+      <p>给定 0-1 矩阵，问能否通过交换行和列使得主对角线全为 1。转化为二分图完美匹配。</p>
+      <p><strong>标签</strong>：二分图匹配、建模</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">P2055 [ZJOI2009] 假期的宿舍</div>
+      <p>住宿问题的建模，转化为二分图匹配求解。</p>
+      <p><strong>标签</strong>：匈牙利算法、建模</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">P1654 OSU!</div>
+      <p>期望 DP 与二分图结合的综合题。</p>
+      <p><strong>标签</strong>：期望DP、二分图</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">P2764 最小路径覆盖问题</div>
+      <p>DAG 上最小不相交路径覆盖，输出路径方案。经典拆点建模。</p>
+      <p><strong>标签</strong>：最小路径覆盖、拆点、匈牙利</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">P3033 [USACO11NOV] Cow Steeplechase G</div>
+      <p>平面线段相交问题，转化为最小点覆盖（König 定理）。</p>
+      <p><strong>标签</strong>：König 定理、计算几何 + 图论</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">Codeforces 1404C - Fixed Point Removal</div>
+      <p>需要结合贪心与二分图匹配的思维题。</p>
+      <p><strong>标签</strong>：贪心、二分图、思维</p>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">解题技巧</div>
+      <ul>
+        <li>看到"配对""选择""覆盖"等关键词，考虑二分图建模</li>
+        <li>最小路径覆盖 = n - 最大匹配（DAG 拆点）</li>
+        <li>最大独立集 = n - 最小点覆盖 = n - 最大匹配（二分图特有性质）</li>
+        <li>当 n 较大（> 2000）时，匈牙利算法可能 TLE，考虑使用网络流（Dinic）</li>
+        <li>输出方案时注意 matchV[] 和 左部匹配数组的对应关系</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

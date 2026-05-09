@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FFT/NTT - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#07-math">数学</a> &gt;
+    FFT/NTT
+  </div>
+
+  <div class="page-header">
+    <h1>FFT / NTT</h1>
+    <p class="subtitle">Fast Fourier Transform / Number Theoretic Transform &mdash; 多项式乘法的终极加速</p>
+    <div class="tags">
+      <span class="tag tag-math">数学</span>
+      <span class="tag tag-hard">困难</span>
+      <span class="tag tag-base">进阶算法</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#poly-mul">多项式乘法</a></li>
+      <li><a href="#fft-principle">FFT 原理</a></li>
+      <li><a href="#ntt">NTT (数论变换)</a></li>
+      <li><a href="#butterfly">蝴蝶运算与迭代实现</a></li>
+      <li><a href="#template">C++ 完整模板</a></li>
+      <li><a href="#problems">经典问题</a></li>
+    </ul>
+  </div>
+
+  <!-- ===== 多项式乘法 ===== -->
+  <div class="section" id="poly-mul">
+    <h2>多项式乘法</h2>
+
+    <h3>定义</h3>
+    <p>给定两个多项式：</p>
+    <p><code>A(x) = a_0 + a_1*x + a_2*x^2 + ... + a_{n-1}*x^{n-1}</code></p>
+    <p><code>B(x) = b_0 + b_1*x + b_2*x^2 + ... + b_{m-1}*x^{m-1}</code></p>
+    <p>它们的乘积 <code>C(x) = A(x) * B(x)</code>，其中：</p>
+    <p><code>c_k = sum(a_i * b_{k-i})  (i = max(0, k-m+1) ... min(k, n-1))</code></p>
+
+    <h3>朴素算法</h3>
+    <p>直接按定义计算，对每个 c_k 遍历所有可能的 i。</p>
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n * m)</span>
+    </div>
+
+    <h3>FFT 加速</h3>
+    <p>利用<strong>卷积定理</strong>：时域（系数表示）的卷积等于频域（点值表示）的逐点相乘。</p>
+
+    <div class="steps">
+      <div class="step">将 A(x) 和 B(x) 从系数表示转为点值表示 -- O(n log n)</div>
+      <div class="step">逐点相乘得到 C(x) 的点值表示 -- O(n)</div>
+      <div class="step">将 C(x) 从点值表示转回系数表示（逆 FFT）-- O(n log n)</div>
+    </div>
+
+    <div class="complexity">
+      <span class="label">FFT 总复杂度</span>
+      <span class="value">O(n log n)</span>
+    </div>
+
+    <div class="diagram">
+      <pre>
+  系数表示              点值表示
+  [a0, a1, ..., an-1]   -->  FFT  -->  [A(w^0), A(w^1), ..., A(w^{n-1})]
+
+  多项式乘法:
+  A(x) --FFT--> A(点值) --|
+                          |--> 逐点相乘 --> C(点值) --IFFT--> C(系数)
+  B(x) --FFT--> B(点值) --|
+      </pre>
+    </div>
+  </div>
+
+  <!-- ===== FFT 原理 ===== -->
+  <div class="section" id="fft-principle">
+    <h2>FFT 原理</h2>
+
+    <h3>单位根</h3>
+    <p>n 次单位根 <code>w_n = e^(2*pi*i/n) = cos(2*pi/n) + i*sin(2*pi/n)</code></p>
+    <p>性质：</p>
+    <ul>
+      <li><code>w_n^n = 1</code></li>
+      <li><code>w_n^k (k=0,1,...,n-1)</code> 是 n 个不同的 n 次单位根</li>
+      <li><code>w_n^{k+n/2} = -w_n^k</code>（折半引理）</li>
+      <li><code>w_{2n}^{2k} = w_n^k</code>（消去引理）</li>
+    </ul>
+
+    <h3>分治思想 (Cooley-Tukey)</h3>
+    <p>将多项式 A(x) 按下标的奇偶性分为两半：</p>
+    <p><code>A(x) = A_even(x^2) + x * A_odd(x^2)</code></p>
+
+    <p>代入 n 次单位根的幂 <code>w_n^k</code>：</p>
+    <div class="diagram">
+      <pre>
+  A(w_n^k) = A_even(w_{n/2}^k) + w_n^k * A_odd(w_{n/2}^k)
+  A(w_n^{k+n/2}) = A_even(w_{n/2}^k) - w_n^k * A_odd(w_{n/2}^k)
+
+  注意: w_n^{k+n/2} = -w_n^k, 且 w_{n/2}^k 的值相同
+
+  这样就将 n 个点的求值问题转化为两个 n/2 个点的子问题
+  合并只需 O(n) 时间
+      </pre>
+    </div>
+
+    <h3>蝶形运算图示</h3>
+    <div class="diagram">
+      <pre>
+  n=8 的 FFT 蝶形结构:
+
+  输入 (bit-reversal 排列后):
+  [0, 4, 2, 6, 1, 5, 3, 7]
+
+  第1层 (跨度=1):
+    0--/\--0     2--/\--2     4--/\--4     6--/\--6
+      \/           \/           \/           \/
+    1--/\--1     3--/\--3     5--/\--5     7--/\--7
+
+  第2层 (跨度=2):
+    0----/\----0       4----/\----4
+        \/                  \/
+    2----/\----2       6----/\----6
+
+  第3层 (跨度=4):
+    0--------/\--------0
+            \/                  --> 输出: DFT
+    4--------/\--------4
+      </pre>
+    </div>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n log n)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(n)</span>
+    </div>
+
+    <h3>逆 FFT (IFFT)</h3>
+    <p>将单位根替换为 <code>w_n^{-1} = e^{-2*pi*i/n}</code>，最后结果除以 n，即可从点值恢复系数。</p>
+  </div>
+
+  <!-- ===== NTT ===== -->
+  <div class="section" id="ntt">
+    <h2>NTT (Number Theoretic Transform)</h2>
+
+    <h3>为什么需要 NTT</h3>
+    <p>FFT 使用浮点复数运算，存在精度误差。在模意义下的多项式乘法中，我们需要精确结果。NTT 在有限域上进行，没有精度问题。</p>
+
+    <h3>原根</h3>
+    <p>对于质数 p，若存在 g 使得 <code>g^1, g^2, ..., g^{p-1}</code> 模 p 两两不同余，则 g 是模 p 的<strong>原根</strong>。</p>
+    <p>NTT 中的 "单位根" 用原根的幂替代：</p>
+    <p><code>w_n = g^{(p-1)/n}  (mod p)</code></p>
+    <p>要求 n | (p-1)，即 p-1 是 n 的倍数。</p>
+
+    <h3>常用 NTT 模数</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>模数</th><th>原根</th><th>最大长度</th><th>特点</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>998244353</td><td>3</td><td>2^23</td><td>最常用，p-1 = 2^23 * 7 * 17</td></tr>
+          <tr><td>1004535809</td><td>3</td><td>2^21</td><td>适合三模 NTT</td></tr>
+          <tr><td>469762049</td><td>3</td><td>2^26</td><td>适合三模 NTT</td></tr>
+          <tr><td>7340033</td><td>3</td><td>2^20</td><td>较小，适合小范围</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">NTT 与 FFT 的对应关系</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>FFT</th><th>NTT</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>复数单位根 w_n = e^(2*pi*i/n)</td><td>原根幂 g^{(p-1)/n}</td></tr>
+            <tr><td>加法/乘法（复数）</td><td>模意义下的加法/乘法</td></tr>
+            <tr><td>IFFT: 除以 n</td><td>乘以 n 的逆元</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3>三模 NTT</h3>
+    <p>当结果可能超过单一模数范围时，选取三个 NTT 友好模数分别做 NTT，然后用中国剩余定理 (CRT) 合并结果。适用于结果需要精确值或模数不友好的场景。</p>
+  </div>
+
+  <!-- ===== 蝴蝶运算 ===== -->
+  <div class="section" id="butterfly">
+    <h2>蝴蝶运算与迭代实现</h2>
+
+    <h3>Bit-Reversal 排列</h3>
+    <p>FFT 的分治过程要求输入按 bit-reversal 顺序排列。将下标的二进制表示翻转，得到新位置。</p>
+
+    <div class="diagram">
+      <pre>
+  n=8 的 bit-reversal 排列:
+
+  原始下标  二进制  翻转后  新下标
+  0         000     000     0
+  1         001     100     4
+  2         010     010     2
+  3         011     110     6
+  4         100     001     1
+  5         101     101     5
+  6         110     011     3
+  7         111     111     7
+
+  排列后: [0, 4, 2, 6, 1, 5, 3, 7]
+      </pre>
+    </div>
+
+    <h3>蝶形运算</h3>
+    <p>每一层 FFT 的核心操作：</p>
+    <div class="diagram">
+      <pre>
+  蝶形运算 (Butterfly Operation):
+
+  输入: u = a[k], v = a[k + half]
+  旋转因子: w = w_n^j
+
+  a[k]        = u + w * v
+  a[k + half] = u - w * v
+
+  类似于:
+      u -----> + -----> u + w*v
+               |
+      v --xw-> + -----> u - w*v
+      </pre>
+    </div>
+
+    <h3>迭代 FFT 的实现要点</h3>
+    <div class="steps">
+      <div class="step">预处理 bit-reversal 排列，将输入重排</div>
+      <div class="step">从底层 (len=2) 到顶层 (len=n) 逐层处理</div>
+      <div class="step">每层中，按跨度 half = len/2 分组，每组做蝶形运算</div>
+      <div class="step">旋转因子 w 从 w_len^0 开始，每次乘以 w_len^1</div>
+      <div class="step">逆 FFT 将旋转因子取反，最后所有值除以 n</div>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">实现注意事项</div>
+      <ul>
+        <li>多项式长度需要扩展到 2 的幂（>= n+m-1）</li>
+        <li>FFT 结果需要四舍五入取整（浮点误差）</li>
+        <li>NTT 要确保长度 n 满足 n | (p-1)</li>
+        <li>逆 NTT 使用 n 的模逆元</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===== C++ 完整模板 ===== -->
+  <div class="section" id="template">
+    <h2>C++ 完整模板</h2>
+
+    <h3>FFT (浮点版)</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">double</span> PI = <span class="fn">acos</span>(-<span class="num">1.0</span>);
+
+<span class="kw">struct</span> <span class="ty">Complex</span> {
+    <span class="ty">double</span> x, y;
+    <span class="fn">Complex</span>(<span class="ty">double</span> _x = <span class="num">0</span>, <span class="ty">double</span> _y = <span class="num">0</span>) : <span class="fn">x</span>(_x), <span class="fn">y</span>(_y) {}
+    <span class="ty">Complex</span> <span class="kw">operator</span>+(<span class="kw">const</span> <span class="ty">Complex</span>&amp; b) <span class="kw">const</span> { <span class="kw">return</span> {x + b.x, y + b.y}; }
+    <span class="ty">Complex</span> <span class="kw">operator</span>-(<span class="kw">const</span> <span class="ty">Complex</span>&amp; b) <span class="kw">const</span> { <span class="kw">return</span> {x - b.x, y - b.y}; }
+    <span class="ty">Complex</span> <span class="kw">operator</span>*(<span class="kw">const</span> <span class="ty">Complex</span>&amp; b) <span class="kw">const</span> {
+        <span class="kw">return</span> {x * b.x - y * b.y, x * b.y + y * b.x};
+    }
+};
+
+<span class="ty">void</span> <span class="fn">fft</span>(<span class="ty">vector</span>&lt;<span class="ty">Complex</span>&gt;&amp; a, <span class="ty">int</span> n, <span class="ty">int</span> op) {
+    <span class="cm">// Bit-reversal 排列</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>, j = <span class="num">0</span>; i < n; i++) {
+        <span class="ty">int</span> bit = n >> <span class="num">1</span>;
+        <span class="kw">for</span> (; j &amp; bit; bit >>= <span class="num">1</span>) j ^= bit;
+        j ^= bit;
+        <span class="kw">if</span> (i < j) <span class="fn">swap</span>(a[i], a[j]);
+    }
+
+    <span class="cm">// 蝶形运算</span>
+    <span class="kw">for</span> (<span class="ty">int</span> len = <span class="num">2</span>; len <= n; len <<= <span class="num">1</span>) {
+        <span class="ty">Complex</span> wn(<span class="fn">cos</span>(<span class="num">2</span> * PI / len), op * <span class="fn">sin</span>(<span class="num">2</span> * PI / len));
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i < n; i += len) {
+            <span class="ty">Complex</span> w(<span class="num">1</span>, <span class="num">0</span>);
+            <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j < len / <span class="num">2</span>; j++) {
+                <span class="ty">Complex</span> u = a[i + j];
+                <span class="ty">Complex</span> v = w * a[i + j + len / <span class="num">2</span>];
+                a[i + j] = u + v;
+                a[i + j + len / <span class="num">2</span>] = u - v;
+                w = w * wn;
+            }
+        }
+    }
+}
+
+<span class="cm">// 多项式乘法（FFT 版本）</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">multiply_fft</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; a, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; b) {
+    <span class="ty">int</span> n = <span class="num">1</span>;
+    <span class="kw">while</span> (n < (<span class="ty">int</span>)(a.<span class="fn">size</span>() + b.<span class="fn">size</span>())) n <<= <span class="num">1</span>;
+    <span class="ty">vector</span>&lt;<span class="ty">Complex</span>&gt; fa(n), fb(n);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i < (<span class="ty">int</span>)a.<span class="fn">size</span>(); i++) fa[i].x = a[i];
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i < (<span class="ty">int</span>)b.<span class="fn">size</span>(); i++) fb[i].x = b[i];
+
+    <span class="fn">fft</span>(fa, n, <span class="num">1</span>);  <span class="cm">// DFT</span>
+    <span class="fn">fft</span>(fb, n, <span class="num">1</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i < n; i++) fa[i] = fa[i] * fb[i];
+    <span class="fn">fft</span>(fa, n, -<span class="num">1</span>); <span class="cm">// IDFT</span>
+
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; res(a.<span class="fn">size</span>() + b.<span class="fn">size</span>() - <span class="num">1</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i < (<span class="ty">int</span>)res.<span class="fn">size</span>(); i++)
+        res[i] = (<span class="ty">int</span>)(fa[i].x / n + <span class="num">0.5</span>); <span class="cm">// 四舍五入</span>
+    <span class="kw">return</span> res;
+}</code></pre>
+
+    <h3>NTT (模意义版)</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+<span class="kw">typedef</span> <span class="ty">long long</span> ll;
+
+<span class="kw">const</span> <span class="ty">int</span> MOD = <span class="num">998244353</span>;   <span class="cm">// 模数</span>
+<span class="kw">const</span> <span class="ty">int</span> G = <span class="num">3</span>;              <span class="cm">// 原根</span>
+<span class="kw">const</span> <span class="ty">int</span> INV_G = <span class="num">332748118</span>;  <span class="cm">// G 的逆元 = G^(MOD-2) % MOD</span>
+
+<span class="ty">ll</span> <span class="fn">qpow</span>(<span class="ty">ll</span> a, <span class="ty">ll</span> b) {
+    <span class="ty">ll</span> res = <span class="num">1</span>;
+    a %= MOD;
+    <span class="kw">while</span> (b > <span class="num">0</span>) {
+        <span class="kw">if</span> (b &amp; <span class="num">1</span>) res = res * a % MOD;
+        a = a * a % MOD;
+        b >>= <span class="num">1</span>;
+    }
+    <span class="kw">return</span> res;
+}
+
+<span class="ty">void</span> <span class="fn">ntt</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; a, <span class="ty">int</span> n, <span class="ty">int</span> op) {
+    <span class="cm">// Bit-reversal 排列</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>, j = <span class="num">0</span>; i < n; i++) {
+        <span class="ty">int</span> bit = n >> <span class="num">1</span>;
+        <span class="kw">for</span> (; j &amp; bit; bit >>= <span class="num">1</span>) j ^= bit;
+        j ^= bit;
+        <span class="kw">if</span> (i < j) <span class="fn">swap</span>(a[i], a[j]);
+    }
+
+    <span class="cm">// 蝶形运算</span>
+    <span class="kw">for</span> (<span class="ty">int</span> len = <span class="num">2</span>; len <= n; len <<= <span class="num">1</span>) {
+        <span class="ty">ll</span> wn = <span class="fn">qpow</span>(op == <span class="num">1</span> ? G : INV_G, (MOD - <span class="num">1</span>) / len);
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i < n; i += len) {
+            <span class="ty">ll</span> w = <span class="num">1</span>;
+            <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j < len / <span class="num">2</span>; j++) {
+                <span class="ty">int</span> u = a[i + j];
+                <span class="ty">int</span> v = (<span class="ty">ll</span>)w * a[i + j + len / <span class="num">2</span>] % MOD;
+                a[i + j] = (u + v) % MOD;
+                a[i + j + len / <span class="num">2</span>] = (u - v + MOD) % MOD;
+                w = w * wn % MOD;
+            }
+        }
+    }
+}
+
+<span class="cm">// 多项式乘法（NTT 版本）</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">multiply_ntt</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; a, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; b) {
+    <span class="ty">int</span> n = <span class="num">1</span>;
+    <span class="kw">while</span> (n < (<span class="ty">int</span>)(a.<span class="fn">size</span>() + b.<span class="fn">size</span>())) n <<= <span class="num">1</span>;
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; fa(a.<span class="fn">begin</span>(), a.<span class="fn">end</span>());
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; fb(b.<span class="fn">begin</span>(), b.<span class="fn">end</span>());
+    fa.<span class="fn">resize</span>(n); fb.<span class="fn">resize</span>(n);
+
+    <span class="fn">ntt</span>(fa, n, <span class="num">1</span>);  <span class="cm">// NTT</span>
+    <span class="fn">ntt</span>(fb, n, <span class="num">1</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i < n; i++) fa[i] = (<span class="ty">ll</span>)fa[i] * fb[i] % MOD;
+    <span class="fn">ntt</span>(fa, n, -<span class="num">1</span>); <span class="cm">// INTT</span>
+
+    <span class="ty">ll</span> inv_n = <span class="fn">qpow</span>(n, MOD - <span class="num">2</span>);
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; res(a.<span class="fn">size</span>() + b.<span class="fn">size</span>() - <span class="num">1</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i < (<span class="ty">int</span>)res.<span class="fn">size</span>(); i++)
+        res[i] = (<span class="ty">ll</span>)fa[i] * inv_n % MOD;
+    <span class="kw">return</span> res;
+}</code></pre>
+
+    <h3>三模 NTT (CRT 合并)</h3>
+    <pre><code><span class="cm">// 三个 NTT 模数</span>
+<span class="kw">const</span> <span class="ty">int</span> P1 = <span class="num">998244353</span>, G1 = <span class="num">3</span>;
+<span class="kw">const</span> <span class="ty">int</span> P2 = <span class="num">1004535809</span>, G2 = <span class="num">3</span>;
+<span class="kw">const</span> <span class="ty">int</span> P3 = <span class="num">469762049</span>, G3 = <span class="num">3</span>;
+
+<span class="cm">// 分别在三个模数下做 NTT，得到三组结果 r1, r2, r3</span>
+<span class="cm">// 用 CRT 合并</span>
+<span class="ty">ll</span> <span class="fn">crt3</span>(<span class="ty">ll</span> r1, <span class="ty">ll</span> r2, <span class="ty">ll</span> r3, <span class="ty">ll</span> mod) {
+    <span class="kw">const</span> <span class="ty">ll</span> M12 = (<span class="ty">ll</span>)P1 * P2;
+    <span class="ty">ll</span> inv1 = <span class="fn">qpow</span>(P1, P2 - <span class="num">2</span>, P2); <span class="cm">// P1 关于 P2 的逆元</span>
+    <span class="ty">ll</span> t = (r2 - r1 % P2 + P2) % P2 * inv1 % P2;
+    <span class="ty">ll</span> r12 = r1 + t * P1; <span class="cm">// 在 P1*P2 意义下的结果</span>
+    <span class="ty">ll</span> inv12 = <span class="fn">qpow</span>(M12 % P3, P3 - <span class="num">2</span>, P3);
+    <span class="ty">ll</span> t2 = (r3 - r12 % P3 + P3) % P3 * inv12 % P3;
+    <span class="kw">return</span> (r12 + t2 * M12) % mod;
+}</code></pre>
+  </div>
+
+  <!-- ===== 经典问题 ===== -->
+  <div class="section" id="problems">
+    <h2>经典问题</h2>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P3803 - 多项式乘法 (FFT)</div>
+      <p>给定两个多项式的系数，求它们的乘积。</p>
+      <p><strong>思路</strong>：FFT 模板题。注意结果四舍五入取整。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P1919 - 高精度乘法 (FFT)</div>
+      <p>两个大整数相乘，位数可达 10^6。</p>
+      <p><strong>思路</strong>：将每一位作为多项式系数，FFT 乘法后处理进位。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P3723 - 礼物</div>
+      <p>两组数列，可以循环移位并对其中一个加常数，最小化差的平方和。</p>
+      <p><strong>思路</strong>：展开式子后，循环卷积部分用 FFT 加速。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P4238 - 多项式求逆</div>
+      <p>给定多项式 A(x)，求 B(x) 使得 A(x)*B(x) = 1 (mod x^n)。</p>
+      <p><strong>思路</strong>：倍增法 + NTT，每次将精度翻倍。O(n log n)。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P4721 - 分治 FFT</div>
+      <p>给定 g[1..n-1] 和 f[0]=1，f[i] = sum(f[j]*g[i-j])，求 f[]。</p>
+      <p><strong>思路</strong>：分治 FFT (CDQ 分治 + NTT)，O(n log^2 n)。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">SPOJ MAXMATCH - Maximum Matching</div>
+      <p>给定只含 abc 的字符串，问两个相同长度字符串的最大匹配数（不同位置算不同匹配）。</p>
+      <p><strong>思路</strong>：分别对 a/b/c 字符用 FFT 做自相关，求和后取最大值。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P4556 - 雨天的尾巴</div>
+      <p>树上操作 + 线段树合并。</p>
+      <p><strong>思路</strong>：涉及卷积运算时用 FFT/NTT 加速。</p>
+    </div>
+
+    <div class="box box-hard">
+      <div class="box-title">FFT/NTT 进阶应用</div>
+      <ul>
+        <li><strong>多项式求逆</strong>：倍增 + NTT，O(n log n)</li>
+        <li><strong>多项式开根</strong>：倍增 + NTT + 求逆，O(n log n)</li>
+        <li><strong>多项式对数/指数</strong>：利用导数和积分，O(n log n)</li>
+        <li><strong>多项式快速幂</strong>：取对数 -> 乘 k -> 取指数，O(n log n)</li>
+        <li><strong>分治 FFT</strong>：CDQ 分治 + NTT，解决递推卷积问题</li>
+        <li><strong>子集卷积</strong>：高维前缀和 + 逐位卷积</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

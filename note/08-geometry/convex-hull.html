@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>凸包 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt; 几何篇 &gt; 凸包
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>凸包</h1>
+    <p class="subtitle">Convex Hull &mdash; 包围点集的最小凸多边形</p>
+    <div class="tags">
+      <span class="tag tag-base">计算几何</span>
+      <span class="tag tag-mid">中等</span>
+      <span class="tag tag-hard">旋转卡壳</span>
+    </div>
+  </div>
+
+  <!-- Table of Contents -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#overview">凸包概述</a></li>
+      <li><a href="#andrew">Andrew 算法 (单调链)</a></li>
+      <li><a href="#graham">Graham 扫描</a></li>
+      <li><a href="#rotating">旋转卡壳 (Rotating Calipers)</a></li>
+      <li><a href="#template">完整模板</a></li>
+      <li><a href="#problems">经典例题</a></li>
+    </ul>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 1: 凸包概述 -->
+  <!-- ============================== -->
+  <div class="section" id="overview">
+    <h2>凸包概述</h2>
+    <p><strong>凸包</strong>（Convex Hull）是包含点集中所有点的最小凸多边形。可以类比为：在平面上钉了 n 个钉子，用一根橡皮筋围住所有钉子，松手后橡皮筋形成的多边形就是凸包。</p>
+
+    <div class="diagram">
+      <pre>
+  凸包示意图
+
+        * E
+       / \
+      /   \
+   * D     * F          外层的 A-B-C-D-E-F-G 构成凸包
+    |       |            内部的 * 不在凸包上
+   * C     * G
+    |       |
+    |   * * |
+     \     /
+      * B * H
+       \ /
+        * A
+
+  凸包上的点称为 hull vertices
+  凸包内部的点不会出现在结果中
+      </pre>
+    </div>
+
+    <h3>基本性质</h3>
+    <ul>
+      <li>凸包是一个<strong>凸多边形</strong>：任意内角不超过 180°</li>
+      <li>凸包是包含所有点的<strong>面积最小</strong>的凸多边形</li>
+      <li>凸包是包含所有点的<strong>周长最小</strong>的凸多边形</li>
+      <li>点集的凸包<strong>唯一</strong>（退化情况：所有点共线时退化为线段）</li>
+    </ul>
+
+    <h3>常见算法</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>算法</th><th>时间复杂度</th><th>特点</th></tr>
+        <tr><td>Andrew (单调链)</td><td>O(n log n)</td><td>实现简单，推荐首选</td></tr>
+        <tr><td>Graham Scan</td><td>O(n log n)</td><td>经典算法，需要极角排序</td></tr>
+        <tr><td>Gift Wrapping</td><td>O(nh)</td><td>简单但慢，h 为凸包点数</td></tr>
+        <tr><td>Divide and Conquer</td><td>O(n log n)</td><td>分治思想</td></tr>
+      </table>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">叉积在凸包中的作用</div>
+      <p>凸包算法的核心是利用<strong>叉积</strong>判断三个点的转向：若 <code>cross(O, A, B) &gt; 0</code>，则 O->A->B 为逆时针（左转），说明 A 是凸包上的候选点；若 <code>cross(O, A, B) &le; 0</code>，则为顺时针或共线，A 应被弹出。</p>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 2: Andrew 算法 -->
+  <!-- ============================== -->
+  <div class="section" id="andrew">
+    <h2>Andrew 算法 (单调链)</h2>
+    <p>Andrew 算法是最常用的凸包算法，也叫<strong>单调链</strong>（Monotone Chain）。核心思想是先按 x 坐标（x 相同按 y）排序，然后分别构建下凸壳和上凸壳。</p>
+
+    <h3>算法流程</h3>
+    <div class="steps">
+      <div class="step">将所有点按 x 坐标排序（x 相同按 y 排序）</div>
+      <div class="step">从左到右扫描，维护<strong>下凸壳</strong>：每次加入新点前，检查栈顶两个点与新点是否构成"左转"，若不是则弹出栈顶</div>
+      <div class="step">从右到左扫描，维护<strong>上凸壳</strong>：同样的逻辑</div>
+      <div class="step">合并下凸壳和上凸壳（去掉端点重复），得到完整凸包</div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+  Andrew 算法分解
+
+  下凸壳 (Lower Hull):        上凸壳 (Upper Hull):
+
+        3                            6
+       /                            / \
+      2                            5   7
+     /                            /
+    1                            4
+   /
+  0
+
+  从左到右建下凸壳              从右到左建上凸壳
+  最后合并得到完整凸包: 0-1-2-3-5-6-7-4
+      </pre>
+    </div>
+
+    <h3>代码实现</h3>
+    <pre><code><span class="cm">// Andrew 算法求凸包 (单调链)</span>
+<span class="cm">// 返回凸包顶点，按逆时针排列</span>
+<span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt; <span class="fn">andrew</span>(<span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt; pts) {
+    <span class="ty">int</span> n = pts.<span class="fn">size</span>();
+    <span class="kw">if</span> (n &lt;= <span class="num">1</span>) <span class="kw">return</span> pts;
+
+    <span class="cm">// 按 x 排序，x 相同按 y 排序</span>
+    <span class="fn">sort</span>(pts.<span class="fn">begin</span>(), pts.<span class="fn">end</span>(), [](<span class="kw">const</span> <span class="ty">Point</span>&amp; a, <span class="kw">const</span> <span class="ty">Point</span>&amp; b) {
+        <span class="kw">return</span> a.x &lt; b.x || (a.x == b.x &amp;&amp; a.y &lt; b.y);
+    });
+
+    <span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt; hull;
+
+    <span class="cm">// 下凸壳</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="kw">while</span> (hull.<span class="fn">size</span>() &gt;= <span class="num">2</span> &amp;&amp;
+               <span class="fn">cross</span>(hull[hull.<span class="fn">size</span>()-<span class="num">2</span>], hull.<span class="fn">back</span>(), pts[i]) &lt;= <span class="num">0</span>)
+            hull.<span class="fn">pop_back</span>();
+        hull.<span class="fn">push_back</span>(pts[i]);
+    }
+
+    <span class="cm">// 上凸壳</span>
+    <span class="ty">int</span> lowerSize = hull.<span class="fn">size</span>();
+    <span class="kw">for</span> (<span class="ty">int</span> i = n - <span class="num">2</span>; i &gt;= <span class="num">0</span>; i--) {
+        <span class="kw">while</span> (hull.<span class="fn">size</span>() &gt; lowerSize &amp;&amp;
+               <span class="fn">cross</span>(hull[hull.<span class="fn">size</span>()-<span class="num">2</span>], hull.<span class="fn">back</span>(), pts[i]) &lt;= <span class="num">0</span>)
+            hull.<span class="fn">pop_back</span>();
+        hull.<span class="fn">push_back</span>(pts[i]);
+    }
+
+    <span class="cm">// 去掉最后一个重复的起点</span>
+    hull.<span class="fn">pop_back</span>();
+    <span class="kw">return</span> hull;
+}</code></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">注意共线点的处理</div>
+      <p>上述代码中 <code>cross(...) &lt;= 0</code> 会<strong>去掉凸包边上的共线点</strong>，只保留端点。如果需要保留凸包边上的点，改为 <code>cross(...) &lt; 0</code>。根据题目要求选择。</p>
+    </div>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n log n)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(n)</span>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 3: Graham 扫描 -->
+  <!-- ============================== -->
+  <div class="section" id="graham">
+    <h2>Graham 扫描</h2>
+    <p>Graham 扫描是经典的凸包算法。选择一个基准点（通常是最低最左的点），然后按极角排序其他点，依次扫描维护凸性。</p>
+
+    <h3>算法流程</h3>
+    <div class="steps">
+      <div class="step">找到 y 坐标最小的点（y 相同取 x 最小）作为基准点 <code>P0</code></div>
+      <div class="step">将其他点按相对于 <code>P0</code> 的<strong>极角</strong>排序（极角相同按距离排序）</div>
+      <div class="step">将前两个点入栈</div>
+      <div class="step">依次处理每个点：检查栈顶两个点与当前点是否构成"左转"，若不是则弹出栈顶，直到满足条件后将当前点入栈</div>
+      <div class="step">栈中即为凸包顶点</div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+  Graham 扫描过程
+
+  P0 是最低点，其余按极角排序
+
+       P4 ---- P3
+      /           \
+    P5             P2
+      \           /
+       P6 ---- P1
+        \      /
+         \    /
+          \  /
+           P0 (基准点)
+
+  扫描顺序: P0 -> P1 -> P2 -> P3 -> P4 -> P5 -> P6
+  每步维护栈中点构成凸壳
+      </pre>
+    </div>
+
+    <h3>极角排序</h3>
+    <pre><code><span class="cm">// 极角排序的比较函数</span>
+<span class="cm">// 以 base 为基准，按极角从小到大排序</span>
+<span class="ty">Point</span> base;  <span class="cm">// 基准点</span>
+
+<span class="ty">bool</span> <span class="fn">polarCmp</span>(<span class="kw">const</span> <span class="ty">Point</span>&amp; a, <span class="kw">const</span> <span class="ty">Point</span>&amp; b) {
+    <span class="ty">double</span> c = <span class="fn">cross</span>(base, a, b);
+    <span class="kw">if</span> (<span class="fn">fabs</span>(c) &gt; eps) <span class="kw">return</span> c &gt; <span class="num">0</span>;  <span class="cm">// 极角小的在前</span>
+    <span class="kw">return</span> <span class="fn">dist</span>(base, a) &lt; <span class="fn">dist</span>(base, b); <span class="cm">// 极角相同，近的在前</span>
+}</code></pre>
+
+    <h3>代码实现</h3>
+    <pre><code><span class="cm">// Graham 扫描求凸包</span>
+<span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt; <span class="fn">graham</span>(<span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt; pts) {
+    <span class="ty">int</span> n = pts.<span class="fn">size</span>();
+    <span class="kw">if</span> (n &lt;= <span class="num">2</span>) <span class="kw">return</span> pts;
+
+    <span class="cm">// 找基准点 (最低最左)</span>
+    <span class="ty">int</span> minIdx = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; n; i++) {
+        <span class="kw">if</span> (pts[i].y &lt; pts[minIdx].y ||
+            (pts[i].y == pts[minIdx].y &amp;&amp; pts[i].x &lt; pts[minIdx].x))
+            minIdx = i;
+    }
+    <span class="fn">swap</span>(pts[<span class="num">0</span>], pts[minIdx]);
+    base = pts[<span class="num">0</span>];
+
+    <span class="cm">// 极角排序 (跳过基准点)</span>
+    <span class="fn">sort</span>(pts.<span class="fn">begin</span>() + <span class="num">1</span>, pts.<span class="fn">end</span>(), polarCmp);
+
+    <span class="cm">// Graham 扫描</span>
+    <span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt; stk;
+    stk.<span class="fn">push_back</span>(pts[<span class="num">0</span>]);
+    stk.<span class="fn">push_back</span>(pts[<span class="num">1</span>]);
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i &lt; n; i++) {
+        <span class="kw">while</span> (stk.<span class="fn">size</span>() &gt;= <span class="num">2</span> &amp;&amp;
+               <span class="fn">cross</span>(stk[stk.<span class="fn">size</span>()-<span class="num">2</span>], stk.<span class="fn">back</span>(), pts[i]) &lt;= <span class="num">0</span>)
+            stk.<span class="fn">pop_back</span>();
+        stk.<span class="fn">push_back</span>(pts[i]);
+    }
+
+    <span class="kw">return</span> stk;
+}</code></pre>
+
+    <h3>Andrew vs Graham</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>比较项</th><th>Andrew (单调链)</th><th>Graham 扫描</th></tr>
+        <tr><td>排序方式</td><td>按 x 坐标排序</td><td>按极角排序</td></tr>
+        <tr><td>实现难度</td><td>更简单</td><td>稍复杂</td></tr>
+        <tr><td>处理退化</td><td>容易处理共线</td><td>需要特殊处理</td></tr>
+        <tr><td>推荐程度</td><td>首选</td><td>经典但不如 Andrew 方便</td></tr>
+      </table>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">实践建议</div>
+      <p>竞赛中推荐使用 Andrew 算法，代码更短且不易出错。Graham 扫描更适合理解凸包的思想，但在处理共线等退化情况时需要注意。</p>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 4: 旋转卡壳 -->
+  <!-- ============================== -->
+  <div class="section" id="rotating">
+    <h2>旋转卡壳 (Rotating Calipers)</h2>
+    <p>旋转卡壳是一种在凸包上高效计算各种几何量的技术。基本思想是：用两条平行线"夹住"凸包，然后旋转这两条线，在旋转过程中维护目标量。</p>
+
+    <h3>求凸包直径（最远点对）</h3>
+    <p>凸包的直径是凸包上距离最远的两个点之间的距离。</p>
+
+    <div class="diagram">
+      <pre>
+  旋转卡壳求直径
+
+     ___________
+    /           \
+   /    凸包     \
+  |              |
+   \            /
+    \__________/
+
+  对于凸包上的每条边 AB，
+  找到离 AB 最远的点 P，
+  |AP| 和 |BP| 中取较大值更新答案。
+  随着边的旋转，最远点单调移动。
+      </pre>
+    </div>
+
+    <h3>代码实现（求直径）</h3>
+    <pre><code><span class="cm">// 旋转卡壳求凸包直径 (最远点对距离)</span>
+<span class="ty">double</span> <span class="fn">rotatingCalipers</span>(<span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt;&amp; hull) {
+    <span class="ty">int</span> n = hull.<span class="fn">size</span>();
+    <span class="kw">if</span> (n == <span class="num">2</span>) <span class="kw">return</span> <span class="fn">dist</span>(hull[<span class="num">0</span>], hull[<span class="num">1</span>]);
+
+    <span class="ty">double</span> ans = <span class="num">0</span>;
+    <span class="ty">int</span> j = <span class="num">1</span>;  <span class="cm">// 对踵点</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="ty">int</span> ni = (i + <span class="num">1</span>) % n;
+        <span class="cm">// 旋转对踵点: 找到离边 hull[i]-hull[ni] 最远的点</span>
+        <span class="kw">while</span> (<span class="fn">fabs</span>(<span class="fn">cross</span>(hull[i], hull[ni], hull[(j+<span class="num">1</span>)%n]))
+             &gt; <span class="fn">fabs</span>(<span class="fn">cross</span>(hull[i], hull[ni], hull[j]))) {
+            j = (j + <span class="num">1</span>) % n;
+        }
+        <span class="cm">// 更新答案</span>
+        ans = <span class="fn">max</span>(ans, <span class="fn">max</span>(<span class="fn">dist</span>(hull[i], hull[j]),
+                            <span class="fn">dist</span>(hull[ni], hull[j])));
+    }
+    <span class="kw">return</span> ans;
+}</code></pre>
+
+    <h3>求凸包宽度（最小宽度）</h3>
+    <pre><code><span class="cm">// 旋转卡壳求凸包宽度 (最小宽度)</span>
+<span class="ty">double</span> <span class="fn">minWidth</span>(<span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt;&amp; hull) {
+    <span class="ty">int</span> n = hull.<span class="fn">size</span>();
+    <span class="kw">if</span> (n == <span class="num">2</span>) <span class="kw">return</span> <span class="num">0</span>;
+
+    <span class="ty">double</span> ans = <span class="num">1e18</span>;
+    <span class="ty">int</span> j = <span class="num">1</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="ty">int</span> ni = (i + <span class="num">1</span>) % n;
+        <span class="kw">while</span> (<span class="fn">fabs</span>(<span class="fn">cross</span>(hull[i], hull[ni], hull[(j+<span class="num">1</span>)%n]))
+             &gt; <span class="fn">fabs</span>(<span class="fn">cross</span>(hull[i], hull[ni], hull[j]))) {
+            j = (j + <span class="num">1</span>) % n;
+        }
+        <span class="cm">// 点 hull[j] 到边 hull[i]-hull[ni] 的距离</span>
+        ans = <span class="fn">min</span>(ans, <span class="fn">pointToLine</span>(hull[j], hull[i], hull[ni]));
+    }
+    <span class="kw">return</span> ans;
+}</code></pre>
+
+    <h3>旋转卡壳的更多应用</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>应用</th><th>说明</th><th>复杂度</th></tr>
+        <tr><td>凸包直径</td><td>最远点对距离</td><td>O(n)</td></tr>
+        <tr><td>凸包宽度</td><td>最小宽度（平行线距离）</td><td>O(n)</td></tr>
+        <tr><td>两凸包最近距离</td><td>两凸包间最近点对</td><td>O(n + m)</td></tr>
+        <tr><td>两凸包最大距离</td><td>两凸包间最远点对</td><td>O(n + m)</td></tr>
+        <tr><td>凸包最小面积外接矩形</td><td>一条边与凸包边重合</td><td>O(n)</td></tr>
+        <tr><td>凸包三角剖分最大面积三角形</td><td>三点在凸包上</td><td>O(n^2)</td></tr>
+      </table>
+    </div>
+
+    <div class="box box-hard">
+      <div class="box-title">旋转卡壳的关键观察</div>
+      <p>旋转卡壳的正确性依赖于凸包的<strong>凸性</strong>：随着一条边的旋转，对踵点（最远点）只会<strong>单调前进</strong>，不会回退。这保证了总时间复杂度为 O(n)。在实现时，通常用叉积大小来判断是否需要移动对踵点。</p>
+    </div>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n)</span>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 5: 完整模板 -->
+  <!-- ============================== -->
+  <div class="section" id="template">
+    <h2>完整模板</h2>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">double</span> eps = <span class="num">1e-9</span>;
+
+<span class="kw">struct</span> <span class="ty">Point</span> {
+    <span class="ty">double</span> x, y;
+    <span class="ty">Point</span>() : <span class="fn">x</span>(<span class="num">0</span>), <span class="fn">y</span>(<span class="num">0</span>) {}
+    <span class="ty">Point</span>(<span class="ty">double</span> x, <span class="ty">double</span> y) : <span class="fn">x</span>(x), <span class="fn">y</span>(y) {}
+    <span class="ty">Point</span> <span class="kw">operator</span>+(<span class="kw">const</span> <span class="ty">Point</span>&amp; b) <span class="kw">const</span> { <span class="kw">return</span> {x+b.x, y+b.y}; }
+    <span class="ty">Point</span> <span class="kw">operator</span>-(<span class="kw">const</span> <span class="ty">Point</span>&amp; b) <span class="kw">const</span> { <span class="kw">return</span> {x-b.x, y-b.y}; }
+    <span class="ty">Point</span> <span class="kw">operator</span>*(<span class="ty">double</span> k) <span class="kw">const</span> { <span class="kw">return</span> {x*k, y*k}; }
+    <span class="ty">bool</span> <span class="kw">operator</span>==(<span class="kw">const</span> <span class="ty">Point</span>&amp; b) <span class="kw">const</span> {
+        <span class="kw">return</span> <span class="fn">fabs</span>(x-b.x)&lt;eps &amp;&amp; <span class="fn">fabs</span>(y-b.y)&lt;eps;
+    }
+};
+
+<span class="ty">double</span> <span class="fn">cross</span>(<span class="ty">Point</span> a, <span class="ty">Point</span> b) { <span class="kw">return</span> a.x*b.y - a.y*b.x; }
+<span class="ty">double</span> <span class="fn">cross</span>(<span class="ty">Point</span> O, <span class="ty">Point</span> A, <span class="ty">Point</span> B) { <span class="kw">return</span> <span class="fn">cross</span>(A-O, B-O); }
+<span class="ty">double</span> <span class="fn">dot</span>(<span class="ty">Point</span> a, <span class="ty">Point</span> b) { <span class="kw">return</span> a.x*b.x + a.y*b.y; }
+<span class="ty">double</span> <span class="fn">len</span>(<span class="ty">Point</span> a) { <span class="kw">return</span> <span class="fn">sqrt</span>(<span class="fn">dot</span>(a,a)); }
+<span class="ty">double</span> <span class="fn">dist</span>(<span class="ty">Point</span> a, <span class="ty">Point</span> b) { <span class="kw">return</span> <span class="fn">len</span>(a-b); }
+<span class="ty">double</span> <span class="fn">pointToLine</span>(<span class="ty">Point</span> P, <span class="ty">Point</span> A, <span class="ty">Point</span> B) {
+    <span class="kw">return</span> <span class="fn">fabs</span>(<span class="fn">cross</span>(B-A, P-A)) / <span class="fn">len</span>(B-A);
+}
+
+<span class="cm">// ========== Andrew 凸包 ==========</span>
+<span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt; <span class="fn">andrew</span>(<span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt; pts) {
+    <span class="ty">int</span> n = pts.<span class="fn">size</span>();
+    <span class="kw">if</span> (n &lt;= <span class="num">1</span>) <span class="kw">return</span> pts;
+    <span class="fn">sort</span>(pts.<span class="fn">begin</span>(), pts.<span class="fn">end</span>(), [](<span class="ty">Point</span>&amp; a, <span class="ty">Point</span>&amp; b) {
+        <span class="kw">return</span> a.x&lt;b.x || (a.x==b.x &amp;&amp; a.y&lt;b.y);
+    });
+    <span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt; hull;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="kw">while</span> (hull.<span class="fn">size</span>()&gt;=<span class="num">2</span> &amp;&amp;
+               <span class="fn">cross</span>(hull[hull.<span class="fn">size</span>()-<span class="num">2</span>], hull.<span class="fn">back</span>(), pts[i]) &lt;= <span class="num">0</span>)
+            hull.<span class="fn">pop_back</span>();
+        hull.<span class="fn">push_back</span>(pts[i]);
+    }
+    <span class="ty">int</span> low = hull.<span class="fn">size</span>();
+    <span class="kw">for</span> (<span class="ty">int</span> i = n-<span class="num">2</span>; i &gt;= <span class="num">0</span>; i--) {
+        <span class="kw">while</span> (hull.<span class="fn">size</span>()&gt;low &amp;&amp;
+               <span class="fn">cross</span>(hull[hull.<span class="fn">size</span>()-<span class="num">2</span>], hull.<span class="fn">back</span>(), pts[i]) &lt;= <span class="num">0</span>)
+            hull.<span class="fn">pop_back</span>();
+        hull.<span class="fn">push_back</span>(pts[i]);
+    }
+    hull.<span class="fn">pop_back</span>();
+    <span class="kw">return</span> hull;
+}
+
+<span class="cm">// ========== 旋转卡壳求直径 ==========</span>
+<span class="ty">double</span> <span class="fn">diameter</span>(<span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt;&amp; hull) {
+    <span class="ty">int</span> n = hull.<span class="fn">size</span>();
+    <span class="kw">if</span> (n == <span class="num">1</span>) <span class="kw">return</span> <span class="num">0</span>;
+    <span class="kw">if</span> (n == <span class="num">2</span>) <span class="kw">return</span> <span class="fn">dist</span>(hull[<span class="num">0</span>], hull[<span class="num">1</span>]);
+    <span class="ty">double</span> ans = <span class="num">0</span>;
+    <span class="ty">int</span> j = <span class="num">1</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="ty">int</span> ni = (i+<span class="num">1</span>) % n;
+        <span class="kw">while</span> (<span class="fn">fabs</span>(<span class="fn">cross</span>(hull[i], hull[ni], hull[(j+<span class="num">1</span>)%n]))
+             &gt; <span class="fn">fabs</span>(<span class="fn">cross</span>(hull[i], hull[ni], hull[j])))
+            j = (j+<span class="num">1</span>) % n;
+        ans = <span class="fn">max</span>(ans, <span class="fn">max</span>(<span class="fn">dist</span>(hull[i],hull[j]),
+                            <span class="fn">dist</span>(hull[ni],hull[j])));
+    }
+    <span class="kw">return</span> ans;
+}
+
+<span class="cm">// ========== 凸包面积 ==========</span>
+<span class="ty">double</span> <span class="fn">hullArea</span>(<span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt;&amp; hull) {
+    <span class="ty">double</span> s = <span class="num">0</span>;
+    <span class="ty">int</span> n = hull.<span class="fn">size</span>();
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        s += <span class="fn">cross</span>(hull[i], hull[(i+<span class="num">1</span>)%n]);
+    <span class="kw">return</span> <span class="fn">fabs</span>(s) / <span class="num">2.0</span>;
+}
+
+<span class="cm">// ========== 凸包周长 ==========</span>
+<span class="ty">double</span> <span class="fn">hullPerimeter</span>(<span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt;&amp; hull) {
+    <span class="ty">double</span> p = <span class="num">0</span>;
+    <span class="ty">int</span> n = hull.<span class="fn">size</span>();
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        p += <span class="fn">dist</span>(hull[i], hull[(i+<span class="num">1</span>)%n]);
+    <span class="kw">return</span> p;
+}
+
+<span class="cm">// ========== 判断点在凸包内 (二分) ==========</span>
+<span class="cm">// 前提: hull 按逆时针排列, 以 hull[0] 为基准</span>
+<span class="ty">bool</span> <span class="fn">inConvex</span>(<span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt;&amp; hull, <span class="ty">Point</span> P) {
+    <span class="ty">int</span> n = hull.<span class="fn">size</span>();
+    <span class="kw">if</span> (<span class="fn">cross</span>(hull[<span class="num">0</span>], hull[<span class="num">1</span>], P) &lt; <span class="num">0</span>) <span class="kw">return</span> <span class="kw">false</span>;
+    <span class="kw">if</span> (<span class="fn">cross</span>(hull[<span class="num">0</span>], hull[n-<span class="num">1</span>], P) &gt; <span class="num">0</span>) <span class="kw">return</span> <span class="kw">false</span>;
+    <span class="ty">int</span> lo = <span class="num">1</span>, hi = n - <span class="num">1</span>;
+    <span class="kw">while</span> (hi - lo &gt; <span class="num">1</span>) {
+        <span class="ty">int</span> mid = (lo + hi) / <span class="num">2</span>;
+        <span class="kw">if</span> (<span class="fn">cross</span>(hull[<span class="num">0</span>], hull[mid], P) &gt;= <span class="num">0</span>) lo = mid;
+        <span class="kw">else</span> hi = mid;
+    }
+    <span class="kw">return</span> <span class="fn">cross</span>(hull[lo], hull[hi], P) &gt;= <span class="num">0</span>;
+}</code></pre>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 6: 经典例题 -->
+  <!-- ============================== -->
+  <div class="section" id="problems">
+    <h2>经典例题</h2>
+
+    <div class="problem">
+      <div class="problem-title">POJ 1113 - Wall</div>
+      <p>求凸包周长加上一个圆的周长（城堡围墙问题）。先求凸包，答案为凸包周长 + 2 * PI * L。</p>
+      <span class="tag tag-base">凸包</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">POJ 2187 - Beauty Contest</div>
+      <p>求平面上最远的两个点之间的距离的平方。先求凸包，再用旋转卡壳求直径。</p>
+      <span class="tag tag-base">凸包</span>
+      <span class="tag tag-mid">旋转卡壳</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">POJ 1873 - The Fortified Forest</div>
+      <p>小象砍树建围栏，用最少的树围住剩余的树。枚举子集，求凸包判断是否可行。</p>
+      <span class="tag tag-hard">枚举</span>
+      <span class="tag tag-base">凸包</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P2742 - 【模板】二维凸包</div>
+      <p>模板题：给定 n 个点，求凸包的周长。直接使用 Andrew 算法即可。</p>
+      <span class="tag tag-base">模板</span>
+      <span class="tag tag-easy">入门</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P3829 - [SHOI2012] 信用卡凸包</div>
+      <p>多张信用卡（圆角矩形）的凸包。将信用卡的四个圆心取出，求所有圆心的凸包，再加上圆弧部分。</p>
+      <span class="tag tag-hard">进阶</span>
+      <span class="tag tag-base">凸包</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">POJ 3608 - Bridge Across Islands</div>
+      <p>求两个凸包之间的最短距离。使用旋转卡壳在两个凸包上同时扫描。</p>
+      <span class="tag tag-hard">旋转卡壳</span>
+      <span class="tag tag-base">凸包</span>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">凸包问题的一般思路</div>
+      <p>1. 先判断问题是否可以通过凸包简化（如最远点对、最小包围多边形等）<br>
+         2. 使用 Andrew 算法求凸包<br>
+         3. 在凸包上用旋转卡壳或其他方法求解具体问题<br>
+         4. 注意退化情况（所有点共线、点数少于 3 等）</p>
+    </div>
+  </div>
+
+</div>
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

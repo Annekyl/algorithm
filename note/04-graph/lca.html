@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>最近公共祖先 (LCA) - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#04-graph">图论</a> &gt;
+    最近公共祖先 (LCA)
+  </div>
+
+  <div class="page-header">
+    <h1>最近公共祖先 (LCA)</h1>
+    <p class="subtitle">Lowest Common Ancestor &mdash; 树上查询的核心工具</p>
+    <div class="tags">
+      <span class="tag tag-graph">图论</span>
+      <span class="tag tag-mid">中等</span>
+      <span class="tag tag-base">基础算法</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#overview">LCA 概述</a></li>
+      <li><a href="#binary-lifting">倍增法 (Binary Lifting)</a></li>
+      <li><a href="#tarjan-offline">Tarjan 离线算法</a></li>
+      <li><a href="#applications">LCA 的应用</a></li>
+      <li><a href="#template">C++ 完整模板</a></li>
+      <li><a href="#problems">经典问题</a></li>
+    </ul>
+  </div>
+
+  <!-- ===== LCA 概述 ===== -->
+  <div class="section" id="overview">
+    <h2>LCA 概述</h2>
+
+    <h3>定义</h3>
+    <p>对于一棵有根树，节点 <code>u</code> 和节点 <code>v</code> 的<strong>最近公共祖先 (Lowest Common Ancestor)</strong> 是指同时是 <code>u</code> 和 <code>v</code> 的祖先，且深度最大的那个节点。</p>
+
+    <div class="diagram">
+      <pre>
+            1           &lt;-- 根节点
+           / \
+          2   3
+         / \   \
+        4   5   6
+       / \
+      7   8
+
+  LCA(4, 5) = 2
+  LCA(4, 6) = 1
+  LCA(7, 8) = 4
+  LCA(5, 6) = 1
+  LCA(3, 6) = 3   (自身也是祖先)
+      </pre>
+    </div>
+
+    <h3>应用场景</h3>
+    <ul>
+      <li><strong>树上两点距离</strong>：<code>dist(u, v) = depth[u] + depth[v] - 2 * depth[LCA(u, v)]</code></li>
+      <li><strong>树上路径信息</strong>：求路径上的最大/最小边权、路径异或和等</li>
+      <li><strong>树上差分</strong>：对 <code>u</code> 到 <code>v</code> 路径上的所有节点加值</li>
+      <li><strong>树的直径</strong>：配合 DFS/BFS 求最远点对</li>
+      <li><strong>在线查询</strong>：多次询问树上两节点关系</li>
+    </ul>
+
+    <div class="box box-info">
+      <div class="box-title">LCA 算法分类</div>
+      <ul>
+        <li><strong>在线算法</strong>：倍增法、ST 表 + DFS 序、树链剖分 &mdash; 预处理后每次查询 O(log n) 或 O(1)</li>
+        <li><strong>离线算法</strong>：Tarjan 算法 &mdash; 所有查询一起处理，总复杂度 O(n + q)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===== 倍增法 ===== -->
+  <div class="section" id="binary-lifting">
+    <h2>倍增法 (Binary Lifting)</h2>
+
+    <h3>核心思想</h3>
+    <p>预处理每个节点向上跳 <code>2^k</code> 步到达的祖先，记为 <code>fa[u][k]</code>。查询时将两个节点同时向上跳，从大步长到小步长逐步逼近。</p>
+
+    <h4>预处理</h4>
+    <p>通过 DFS 求出每个节点的深度和直接父亲 <code>fa[u][0]</code>，然后用递推：</p>
+    <pre><code><span class="cm">// fa[u][k] = fa[ fa[u][k-1] ][k-1]</span>
+<span class="cm">// 含义：u 向上跳 2^k 步 = 先跳 2^(k-1) 步，再跳 2^(k-1) 步</span>
+<span class="kw">for</span> (<span class="ty">int</span> k = <span class="num">1</span>; k &lt;= LOG; k++)
+    <span class="kw">for</span> (<span class="ty">int</span> u = <span class="num">1</span>; u &lt;= n; u++)
+        fa[u][k] = fa[ fa[u][k<span class="num">-1</span>] ][k<span class="num">-1</span>];</code></pre>
+
+    <h4>查询过程</h4>
+    <div class="steps">
+      <div class="step">先将深度较大的节点上移到与另一节点<strong>相同深度</strong></div>
+      <div class="step">如果两节点已经相同，返回该节点</div>
+      <div class="step">从大到小枚举 <code>k</code>，若 <code>fa[u][k] != fa[v][k]</code>，则同时上移 <code>u</code> 和 <code>v</code></div>
+      <div class="step">循环结束后，<code>fa[u][0]</code> 即为 LCA</div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+  查询 LCA(7, 5)，假设树：
+          1
+         / \
+        2   3
+       / \   \
+      4   5   6
+     /
+    7
+
+  depth[7]=3, depth[5]=2, depth[4]=2
+
+  Step 1: 将 u=7 上移到 depth=2
+          从 k=1 开始: fa[7][1]=fa[4][0]=1 (depth[1]=0 &lt; 2, 跳过)
+          k=0: fa[7][0]=4, depth[4]=2 == 2, u=4
+          现在 u=4, v=5, 同深度
+
+  Step 2: 从 k=1 开始
+          k=1: fa[4][1]=1, fa[5][1]=1, 相等, 不跳
+          k=0: fa[4][0]=2, fa[5][0]=2, 相等, 不跳
+
+  Step 3: 返回 fa[4][0] = 2, LCA(7,5) = 2
+      </pre>
+    </div>
+
+    <h3>复杂度分析</h3>
+    <div class="complexity">
+      <span class="label">预处理:</span>
+      <span class="value">O(n log n)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">查询:</span>
+      <span class="value">O(log n)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间:</span>
+      <span class="value">O(n log n)</span>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">LOG 的取值</div>
+      <p><code>LOG = ceil(log2(n))</code>，通常取 <code>__lg(n) + 1</code> 或直接取 <code>20</code>（当 n &le; 10^6 时足够）。</p>
+    </div>
+  </div>
+
+  <!-- ===== Tarjan 离线算法 ===== -->
+  <div class="section" id="tarjan-offline">
+    <h2>Tarjan 离线算法</h2>
+
+    <h3>核心思想</h3>
+    <p>在一次 DFS 中，利用<strong>并查集 (DSU)</strong> 将已访问完的子树合并到祖先上。当处理查询 <code>(u, v)</code> 时，如果 <code>v</code> 已经被访问过，则 <code>find(v)</code> 就是它们的 LCA。</p>
+
+    <h4>算法流程</h4>
+    <div class="steps">
+      <div class="step">将所有查询按节点分组存储（无向图，双向存）</div>
+      <div class="step">从根节点开始 DFS</div>
+      <div class="step">访问节点 <code>u</code> 时，标记为已访问，递归处理所有子节点</div>
+      <div class="step">处理完子树后，将 <code>u</code> 合并到父亲：<code>fa_union(u, parent[u])</code></div>
+      <div class="step">对于每个与 <code>u</code> 相关的查询 <code>(u, v)</code>，若 <code>v</code> 已访问，<code>LCA = find(v)</code></div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+  树:       查询: LCA(4,5), LCA(7,8)
+            1
+           / \
+          2   3
+         / \   \
+        4   5   6
+       / \
+      7   8
+
+  DFS 过程:
+  visit 1 -> visit 2 -> visit 4 -> visit 7
+    finish 7, union(7,4)
+    visit 8
+      查询(7,8)? 7已访问, find(7)=4, LCA=4
+    finish 8, union(8,4)
+  finish 4, union(4,2)
+  visit 5
+    查询(4,5)? 4已访问, find(4)=2, LCA=2
+  finish 5, union(5,2)
+  finish 2, union(2,1)
+  visit 3 -> visit 6
+  finish 6, union(6,3)
+  finish 3, union(3,1)
+      </pre>
+    </div>
+
+    <h3>复杂度分析</h3>
+    <div class="complexity">
+      <span class="label">总复杂度:</span>
+      <span class="value">O(n + q) * alpha(n)</span>
+    </div>
+    <p>其中 <code>alpha</code> 为反阿克曼函数，近似常数。比倍增法更快，但只能离线处理。</p>
+
+    <div class="box box-warn">
+      <div class="box-title">注意</div>
+      <p>Tarjan 离线算法需要一次性给出所有查询，无法在线回答。如果题目强制在线，应使用倍增法或树链剖分。</p>
+    </div>
+  </div>
+
+  <!-- ===== LCA 的应用 ===== -->
+  <div class="section" id="applications">
+    <h2>LCA 的应用</h2>
+
+    <h3>1. 树上两点距离</h3>
+    <p>给定带权树，求节点 <code>u</code> 到 <code>v</code> 的距离：</p>
+    <pre><code><span class="ty">int</span> <span class="fn">distance</span>(<span class="ty">int</span> u, <span class="ty">int</span> v) {
+    <span class="ty">int</span> l = <span class="fn">lca</span>(u, v);
+    <span class="kw">return</span> depth[u] + depth[v] - <span class="num">2</span> * depth[l];
+}</code></pre>
+    <p>对于带边权的树，可以用 <code>dist[u]</code> 表示根到 <code>u</code> 的距离：</p>
+    <pre><code><span class="ty">int</span> <span class="fn">distance</span>(<span class="ty">int</span> u, <span class="ty">int</span> v) {
+    <span class="ty">int</span> l = <span class="fn">lca</span>(u, v);
+    <span class="kw">return</span> dist[u] + dist[v] - <span class="num">2</span> * dist[l];
+}</code></pre>
+
+    <h3>2. 树上路径最大/最小边权</h3>
+    <p>维护 <code>maxEdge[u][k]</code> 表示 <code>u</code> 向上跳 <code>2^k</code> 步路径上的最大边权：</p>
+    <pre><code><span class="cm">// 预处理</span>
+maxEdge[u][<span class="num">0</span>] = weight(u, parent[u]);
+maxEdge[u][k] = <span class="fn">max</span>(maxEdge[u][k<span class="num">-1</span>], maxEdge[ fa[u][k<span class="num">-1</span>] ][k<span class="num">-1</span>]);
+
+<span class="cm">// 查询路径最大边权</span>
+<span class="ty">int</span> <span class="fn">pathMax</span>(<span class="ty">int</span> u, <span class="ty">int</span> v) {
+    <span class="ty">int</span> ans = <span class="num">0</span>;
+    <span class="kw">if</span> (depth[u] &lt; depth[v]) <span class="fn">swap</span>(u, v);
+    <span class="kw">for</span> (<span class="ty">int</span> k = LOG; k >= <span class="num">0</span>; k--)
+        <span class="kw">if</span> (depth[fa[u][k]] >= depth[v]) {
+            ans = <span class="fn">max</span>(ans, maxEdge[u][k]);
+            u = fa[u][k];
+        }
+    <span class="kw">if</span> (u == v) <span class="kw">return</span> ans;
+    <span class="kw">for</span> (<span class="ty">int</span> k = LOG; k >= <span class="num">0</span>; k--)
+        <span class="kw">if</span> (fa[u][k] != fa[v][k]) {
+            ans = <span class="fn">max</span>(ans, <span class="fn">max</span>(maxEdge[u][k], maxEdge[v][k]));
+            u = fa[u][k]; v = fa[v][k];
+        }
+    <span class="kw">return</span> <span class="fn">max</span>(ans, <span class="fn">max</span>(maxEdge[u][<span class="num">0</span>], maxEdge[v][<span class="num">0</span>]));
+}</code></pre>
+
+    <h3>3. 树上差分</h3>
+    <p>对 <code>u</code> 到 <code>v</code> 路径上的所有节点加 <code>w</code>：</p>
+    <pre><code><span class="ty">int</span> l = <span class="fn">lca</span>(u, v);
+diff[u] += w;
+diff[v] += w;
+diff[l] -= w;
+<span class="kw">if</span> (parent[l]) diff[parent[l]] -= w;  <span class="cm">// 防止影响 l 的父节点</span>
+
+<span class="cm">// 最后通过一次 DFS 自底向上累加</span></code></pre>
+
+    <h3>4. 两点是否在同一条链上</h3>
+    <p>判断 <code>u</code> 是否在 <code>a</code> 到 <code>b</code> 的路径上：</p>
+    <pre><code><span class="ty">bool</span> <span class="fn">onPath</span>(<span class="ty">int</span> a, <span class="ty">int</span> b, <span class="ty">int</span> u) {
+    <span class="kw">return</span> (<span class="fn">lca</span>(a, u) == u &amp;&amp; <span class="fn">lca</span>(u, b) == u) ||
+           (<span class="fn">lca</span>(b, u) == u &amp;&amp; <span class="fn">lca</span>(u, a) == u);
+}</code></pre>
+  </div>
+
+  <!-- ===== C++ 完整模板 ===== -->
+  <div class="section" id="template">
+    <h2>C++ 完整模板</h2>
+
+    <h3>倍增法 LCA 模板</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> MAXN = <span class="num">500005</span>;
+<span class="kw">const int</span> LOG = <span class="num">20</span>;
+
+<span class="kw">struct</span> <span class="ty">LCA</span> {
+    vector&lt;<span class="ty">int</span>&gt; adj[MAXN];
+    <span class="ty">int</span> fa[MAXN][LOG + <span class="num">1</span>];
+    <span class="ty">int</span> depth[MAXN];
+    <span class="ty">int</span> n, root;
+
+    <span class="kw">void</span> <span class="fn">init</span>(<span class="ty">int</span> _n, <span class="ty">int</span> _root) {
+        n = _n; root = _root;
+        <span class="fn">dfs</span>(root, <span class="num">0</span>);
+        <span class="kw">for</span> (<span class="ty">int</span> k = <span class="num">1</span>; k &lt;= LOG; k++)
+            <span class="kw">for</span> (<span class="ty">int</span> u = <span class="num">1</span>; u &lt;= n; u++)
+                fa[u][k] = fa[ fa[u][k<span class="num">-1</span>] ][k<span class="num">-1</span>];
+    }
+
+    <span class="kw">void</span> <span class="fn">dfs</span>(<span class="ty">int</span> u, <span class="ty">int</span> p) {
+        fa[u][<span class="num">0</span>] = p;
+        depth[u] = depth[p] + <span class="num">1</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> v : adj[u])
+            <span class="kw">if</span> (v != p) <span class="fn">dfs</span>(v, u);
+    }
+
+    <span class="ty">int</span> <span class="fn">query</span>(<span class="ty">int</span> u, <span class="ty">int</span> v) {
+        <span class="kw">if</span> (depth[u] &lt; depth[v]) <span class="fn">swap</span>(u, v);
+        <span class="cm">// Step 1: 上移到同一深度</span>
+        <span class="kw">for</span> (<span class="ty">int</span> k = LOG; k >= <span class="num">0</span>; k--)
+            <span class="kw">if</span> (depth[fa[u][k]] >= depth[v])
+                u = fa[u][k];
+        <span class="kw">if</span> (u == v) <span class="kw">return</span> u;
+        <span class="cm">// Step 2: 同时上移</span>
+        <span class="kw">for</span> (<span class="ty">int</span> k = LOG; k >= <span class="num">0</span>; k--)
+            <span class="kw">if</span> (fa[u][k] != fa[v][k]) {
+                u = fa[u][k];
+                v = fa[v][k];
+            }
+        <span class="kw">return</span> fa[u][<span class="num">0</span>];
+    }
+
+    <span class="ty">int</span> <span class="fn">dist</span>(<span class="ty">int</span> u, <span class="ty">int</span> v) {
+        <span class="kw">return</span> depth[u] + depth[v] - <span class="num">2</span> * depth[<span class="fn">query</span>(u, v)];
+    }
+};</code></pre>
+
+    <h3>Tarjan 离线 LCA 模板</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> MAXN = <span class="num">500005</span>;
+
+<span class="kw">struct</span> <span class="ty">TarjanLCA</span> {
+    vector&lt;<span class="ty">int</span>&gt; adj[MAXN];
+    vector&lt;pair&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; qry[MAXN]; <span class="cm">// {对方节点, 查询编号}</span>
+    <span class="ty">int</span> fa[MAXN], ans[MAXN];
+    <span class="ty">bool</span> vis[MAXN];
+    <span class="ty">int</span> n, root;
+
+    <span class="ty">int</span> <span class="fn">find</span>(<span class="ty">int</span> x) {
+        <span class="kw">return</span> fa[x] == x ? x : fa[x] = <span class="fn">find</span>(fa[x]);
+    }
+
+    <span class="kw">void</span> <span class="fn">tarjan</span>(<span class="ty">int</span> u, <span class="ty">int</span> p) {
+        vis[u] = <span class="kw">true</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> v : adj[u])
+            <span class="kw">if</span> (v != p) {
+                <span class="fn">tarjan</span>(v, u);
+                fa[v] = u;  <span class="cm">// 合并到父亲</span>
+            }
+        <span class="cm">// 处理与 u 相关的所有查询</span>
+        <span class="kw">for</span> (<span class="kw">auto</span>&amp; [v, id] : qry[u])
+            <span class="kw">if</span> (vis[v]) ans[id] = <span class="fn">find</span>(v);
+    }
+
+    <span class="kw">void</span> <span class="fn">solve</span>(<span class="ty">int</span> _n, <span class="ty">int</span> _root, <span class="ty">int</span> q) {
+        n = _n; root = _root;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) fa[i] = i;
+        <span class="fn">tarjan</span>(root, <span class="num">0</span>);
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; q; i++)
+            printf(<span class="str">"%d\n"</span>, ans[i]);
+    }
+};</code></pre>
+  </div>
+
+  <!-- ===== 经典问题 ===== -->
+  <div class="section" id="problems">
+    <h2>经典问题</h2>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P3379" target="_blank">P3379 【模板】最近公共祖先（LCA）</a>
+      </div>
+      <p>LCA 基础模板题，给定一棵树和多组查询，求每组的 LCA。可用倍增法或 Tarjan 离线算法。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P3398" target="_blank">P3398 仓鼠找 sugar</a>
+      </div>
+      <p>判断树上两条路径是否相交。关键结论：路径 (a,b) 和 (c,d) 相交，当且仅当 <code>LCA(a,b)</code> 在路径 (c,d) 上，或 <code>LCA(c,d)</code> 在路径 (a,b) 上。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P2680" target="_blank">P2680 运输计划</a>
+      </div>
+      <p>二分答案 + 树上差分 + LCA。需要将一条边的权值改为 0，使所有路径的最大值最小。经典综合题。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P1967" target="_blank">P1967 货车运输</a>
+      </div>
+      <p>最大生成树 + LCA 求路径最小值。先建最大生成树，再用倍增法维护路径上的最小边权。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P4281" target="_blank">P4281 [AHOI2008] 紧急集合 / 聚会</a>
+      </div>
+      <p>三点 LCA 问题。三个点到某个汇合点的距离之和最小，汇合点为三个 LCA 中深度最大的那个。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://codeforces.com/contest/609/problem/E" target="_blank">CF 609E Minimum spanning tree for each edge</a>
+      </div>
+      <p>对每条边，求包含该边的最小生成树权值。结合 Kruskal 和 LCA 求路径最大边权。</p>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>网络流 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="page-header">
+  <h1>网络流</h1>
+  <p class="subtitle">Network Flow &mdash; 最大流、最小割、最小费用最大流</p>
+  <div class="tags">
+    <span class="tag tag-graph">图论</span>
+    <span class="tag tag-hard">困难</span>
+    <span class="tag tag-base">模板</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#04">图论篇</a> &gt;
+    网络流
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#overview">网络流概述</a></li>
+      <li><a href="#basic-concepts">基本概念</a></li>
+      <li><a href="#ford-fulkerson">Ford-Fulkerson 方法</a></li>
+      <li><a href="#edmonds-karp">Edmonds-Karp 算法</a></li>
+      <li><a href="#dinic">Dinic 算法详解</a></li>
+      <li><a href="#min-cut">最小割定理</a></li>
+      <li><a href="#mcmf">最小费用最大流（MCMF）</a></li>
+      <li><a href="#applications">应用与建模</a></li>
+      <li><a href="#template">C++ 完整模板</a></li>
+      <li><a href="#problems">经典题目</a></li>
+    </ul>
+  </div>
+
+  <!-- ==================== 1. 网络流概述 ==================== -->
+  <div class="section" id="overview">
+    <h2>1. 网络流概述</h2>
+
+    <h3>1.1 什么是网络流</h3>
+    <p>网络流（Network Flow）是图论中一类重要的模型，用于描述"物质"在网络中的流动。想象一个水管网络：水从源头（source）流出，经过各段管道（每段管道有最大流量限制），最终汇入汇点（sink）。网络流要解决的核心问题是：<strong>从源点到汇点，最大能输送多少流量？</strong></p>
+
+    <div class="diagram">
+      <pre>
+  网络流模型示意：
+
+      s ──(10)──→ A ──(8)──→ t
+      │           ↑           ↑
+      └──(8)──→ B ──(10)──→ C
+                  └──(5)──→ t
+
+  s = 源点 (Source), t = 汇点 (Sink)
+  边上数字 = 容量 (Capacity)
+
+  问题：从 s 到 t 的最大流量是多少？
+      </pre>
+    </div>
+
+    <h3>1.2 网络流的应用领域</h3>
+    <ul>
+      <li><strong>物流运输</strong>：交通网络中的最大运力</li>
+      <li><strong>二分图匹配</strong>：最大匹配可转化为最大流</li>
+      <li><strong>项目选择</strong>：最小割模型解决收益最大化问题</li>
+      <li><strong>图像分割</strong>：计算机视觉中的前景/背景分离</li>
+      <li><strong>棒球联赛淘汰问题</strong>：判断某队是否有夺冠可能</li>
+    </ul>
+  </div>
+
+  <!-- ==================== 2. 基本概念 ==================== -->
+  <div class="section" id="basic-concepts">
+    <h2>2. 基本概念</h2>
+
+    <h3>2.1 定义</h3>
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>术语</th>
+          <th>定义</th>
+        </tr>
+        <tr>
+          <td>流网络 (Flow Network)</td>
+          <td>有向图 G = (V, E)，每条边 (u,v) 有容量 c(u,v) >= 0</td>
+        </tr>
+        <tr>
+          <td>源点 (Source) s</td>
+          <td>只有出边的顶点，流的起点</td>
+        </tr>
+        <tr>
+          <td>汇点 (Sink) t</td>
+          <td>只有入边的顶点，流的终点</td>
+        </tr>
+        <tr>
+          <td>可行流 f</td>
+          <td>满足容量约束和流量守恒的函数 f: E → R+</td>
+        </tr>
+        <tr>
+          <td>流量 |f|</td>
+          <td>从 s 流出的净流量 = 流入 t 的净流量</td>
+        </tr>
+        <tr>
+          <td>残量网络 (Residual Graph)</td>
+          <td>在当前流 f 下，包含所有残量 > 0 的边构成的图</td>
+        </tr>
+        <tr>
+          <td>增广路 (Augmenting Path)</td>
+          <td>残量网络中从 s 到 t 的路径</td>
+        </tr>
+      </table>
+    </div>
+
+    <h3>2.2 两个约束条件</h3>
+    <div class="box box-info">
+      <div class="box-title">流的基本约束</div>
+      <ol>
+        <li><strong>容量约束</strong>：对每条边 (u,v)，0 <= f(u,v) <= c(u,v)</li>
+        <li><strong>流量守恒</strong>：对每个非源非汇的顶点 v，流入量 = 流出量</li>
+      </ol>
+    </div>
+
+    <h3>2.3 残量网络与反向边</h3>
+    <p>残量网络是网络流算法的核心概念。对于原图中的每条边 (u, v) 容量为 c：</p>
+    <ul>
+      <li>正向残量：c - f(u,v)（还可以增加的流量）</li>
+      <li>反向残量：f(u,v)（可以退回的流量）</li>
+    </ul>
+    <p>实现时，每条边存为两条：正向边（容量 c）和反向边（容量 0）。增广时正向边减少流量，反向边增加流量。</p>
+
+    <div class="diagram">
+      <pre>
+  反向边的作用：
+
+  原图:  A ──(10)──→ B
+
+  实际存储（链式前向星）:
+  边0: A → B, cap = 10  (正向)
+  边1: B → A, cap = 0   (反向)
+
+  流过 6 单位后:
+  边0: A → B, cap = 4   (还剩 4)
+  边1: B → A, cap = 6   (可退回 6)
+
+  反向边使得算法能够"反悔"之前的决策
+      </pre>
+    </div>
+  </div>
+
+  <!-- ==================== 3. Ford-Fulkerson ==================== -->
+  <div class="section" id="ford-fulkerson">
+    <h2>3. Ford-Fulkerson 方法</h2>
+
+    <h3>3.1 基本思想</h3>
+    <p>Ford-Fulkerson 是求最大流的方法论框架，核心思想是：<strong>反复在残量网络中寻找增广路，沿增广路增加流量，直到不存在增广路为止。</strong></p>
+
+    <div class="steps">
+      <div class="step">初始化：所有边的流量为 0</div>
+      <div class="step">在残量网络中寻找一条从 s 到 t 的增广路</div>
+      <div class="step">找到增广路后，计算路径上的瓶颈容量（最小残量）</div>
+      <div class="step">沿增广路增加瓶颈容量的流量，更新残量网络</div>
+      <div class="step">重复步骤 2-4，直到不存在增广路</div>
+      <div class="step">此时的流量即为最大流</div>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">Ford-Fulkerson 的局限</div>
+      <p>若增广路的选择不加限制（如用 DFS 随意搜索），时间复杂度为 O(E * |f*|)，其中 |f*| 是最大流值。当容量为浮点数或极大整数时，可能非常慢甚至不终止。</p>
+    </div>
+  </div>
+
+  <!-- ==================== 4. Edmonds-Karp ==================== -->
+  <div class="section" id="edmonds-karp">
+    <h2>4. Edmonds-Karp 算法</h2>
+
+    <h3>4.1 改进思路</h3>
+    <p>Edmonds-Karp 是 Ford-Fulkerson 的具体实现：使用 <strong>BFS</strong> 寻找增广路（选择最短增广路），保证了多项式时间复杂度。</p>
+
+    <h3>4.2 复杂度分析</h3>
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(VE^2)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(V + E)</span>
+    </div>
+
+    <p>为什么是 O(VE^2)？关键观察：</p>
+    <ul>
+      <li>BFS 找到的最短增广路长度随增广次数单调不减</li>
+      <li>某条边 (u,v) 成为关键边（瓶颈）时，下次再成为关键边时 s→u 和 v→t 的最短路至少各增加 2</li>
+      <li>每条边最多成为关键边 O(V) 次</li>
+      <li>总共 O(VE) 次增广，每次 BFS 花费 O(E)</li>
+    </ul>
+
+    <div class="box box-tip">
+      <div class="box-title">适用场景</div>
+      <p>Edmonds-Karp 适合中小规模网络（V, E 在几千以内），代码简洁，不易出错。大规模网络应使用 Dinic 算法。</p>
+    </div>
+  </div>
+
+  <!-- ==================== 5. Dinic 算法详解 ==================== -->
+  <div class="section" id="dinic">
+    <h2>5. Dinic 算法详解</h2>
+
+    <h3>5.1 算法思想</h3>
+    <p>Dinic 算法是目前竞赛中最常用的最大流算法，通过引入<strong>分层图</strong>（Level Graph）和<strong>阻塞流</strong>（Blocking Flow）的概念，将每次 BFS + 多次 DFS 结合，大幅提高了效率。</p>
+
+    <h3>5.2 核心概念</h3>
+    <ul>
+      <li><strong>分层图（Level Graph）</strong>：用 BFS 从 s 出发计算每个顶点到 s 的最短距离（层数），只保留从第 i 层到第 i+1 层的边</li>
+      <li><strong>阻塞流（Blocking Flow）</strong>：在分层图上，从 s 到 t 的所有路径上都已经有流经过的流</li>
+      <li><strong>当前弧优化（Current Arc Optimization）</strong>：对每个顶点记录上次尝试到哪条边，避免重复搜索已经确定无法增广的边</li>
+    </ul>
+
+    <h3>5.3 算法流程</h3>
+    <div class="steps">
+      <div class="step"><strong>BFS 构建分层图</strong>：从 s 出发 BFS，计算每个顶点的层数 level[v]。若无法到达 t，算法结束。</div>
+      <div class="step"><strong>DFS 寻找阻塞流</strong>：从 s 出发 DFS，只沿着 level[v] = level[u] + 1 的边前进（沿分层图），寻找多条增广路，直到从 s 出发无法再到达 t。</div>
+      <div class="step"><strong>当前弧优化</strong>：DFS 时，对每个顶点 u 记录当前搜到第几条边 cur[u]，避免重复搜索已确定无法增广的边。</div>
+      <div class="step">重复步骤 1-3，直到 BFS 无法到达 t。</div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+  Dinic 算法执行过程：
+
+  第 1 轮 BFS: s(层0) → A(层1) → B(层1) → t(层2)
+  分层图: s→A, s→B, A→t, B→t
+
+  第 1 轮 DFS: 在分层图上反复找增广路
+  增广路1: s→A→t, 瓶颈=5
+  增广路2: s→B→t, 瓶颈=3
+  ...直到无路可走（阻塞流完成）
+
+  第 2 轮 BFS: 重新计算分层
+  ...重复直到 t 不可达
+
+  ┌─────────────────────────────┐
+  │  每轮: BFS建分层 + DFS找阻塞流  │
+  │  最多 O(V) 轮，每轮 O(VE)     │
+  │  总复杂度: O(V^2 * E)         │
+  └─────────────────────────────┘
+      </pre>
+    </div>
+
+    <h3>5.4 为什么分层图有效</h3>
+    <div class="box box-info">
+      <div class="box-title">正确性论证</div>
+      <p>分层图保证每次 DFS 只走最短增广路（边数最少）。当 BFS 发现 t 不可达时，意味着残量网络中不存在 s-t 路径，由最大流最小割定理，此时流达到最大。</p>
+    </div>
+
+    <h3>5.5 当前弧优化的重要性</h3>
+    <p>没有当前弧优化时，Dinic 的复杂度为 O(V^2 * E * log C)。加入当前弧优化后：</p>
+    <ul>
+      <li>每条边至多被考虑一次（在某一轮的 DFS 中）</li>
+      <li>每轮 DFS 的总代价为 O(VE)</li>
+      <li>总共 O(V) 轮</li>
+      <li><strong>总复杂度：O(V^2 * E)</strong></li>
+    </ul>
+
+    <div class="box box-tip">
+      <div class="box-title">Dinic 在特殊图上的表现</div>
+      <ul>
+        <li><strong>单位容量图</strong>（所有边容量为 1）：O(min(V^(2/3), E^(1/2)) * E)</li>
+        <li><strong>二分图</strong>（s→U→V→t 结构）：O(V^(1/2) * E)</li>
+        <li>因此 Dinic 求二分图最大匹配的效率优于匈牙利算法</li>
+      </ul>
+    </div>
+
+    <h3>5.6 复杂度对比</h3>
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>算法</th>
+          <th>时间复杂度</th>
+          <th>适用场景</th>
+          <th>难度</th>
+        </tr>
+        <tr>
+          <td>Ford-Fulkerson (DFS)</td>
+          <td>O(E * |f*|)</td>
+          <td>小规模、整数容量</td>
+          <td>简单</td>
+        </tr>
+        <tr>
+          <td>Edmonds-Karp (BFS)</td>
+          <td>O(VE^2)</td>
+          <td>中小规模</td>
+          <td>简单</td>
+        </tr>
+        <tr>
+          <td><strong>Dinic</strong></td>
+          <td><strong>O(V^2 * E)</strong></td>
+          <td><strong>竞赛首选</strong></td>
+          <td><strong>中等</strong></td>
+        </tr>
+        <tr>
+          <td>ISAP</td>
+          <td>O(V^2 * E)</td>
+          <td>实践中常数较小</td>
+          <td>较难</td>
+        </tr>
+        <tr>
+          <td>HLPP</td>
+          <td>O(V^2 * sqrt(E))</td>
+          <td>理论最优</td>
+          <td>困难</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== 6. 最小割 ==================== -->
+  <div class="section" id="min-cut">
+    <h2>6. 最小割定理</h2>
+
+    <h3>6.1 割的定义</h3>
+    <p>流网络 G = (V, E) 的一个 <strong>s-t 割</strong> (S, T) 是将顶点集 V 分为两个集合 S 和 T，使得 s 属于 S，t 属于 T。</p>
+    <ul>
+      <li><strong>割的容量</strong>：c(S, T) = sum of c(u,v) for all u in S, v in T</li>
+      <li><strong>最小割</strong>：容量最小的 s-t 割</li>
+    </ul>
+
+    <h3>6.2 最大流最小割定理</h3>
+    <div class="box box-info">
+      <div class="box-title">最大流最小割定理（Max-Flow Min-Cut Theorem）</div>
+      <p>以下三个命题等价：</p>
+      <ol>
+        <li>f 是最大流</li>
+        <li>残量网络中不存在增广路</li>
+        <li>存在一个 s-t 割 (S, T)，使得 |f| = c(S, T)</li>
+      </ol>
+      <p><strong>核心结论：最大流 = 最小割</strong></p>
+    </div>
+
+    <h3>6.3 最小割的构造</h3>
+    <p>在最大流算法完成后，从 s 出发在残量网络中 BFS/DFS 能到达的所有顶点构成集合 S，其余顶点构成集合 T。割边就是从 S 到 T 的所有满流边。</p>
+
+    <div class="steps">
+      <div class="step">运行最大流算法，得到残量网络</div>
+      <div class="step">在残量网络中，从 s 出发 BFS/DFS，标记所有可达顶点</div>
+      <div class="step">S = 被标记的顶点集合，T = 未被标记的顶点集合</div>
+      <div class="step">最小割的割边 = 原图中从 S 到 T 且残量为 0 的边</div>
+    </div>
+
+    <h3>6.4 最小割的应用</h3>
+    <p>很多看起来与网络流无关的问题可以建模为最小割问题：</p>
+    <ul>
+      <li><strong>项目选择问题</strong>：选择一些项目使收益最大（扣除依赖成本）</li>
+      <li><strong>图像分割</strong>：将像素分为前景和背景</li>
+      <li><strong>最大权闭合子图</strong>：选择一些顶点使得选中的集合是闭合的且权值和最大</li>
+    </ul>
+  </div>
+
+  <!-- ==================== 7. MCMF ==================== -->
+  <div class="section" id="mcmf">
+    <h2>7. 最小费用最大流（MCMF）</h2>
+
+    <h3>7.1 问题定义</h3>
+    <p>在流网络中，每条边除了容量 c(u,v) 外，还有一个单位费用 w(u,v)。问题：<strong>在最大流的前提下，使总费用 sum(f(u,v) * w(u,v)) 最小。</strong></p>
+
+    <h3>7.2 核心思想</h3>
+    <p>将最大流算法中的 BFS 替换为<strong>最短路算法</strong>（SPFA 或 Dijkstra），每次沿费用最小的增广路增广。</p>
+
+    <div class="box box-info">
+      <div class="box-title">SPFA 增广法</div>
+      <p>每次用 SPFA 在残量网络中求从 s 到各点的最短路（以费用为边权），然后沿 s→t 的最短路增广。直到无法增广或最短路费用 >= 0（若要求最小费用最大流则直到无法增广）。</p>
+    </div>
+
+    <h3>7.3 费用流的反向边</h3>
+    <p>与最大流类似，费用流也需要反向边。反向边的费用是正向边费用的相反数：</p>
+    <ul>
+      <li>正向边 (u, v)：容量 c，费用 w</li>
+      <li>反向边 (v, u)：容量 0，费用 -w</li>
+      <li>增广时：正向边容量减少，反向边容量增加，费用取反</li>
+    </ul>
+
+    <h3>7.4 SPFA 的负环问题</h3>
+    <p>由于反向边的费用为负，残量网络中可能存在负权边。因此不能直接用 Dijkstra（除非配合 Johnson 势函数），通常使用 SPFA。</p>
+
+    <div class="box box-warn">
+      <div class="box-title">SPFA 被卡的应对</div>
+      <p>SPFA 最坏复杂度 O(VE)，在构造数据上可能退化。应对策略：</p>
+      <ul>
+        <li>使用 SLF（Small Label First）优化：双端队列</li>
+        <li>使用 Dijkstra + Johnson 势函数（Primal-Dual 方法），复杂度 O(F * E * log V)</li>
+        <li>实践中 SPFA 通常很快，多数 OJ 题目可通过</li>
+      </ul>
+    </div>
+
+    <h3>7.5 复杂度分析</h3>
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>算法</th>
+          <th>时间复杂度</th>
+          <th>备注</th>
+        </tr>
+        <tr>
+          <td>SPFA 增广</td>
+          <td>O(F * VE)</td>
+          <td>F 为最大流值，最坏较慢</td>
+        </tr>
+        <tr>
+          <td>Dijkstra + 势函数</td>
+          <td>O(F * E * log V)</td>
+          <td>Primal-Dual，更快更稳</td>
+        </tr>
+        <tr>
+          <td>Capacity Scaling</td>
+          <td>O(E^2 * log U)</td>
+          <td>U 为最大容量</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== 8. 应用与建模 ==================== -->
+  <div class="section" id="applications">
+    <h2>8. 应用与建模</h2>
+
+    <h3>8.1 二分图匹配转化为最大流</h3>
+    <p>将二分图最大匹配转化为最大流问题是网络流最经典的应用之一。</p>
+
+    <div class="diagram">
+      <pre>
+  二分图匹配 → 最大流建模：
+
+  原二分图:
+  U = {u1, u2, u3}     V = {v1, v2, v3}
+  边: u1-v1, u1-v2, u2-v1, u3-v2
+
+  添加超级源 s 和超级汇 t：
+      s ──(1)──→ u1 ──(1)──→ v1 ──(1)──→ t
+      s ──(1)──→ u2 ──(1)──→ v2 ──(1)──→ t
+      s ──(1)──→ u3
+                    u1 ──(1)──→ v2
+                    u2 ──(1)──→ v1
+
+  所有新增边容量为 1
+  最大流 = 最大匹配数
+      </pre>
+    </div>
+
+    <h3>8.2 项目选择问题（最大权闭合子图）</h3>
+    <p>有 n 个项目，每个项目有收益（正或负）。选择某些项目时，必须同时选择其依赖的项目。求最大总收益。</p>
+    <div class="box box-tip">
+      <div class="box-title">建模方法</div>
+      <ol>
+        <li>源 s 向所有正收益项目连边，容量 = 收益值</li>
+        <li>所有负收益项目向汇 t 连边，容量 = |收益值|</li>
+        <li>项目 i 依赖项目 j 时，连边 i → j，容量 = +∞</li>
+        <li>最大权闭合子图的权值 = 正收益总和 - 最小割</li>
+      </ol>
+    </div>
+
+    <h3>8.3 最大权闭合子图构造</h3>
+    <p>在最小割 (S, T) 中：</p>
+    <ul>
+      <li>S ∩ {正收益项目} = 选中的正收益项目</li>
+      <li>T ∩ {负收益项目} = 不选的负收益项目</li>
+      <li>闭合子图 = S 中除 s 外的所有顶点</li>
+    </ul>
+
+    <h3>8.4 棒球联赛淘汰问题</h3>
+    <p>n 支队伍，已知每支队伍已胜场数和剩余比赛安排。判断某支队伍是否有可能成为冠军（或并列冠军）。</p>
+    <p>建模：每场未进行的比赛建一个顶点（源连向它），每支其他队伍建一个顶点（它连向汇），容量约束使得每场比赛的胜利分配不超过队伍的胜场上限。</p>
+
+    <h3>8.5 方格取数问题</h3>
+    <p>在 n*m 的方格中，每个格子有数值，取出一些格子使得取出的格子互不相邻，且数值和最大。转化为最小割（最大权独立集）。</p>
+
+    <div class="diagram">
+      <pre>
+  最小割建模通用框架：
+
+  ┌─────────────────────────────────────┐
+  │                                       │
+  │  选择类问题 → 每个元素选/不选 → S/T 割 │
+  │                                       │
+  │  收益类 → s 连正权, 负权连 t           │
+  │  依赖类 → 依赖边容量 +∞               │
+  │  互斥类 → 互斥边容量 +∞               │
+  │                                       │
+  │  答案 = 总正收益 - 最小割              │
+  └─────────────────────────────────────┘
+      </pre>
+    </div>
+  </div>
+
+  <!-- ==================== 9. C++ 完整模板 ==================== -->
+  <div class="section" id="template">
+    <h2>9. C++ 完整模板</h2>
+
+    <h3>9.1 Dinic 最大流模板</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">struct</span> <span class="ty">Dinic</span> {
+    <span class="kw">struct</span> <span class="ty">Edge</span> {
+        <span class="ty">int</span> to, rev;
+        <span class="ty">long long</span> cap;
+    };
+    <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">Edge</span>&gt;&gt; g;
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; level, cur;
+    <span class="ty">int</span> n;
+
+    <span class="kw">void</span> <span class="fn">init</span>(<span class="ty">int</span> _n) {
+        n = _n;
+        g.<span class="fn">assign</span>(n + <span class="num">1</span>, {});
+        level.<span class="fn">resize</span>(n + <span class="num">1</span>);
+        cur.<span class="fn">resize</span>(n + <span class="num">1</span>);
+    }
+
+    <span class="kw">void</span> <span class="fn">addEdge</span>(<span class="ty">int</span> u, <span class="ty">int</span> v, <span class="ty">long long</span> cap) {
+        g[u].<span class="fn">push_back</span>({v, (<span class="ty">int</span>)g[v].<span class="fn">size</span>(), cap});
+        g[v].<span class="fn">push_back</span>({u, (<span class="ty">int</span>)g[u].<span class="fn">size</span>() - <span class="num">1</span>, <span class="num">0</span>});
+    }
+
+    <span class="cm">// BFS 构建分层图</span>
+    <span class="ty">bool</span> <span class="fn">bfs</span>(<span class="ty">int</span> s, <span class="ty">int</span> t) {
+        <span class="fn">fill</span>(level.<span class="fn">begin</span>(), level.<span class="fn">end</span>(), -<span class="num">1</span>);
+        level[s] = <span class="num">0</span>;
+        <span class="ty">queue</span>&lt;<span class="ty">int</span>&gt; q;
+        q.<span class="fn">push</span>(s);
+        <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+            <span class="ty">int</span> u = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+            <span class="kw">for</span> (<span class="kw">auto</span>&amp; e : g[u]) {
+                <span class="kw">if</span> (e.cap &gt; <span class="num">0</span> &amp;&amp; level[e.to] == -<span class="num">1</span>) {
+                    level[e.to] = level[u] + <span class="num">1</span>;
+                    q.<span class="fn">push</span>(e.to);
+                }
+            }
+        }
+        <span class="kw">return</span> level[t] != -<span class="num">1</span>;
+    }
+
+    <span class="cm">// DFS 寻找阻塞流（带当前弧优化）</span>
+    <span class="ty">long long</span> <span class="fn">dfs</span>(<span class="ty">int</span> u, <span class="ty">int</span> t, <span class="ty">long long</span> flow) {
+        <span class="kw">if</span> (u == t) <span class="kw">return</span> flow;
+        <span class="ty">long long</span> total = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">int</span>&amp; i = cur[u]; i &lt; (<span class="ty">int</span>)g[u].<span class="fn">size</span>(); i++) {
+            <span class="kw">auto</span>&amp; e = g[u][i];
+            <span class="kw">if</span> (e.cap &gt; <span class="num">0</span> &amp;&amp; level[e.to] == level[u] + <span class="num">1</span>) {
+                <span class="ty">long long</span> f = <span class="fn">dfs</span>(e.to, t, <span class="fn">min</span>(flow, e.cap));
+                <span class="kw">if</span> (f &gt; <span class="num">0</span>) {
+                    e.cap -= f;
+                    g[e.to][e.rev].cap += f;
+                    total += f;
+                    flow -= f;
+                    <span class="kw">if</span> (flow == <span class="num">0</span>) <span class="kw">break</span>;
+                }
+            }
+        }
+        <span class="kw">return</span> total;
+    }
+
+    <span class="cm">// 求 s 到 t 的最大流</span>
+    <span class="ty">long long</span> <span class="fn">maxFlow</span>(<span class="ty">int</span> s, <span class="ty">int</span> t) {
+        <span class="ty">long long</span> total = <span class="num">0</span>;
+        <span class="kw">while</span> (<span class="fn">bfs</span>(s, t)) {
+            <span class="fn">fill</span>(cur.<span class="fn">begin</span>(), cur.<span class="fn">end</span>(), <span class="num">0</span>);
+            total += <span class="fn">dfs</span>(s, t, LLONG_MAX);
+        }
+        <span class="kw">return</span> total;
+    }
+
+    <span class="cm">// 获取最小割集合 S（从 s 可达的顶点）</span>
+    <span class="ty">vector</span>&lt;<span class="ty">bool</span>&gt; <span class="fn">minCut</span>(<span class="ty">int</span> s) {
+        <span class="ty">vector</span>&lt;<span class="ty">bool</span>&gt; vis(n + <span class="num">1</span>, <span class="kw">false</span>);
+        <span class="ty">queue</span>&lt;<span class="ty">int</span>&gt; q;
+        q.<span class="fn">push</span>(s);
+        vis[s] = <span class="kw">true</span>;
+        <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+            <span class="ty">int</span> u = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+            <span class="kw">for</span> (<span class="kw">auto</span>&amp; e : g[u])
+                <span class="kw">if</span> (e.cap &gt; <span class="num">0</span> &amp;&amp; !vis[e.to]) {
+                    vis[e.to] = <span class="kw">true</span>;
+                    q.<span class="fn">push</span>(e.to);
+                }
+        }
+        <span class="kw">return</span> vis;
+    }
+};</code></pre>
+
+    <h3>9.2 最小费用最大流模板（SPFA 版）</h3>
+    <pre><code><span class="kw">struct</span> <span class="ty">MCMF</span> {
+    <span class="kw">struct</span> <span class="ty">Edge</span> {
+        <span class="ty">int</span> to, rev;
+        <span class="ty">long long</span> cap, cost;
+    };
+    <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">Edge</span>&gt;&gt; g;
+    <span class="ty">vector</span>&lt;<span class="ty">long long</span>&gt; dist;
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; preu, pree; <span class="cm">// 记录增广路上每个顶点的前驱</span>
+    <span class="ty">vector</span>&lt;<span class="ty">bool</span>&gt; inq;
+    <span class="ty">int</span> n;
+
+    <span class="kw">void</span> <span class="fn">init</span>(<span class="ty">int</span> _n) {
+        n = _n;
+        g.<span class="fn">assign</span>(n + <span class="num">1</span>, {});
+        dist.<span class="fn">resize</span>(n + <span class="num">1</span>);
+        preu.<span class="fn">resize</span>(n + <span class="num">1</span>);
+        pree.<span class="fn">resize</span>(n + <span class="num">1</span>);
+        inq.<span class="fn">resize</span>(n + <span class="num">1</span>);
+    }
+
+    <span class="kw">void</span> <span class="fn">addEdge</span>(<span class="ty">int</span> u, <span class="ty">int</span> v, <span class="ty">long long</span> cap, <span class="ty">long long</span> cost) {
+        g[u].<span class="fn">push_back</span>({v, (<span class="ty">int</span>)g[v].<span class="fn">size</span>(), cap, cost});
+        g[v].<span class="fn">push_back</span>({u, (<span class="ty">int</span>)g[u].<span class="fn">size</span>() - <span class="num">1</span>, <span class="num">0</span>, -cost});
+    }
+
+    <span class="cm">// SPFA 求最短路（以费用为边权）</span>
+    <span class="ty">bool</span> <span class="fn">spfa</span>(<span class="ty">int</span> s, <span class="ty">int</span> t) {
+        <span class="fn">fill</span>(dist.<span class="fn">begin</span>(), dist.<span class="fn">end</span>(), LLONG_MAX);
+        <span class="fn">fill</span>(inq.<span class="fn">begin</span>(), inq.<span class="fn">end</span>(), <span class="kw">false</span>);
+        dist[s] = <span class="num">0</span>;
+        <span class="ty">queue</span>&lt;<span class="ty">int</span>&gt; q;
+        q.<span class="fn">push</span>(s);
+        inq[s] = <span class="kw">true</span>;
+        <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+            <span class="ty">int</span> u = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+            inq[u] = <span class="kw">false</span>;
+            <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; (<span class="ty">int</span>)g[u].<span class="fn">size</span>(); i++) {
+                <span class="kw">auto</span>&amp; e = g[u][i];
+                <span class="kw">if</span> (e.cap &gt; <span class="num">0</span> &amp;&amp; dist[u] + e.cost &lt; dist[e.to]) {
+                    dist[e.to] = dist[u] + e.cost;
+                    preu[e.to] = u;
+                    pree[e.to] = i;
+                    <span class="kw">if</span> (!inq[e.to]) {
+                        q.<span class="fn">push</span>(e.to);
+                        inq[e.to] = <span class="kw">true</span>;
+                    }
+                }
+            }
+        }
+        <span class="kw">return</span> dist[t] != LLONG_MAX;
+    }
+
+    <span class="cm">// 返回 {最大流, 最小费用}</span>
+    <span class="ty">pair</span>&lt;<span class="ty">long long</span>, <span class="ty">long long</span>&gt; <span class="fn">minCostMaxFlow</span>(<span class="ty">int</span> s, <span class="ty">int</span> t) {
+        <span class="ty">long long</span> flow = <span class="num">0</span>, cost = <span class="num">0</span>;
+        <span class="kw">while</span> (<span class="fn">spfa</span>(s, t)) {
+            <span class="cm">// 沿最短路增广</span>
+            <span class="ty">long long</span> f = LLONG_MAX;
+            <span class="kw">for</span> (<span class="ty">int</span> v = t; v != s; v = preu[v])
+                f = <span class="fn">min</span>(f, g[preu[v]][pree[v]].cap);
+            <span class="kw">for</span> (<span class="ty">int</span> v = t; v != s; v = preu[v]) {
+                <span class="kw">auto</span>&amp; e = g[preu[v]][pree[v]];
+                e.cap -= f;
+                g[v][e.rev].cap += f;
+            }
+            flow += f;
+            cost += f * dist[t];
+        }
+        <span class="kw">return</span> {flow, cost};
+    }
+};</code></pre>
+
+    <h3>9.3 Edmonds-Karp 模板（简洁版）</h3>
+    <pre><code><span class="kw">struct</span> <span class="ty">EdmondsKarp</span> {
+    <span class="ty">int</span> n;
+    <span class="ty">long long</span> cap[N][N]; <span class="cm">// 邻接矩阵存容量</span>
+    <span class="ty">int</span> pre[N];
+
+    <span class="kw">void</span> <span class="fn">init</span>(<span class="ty">int</span> _n) {
+        n = _n;
+        <span class="fn">memset</span>(cap, <span class="num">0</span>, <span class="kw">sizeof</span>(cap));
+    }
+
+    <span class="kw">void</span> <span class="fn">addEdge</span>(<span class="ty">int</span> u, <span class="ty">int</span> v, <span class="ty">long long</span> c) {
+        cap[u][v] += c; <span class="cm">// 注意：+= 处理重边</span>
+    }
+
+    <span class="ty">long long</span> <span class="fn">bfs</span>(<span class="ty">int</span> s, <span class="ty">int</span> t) {
+        <span class="fn">memset</span>(pre, -<span class="num">1</span>, <span class="kw">sizeof</span>(pre));
+        <span class="ty">queue</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>, <span class="ty">long long</span>&gt;&gt; q;
+        q.<span class="fn">push</span>({s, LLONG_MAX});
+        pre[s] = s;
+        <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+            <span class="kw">auto</span> [u, f] = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+            <span class="kw">for</span> (<span class="ty">int</span> v = <span class="num">1</span>; v &lt;= n; v++) {
+                <span class="kw">if</span> (pre[v] == -<span class="num">1</span> &amp;&amp; cap[u][v] &gt; <span class="num">0</span>) {
+                    pre[v] = u;
+                    <span class="ty">long long</span> nf = <span class="fn">min</span>(f, cap[u][v]);
+                    <span class="kw">if</span> (v == t) <span class="kw">return</span> nf;
+                    q.<span class="fn">push</span>({v, nf});
+                }
+            }
+        }
+        <span class="kw">return</span> <span class="num">0</span>;
+    }
+
+    <span class="ty">long long</span> <span class="fn">maxFlow</span>(<span class="ty">int</span> s, <span class="ty">int</span> t) {
+        <span class="ty">long long</span> total = <span class="num">0</span>, f;
+        <span class="kw">while</span> ((f = <span class="fn">bfs</span>(s, t)) &gt; <span class="num">0</span>) {
+            total += f;
+            <span class="kw">for</span> (<span class="ty">int</span> v = t; v != s; v = pre[v]) {
+                cap[pre[v]][v] -= f;
+                cap[v][pre[v]] += f;
+            }
+        }
+        <span class="kw">return</span> total;
+    }
+};</code></pre>
+  </div>
+
+  <!-- ==================== 10. 经典题目 ==================== -->
+  <div class="section" id="problems">
+    <h2>10. 经典题目</h2>
+
+    <div class="problem">
+      <div class="problem-title">P3376 【模板】网络最大流</div>
+      <p>给定流网络，求源点到汇点的最大流。Dinic 模板题。</p>
+      <p><strong>标签</strong>：Dinic、最大流模板</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">P3381 【模板】最小费用最大流</div>
+      <p>给定流网络，每条边有容量和费用，求最小费用最大流。</p>
+      <p><strong>标签</strong>：MCMF、SPFA、模板</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">P2765 魔术球问题</div>
+      <p>放置编号为 1, 2, ... 的球，当两个球编号之和为完全平方数时可以相邻。求最少需要多少根柱子。转化为最小路径覆盖。</p>
+      <p><strong>标签</strong>：最小路径覆盖、Dinic、二分图</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">P2766 最长不下降子序列问题</div>
+      <p>求最长不下降子序列的长度和数量，并限制某些元素必须选/不选时的方案数。结合 LIS 与网络流。</p>
+      <p><strong>标签</strong>：LIS、Dinic、拆点</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">P2763 试题库问题</div>
+      <p>从题库中按要求选取试题，满足各类题目的数量要求。经典建模题。</p>
+      <p><strong>标签</strong>：Dinic、二分图匹配</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">P2805 [NOI2009] 植物大战僵尸</div>
+      <p>选择植物使总收益最大，有依赖关系和保护关系。最大权闭合子图。</p>
+      <p><strong>标签</strong>：最大权闭合子图、Dinic、拓扑排序</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">P3355 骑士共存问题</div>
+      <p>n*n 棋盘上放置尽可能多的马，使其互不攻击。最大独立集 = 总点数 - 最小点覆盖。</p>
+      <p><strong>标签</strong>：二分图最大独立集、Dinic</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">P4014 分配问题</div>
+      <p>n 个工人分配 n 项工作，求最小/最大总费用。MCMF 模板应用。</p>
+      <p><strong>标签</strong>：MCMF、二分图带权匹配</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">P3980 [NOI2008] 志愿者招募</div>
+      <p>每天需要一定数量志愿者，每位志愿者在特定时间段工作，有雇佣费用，求最小总费用。经典建模。</p>
+      <p><strong>标签</strong>：MCMF、线性规划建模</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">SPOJ MATCHING - Fast Maximum Matching</div>
+      <p>大规模二分图最大匹配。用 Dinic 解决，验证单位容量图上的优秀表现。</p>
+      <p><strong>标签</strong>：Dinic、二分图匹配、大数据</p>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">网络流解题框架</div>
+      <ul>
+        <li><strong>判断模型</strong>：是最大流？最小割？还是费用流？</li>
+        <li><strong>建图</strong>：源点汇点怎么设？边的容量代表什么？费用是什么？</li>
+        <li><strong>拆点</strong>：当顶点有容量限制或需要限制"选择"时，将顶点拆为入点和出点</li>
+        <li><strong>无穷大边</strong>：用于表达"必须满足"的约束，通常设为正权和 + 1</li>
+        <li><strong>答案提取</strong>：最大流直接读值，最小割需分析 (S, T) 集合，费用流需同时关注流量和费用</li>
+      </ul>
+    </div>
+
+    <div class="box box-hard">
+      <div class="box-title">常见陷阱</div>
+      <ul>
+        <li>忘记初始化：每组数据要重新 init，边数组要清空</li>
+        <li>反向边索引错误：addEdge 中 rev 的对应关系要正确</li>
+        <li>long long 溢出：容量和费用可能很大，注意用 long long</li>
+        <li>无穷大设置：MCMF 中 dist 初始值要用 LLONG_MAX，不能用 INT_MAX</li>
+        <li>重边处理：Dinic 的链式前向星天然支持重边，EK 邻接矩阵需要累加</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

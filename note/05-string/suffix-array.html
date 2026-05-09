@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>后缀数组 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#05-string">字符串</a> &gt;
+    后缀数组
+  </div>
+
+  <!-- Header -->
+  <div class="page-header">
+    <h1>后缀数组</h1>
+    <p class="subtitle">Suffix Array &mdash; 字符串处理的瑞士军刀</p>
+    <div class="tags">
+      <span class="tag tag-hard">高级</span>
+      <span class="tag tag-str">字符串</span>
+      <span class="tag tag-base">倍增 / SA-IS</span>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#overview">后缀数组概述</a></li>
+      <li><a href="#build">SA 构建 &mdash; 倍增法</a></li>
+      <li><a href="#lcp">LCP 数组 &mdash; Kasai 算法</a></li>
+      <li><a href="#applications">经典应用</a></li>
+      <li><a href="#template">C++ 完整模板</a></li>
+      <li><a href="#problems">经典例题</a></li>
+    </ul>
+  </div>
+
+  <!-- Section 1: 概述 -->
+  <div class="section" id="overview">
+    <h2>1. 后缀数组概述</h2>
+    <p><strong>后缀数组（Suffix Array, SA）</strong>是将一个字符串的所有后缀按字典序排序后得到的数组。它与 LCP（最长公共前缀）数组配合，可以高效解决大量字符串问题。</p>
+
+    <h3>核心定义</h3>
+    <p>对于长度为 <code>n</code> 的字符串 <code>s</code>，其后缀 <code>s[i..n-1]</code>（<code>0 &le; i &lt; n</code>）共有 <code>n</code> 个。</p>
+
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>符号</th>
+          <th>含义</th>
+        </tr>
+        <tr>
+          <td><code>SA[i]</code></td>
+          <td>排名第 <code>i</code> 小的后缀的起始下标（<code>i</code> 从 0 开始）</td>
+        </tr>
+        <tr>
+          <td><code>rk[i]</code>（或 <code>Rank[i]</code>）</td>
+          <td>以 <code>i</code> 开头的后缀的排名</td>
+        </tr>
+        <tr>
+          <td><code>lcp[i]</code></td>
+          <td><code>s[SA[i-1]..]</code> 与 <code>s[SA[i]..]</code> 的最长公共前缀长度</td>
+        </tr>
+      </table>
+    </div>
+
+    <h3>示例</h3>
+    <div class="diagram">
+      <pre>
+字符串 s = "banana$"
+
+后缀:               排序后:
+  0: banana$         6: $
+  1: anana$          5: a$
+  2: nana$           3: ana$
+  3: ana$            1: anana$
+  4: na$             0: banana$
+  5: a$              4: na$
+  6: $               2: nana$
+
+SA  = [6, 5, 3, 1, 0, 4, 2]
+rk  = [4, 3, 6, 2, 5, 1, 0]
+lcp = [0, 1, 3, 0, 0, 2, 0]  (lcp[0]无意义)
+      </pre>
+    </div>
+
+    <h3>复杂度概览</h3>
+    <div class="complexity">
+      <span class="label">倍增法</span>
+      <span class="value">O(n log n) 排序 &times; log n = O(n log&sup2;n)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">倍增法 + 基数排序</span>
+      <span class="value">O(n log n)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">SA-IS</span>
+      <span class="value">O(n)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">Kasai 求 LCP</span>
+      <span class="value">O(n)</span>
+    </div>
+  </div>
+
+  <!-- Section 2: SA 构建 -->
+  <div class="section" id="build">
+    <h2>2. SA 构建 &mdash; 倍增法</h2>
+
+    <h3>倍增思想</h3>
+    <p>倍增法的核心思想：先按每个字符排序，再按长度 2 排序，再按长度 4 排序...每次将排序关键字的长度翻倍，直到长度 &ge; n。利用上一轮的排名信息，用 <strong>双关键字排序</strong>（第一关键字为前半部分排名，第二关键字为后半部分排名）完成排序。</p>
+
+    <div class="steps">
+      <div class="step">
+        <strong>初始化（长度 1）：</strong>对每个字符排序，得到初始排名 <code>rk[]</code>。
+      </div>
+      <div class="step">
+        <strong>倍增（长度 k &rarr; 2k）：</strong>对于以 <code>i</code> 开头、长度为 <code>2k</code> 的子串，第一关键字是 <code>rk[i]</code>（前 k 位排名），第二关键字是 <code>rk[i+k]</code>（后 k 位排名）。
+      </div>
+      <div class="step">
+        <strong>双关键字排序：</strong>先按第二关键字排序，再按第一关键字稳定排序。使用 <strong>基数排序</strong> 可在 O(n) 内完成一轮。
+      </div>
+      <div class="step">
+        <strong>重新编号：</strong>排序后对排名重新编号（去重），如果所有排名都唯一则提前终止。
+      </div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+s = "aabaaaab"
+
+初始 (k=1):
+  字符:  a  a  b  a  a  a  a  b
+  rk:    1  1  2  1  1  1  1  2
+
+k=2 (按前1+后1排序):
+  第一关键字: 1  1  2  1  1  1  1  2
+  第二关键字: 1  2  1  1  1  1  2  0
+  排名:       1  2  4  1  1  1  2  3
+
+k=4 (按前2+后2排序):
+  ...继续倍增直到 k >= n
+
+每一轮排名越来越细，直到所有排名唯一
+      </pre>
+    </div>
+
+    <h3>SA-IS 线性算法（了解）</h3>
+    <p>SA-IS（Suffix Array by Induced Sorting）是一种 O(n) 的后缀数组构建算法。它将后缀分为 <strong>L型</strong>（递减）和 <strong>S型</strong>（递增），先递归处理部分后缀，再诱导排序出完整的 SA。虽然复杂度更优，但实现复杂，竞赛中通常使用倍增法即可。</p>
+
+    <div class="box box-info">
+      <div class="box-title">实际建议</div>
+      <p>竞赛中 <strong>倍增法 + 基数排序</strong>（O(n log n)）是最常用的实现，代码简洁且常数小。只有在 n 特别大（如 10^7 级别）时才需要 SA-IS。</p>
+    </div>
+  </div>
+
+  <!-- Section 3: LCP -->
+  <div class="section" id="lcp">
+    <h2>3. LCP 数组 &mdash; Kasai 算法</h2>
+
+    <p><strong>LCP 数组</strong>（Longest Common Prefix Array）定义：<code>lcp[i]</code> 是排名相邻的两个后缀 <code>s[SA[i-1]..]</code> 和 <code>s[SA[i]..]</code> 的最长公共前缀长度。</p>
+
+    <h3>Kasai 算法</h3>
+    <p>Kasai 算法利用一个巧妙的性质在线性时间内求出 LCP 数组：</p>
+
+    <div class="box box-tip">
+      <div class="box-title">关键观察</div>
+      <p>如果 <code>lcp[rk[i]] &gt; 0</code>，那么 <code>lcp[rk[i+1]] &ge; lcp[rk[i]] - 1</code>。直观理解：如果以 <code>i</code> 开头的后缀与排名前一位的后缀有长度为 <code>h</code> 的公共前缀，那么以 <code>i+1</code> 开头的后缀与排名前一位的后缀至少有 <code>h-1</code> 的公共前缀。</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <strong>初始化：</strong>令 <code>h = 0</code>，按原始下标 <code>i = 0, 1, ..., n-1</code> 依次处理。
+      </div>
+      <div class="step">
+        <strong>计算 lcp[rk[i]]：</strong>如果 <code>rk[i] == 0</code>（排名最前），<code>lcp[0] = 0</code>，跳过。否则令 <code>j = SA[rk[i]-1]</code>（排名前一位的后缀起始位置），从 <code>s[i+h]</code> 和 <code>s[j+h]</code> 开始比较。
+      </div>
+      <div class="step">
+        <strong>逐字符比较：</strong>当 <code>s[i+h] == s[j+h]</code> 时 <code>h++</code>。停止后 <code>lcp[rk[i]] = h</code>。
+      </div>
+      <div class="step">
+        <strong>更新 h：</strong><code>h = max(0, h - 1)</code>，为下一次迭代做准备。
+      </div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+s = "aabaaaab", SA = [7,6,5,2,3,4,0,1]
+
+i=0: rk[0]=6, j=SA[5]=4, s="aabaaaab" vs "aab"  -> lcp[6]=3, h=3
+i=1: rk[1]=7, j=SA[6]=0, s="abaaaab"  vs "aabaaaab" -> lcp[7]=1, h=max(0,3-1)=1
+i=2: rk[2]=3, j=SA[2]=5, s="baaaab"   vs "aab"  -> lcp[3]=0, h=0
+i=3: rk[3]=4, j=SA[3]=2, s="aaaab"    vs "baaaab" -> lcp[4]=0, h=0
+...
+
+h 的"保底"性质保证了总比较次数不超过 2n
+      </pre>
+    </div>
+
+    <h3>LCP 数组的性质</h3>
+    <ul>
+      <li>任意两个后缀 <code>s[SA[i]..]</code> 和 <code>s[SA[j]..]</code>（<code>i &lt; j</code>）的 LCP 等于 <code>min(lcp[i+1], lcp[i+2], ..., lcp[j])</code>（RMQ 问题）</li>
+      <li>利用 ST 表可在 O(1) 内查询任意两个后缀的 LCP</li>
+    </ul>
+  </div>
+
+  <!-- Section 4: 应用 -->
+  <div class="section" id="applications">
+    <h2>4. 经典应用</h2>
+
+    <h3>4.1 最长公共子串（多个串）</h3>
+    <p>将多个字符串用不同分隔符拼接，构建后缀数组。在 LCP 数组上滑动窗口，要求窗口内包含来自每个字符串的至少一个后缀，窗口内 LCP 的最小值的最大值即为答案。</p>
+
+    <pre><span class="cm">// 求两个串的最长公共子串</span>
+<span class="ty">int</span> <span class="fn">lcs</span>(<span class="kw">const</span> <span class="ty">string</span> &amp;a, <span class="kw">const</span> <span class="ty">string</span> &amp;b) {
+    <span class="ty">int</span> n = a.size();
+    <span class="ty">string</span> s = a + <span class="str">"$"</span> + b;
+    <span class="cm">// 构建 SA 和 LCP</span>
+    <span class="cm">// 在 LCP 上滑动窗口，窗口内必须同时包含 a 和 b 的后缀</span>
+    <span class="ty">int</span> ans = <span class="num">0</span>;
+    <span class="cm">// ... 滑动窗口维护 lcp 最小值 ...</span>
+    <span class="kw">return</span> ans;
+}</pre>
+
+    <h3>4.2 不同子串个数</h3>
+    <p>长度为 <code>n</code> 的字符串的不同子串总数 = <code>n*(n+1)/2 - sum(lcp[i])</code>。直观理解：每个后缀贡献 <code>n - SA[i]</code> 个新子串，但与排名前一位的后缀有 <code>lcp[i]</code> 个公共前缀要扣除。</p>
+
+    <pre><span class="cm">// 不同子串个数</span>
+<span class="ty">long</span> <span class="ty">long</span> <span class="fn">distinctSubstrings</span>(<span class="ty">int</span> n) {
+    <span class="ty">long</span> <span class="ty">long</span> ans = (<span class="ty">long</span> <span class="ty">long</span>)n * (n + <span class="num">1</span>) / <span class="num">2</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        ans -= lcp[i];
+    <span class="kw">return</span> ans;
+}</pre>
+
+    <h3>4.3 重复出现的子串</h3>
+    <p>求至少出现 <code>k</code> 次的最长子串：在 LCP 数组上用长度为 <code>k-1</code> 的滑动窗口求窗口内 LCP 最小值的最大值（单调队列或二分+判定）。</p>
+
+    <h3>4.4 字符串的最小循环节</h3>
+    <p>利用后缀数组可以求字符串的最小周期。设 <code>n - SA[0]</code> 是最小后缀的长度（假设以特殊字符结尾），则最小周期可能与 LCP 和 SA 的性质有关。更常用的做法是直接用 KMP 的 next 数组。</p>
+
+    <h3>4.5 求任意两个后缀的 LCP</h3>
+    <p>用 Kasai 算法求出 LCP 数组后，配合 ST 表做 RMQ，可在 O(1) 时间内查询任意两个后缀的 LCP。</p>
+
+    <pre><span class="cm">// ST 表预处理 LCP 数组，O(n log n) 预处理, O(1) 查询</span>
+<span class="ty">int</span> st[<span class="num">20</span>][MAXN];
+<span class="ty">void</span> <span class="fn">buildST</span>(<span class="ty">int</span> n) {
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) st[<span class="num">0</span>][i] = lcp[i];
+    <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">1</span>; (<span class="num">1</span> &lt;&lt; j) &lt;= n; j++)
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i + (<span class="num">1</span> &lt;&lt; j) &lt;= n; i++)
+            st[j][i] = min(st[j - <span class="num">1</span>][i], st[j - <span class="num">1</span>][i + (<span class="num">1</span> &lt;&lt; (j - <span class="num">1</span>))]);
+}
+<span class="ty">int</span> <span class="fn">queryLCP</span>(<span class="ty">int</span> i, <span class="ty">int</span> j) { <span class="cm">// 求排名 i 和排名 j 的后缀的 LCP</span>
+    <span class="kw">if</span> (i == j) <span class="kw">return</span> n - SA[i];
+    <span class="kw">if</span> (i &gt; j) swap(i, j);
+    i++; <span class="cm">// lcp[i+1..j] 的最小值</span>
+    <span class="ty">int</span> k = __lg(j - i + <span class="num">1</span>);
+    <span class="kw">return</span> min(st[k][i], st[k][j - (<span class="num">1</span> &lt;&lt; k) + <span class="num">1</span>]);
+}</pre>
+  </div>
+
+  <!-- Section 5: 完整模板 -->
+  <div class="section" id="template">
+    <h2>5. C++ 完整模板</h2>
+
+    <h3>倍增法 + 基数排序 + Kasai</h3>
+    <pre><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> MAXN = <span class="num">1000010</span>;
+
+<span class="ty">int</span> sa[MAXN];     <span class="cm">// 后缀数组</span>
+<span class="ty">int</span> rk[MAXN];     <span class="cm">// 排名数组</span>
+<span class="ty">int</span> tmp[MAXN];    <span class="cm">// 辅助数组（第二关键字排序结果）</span>
+<span class="ty">int</span> cnt[MAXN];    <span class="cm">// 基数排序计数桶</span>
+<span class="ty">int</span> lcp[MAXN];    <span class="cm">// LCP 数组</span>
+<span class="ty">char</span> s[MAXN];     <span class="cm">// 原字符串（从下标 1 开始）</span>
+<span class="ty">int</span> n;            <span class="cm">// 字符串长度</span>
+
+<span class="cm">// 倍增法构建后缀数组，使用基数排序</span>
+<span class="ty">void</span> <span class="fn">buildSA</span>() {
+    <span class="ty">int</span> m = <span class="num">128</span>; <span class="cm">// 字符集大小</span>
+
+    <span class="cm">// 第一轮：按单个字符排序</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) cnt[rk[i] = s[i]]++;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= m; i++) cnt[i] += cnt[i - <span class="num">1</span>];
+    <span class="kw">for</span> (<span class="ty">int</span> i = n; i &gt;= <span class="num">1</span>; i--) sa[cnt[rk[i]]--] = i;
+
+    <span class="kw">for</span> (<span class="ty">int</span> w = <span class="num">1</span>; w &lt; n; w &lt;&lt;= <span class="num">1</span>) { <span class="cm">// w = 当前关键字长度</span>
+        <span class="ty">int</span> p = <span class="num">0</span>;
+
+        <span class="cm">// 第二关键字排序：先排 SA 中位置 &gt; n-w 的（第二关键字为 0，排最前）</span>
+        <span class="kw">for</span> (<span class="ty">int</span> i = n - w + <span class="num">1</span>; i &lt;= n; i++) tmp[++p] = i;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+            <span class="kw">if</span> (sa[i] &gt; w) tmp[++p] = sa[i] - w;
+
+        <span class="cm">// 第一关键字基数排序</span>
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt;= m; i++) cnt[i] = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) cnt[rk[tmp[i]]]++;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= m; i++) cnt[i] += cnt[i - <span class="num">1</span>];
+        <span class="kw">for</span> (<span class="ty">int</span> i = n; i &gt;= <span class="num">1</span>; i--) sa[cnt[rk[tmp[i]]]--] = tmp[i];
+
+        <span class="cm">// 重新计算排名</span>
+        swap(rk, tmp);
+        rk[sa[<span class="num">1</span>]] = <span class="num">1</span>;
+        p = <span class="num">1</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i &lt;= n; i++) {
+            <span class="cm">// 判断是否与前一位的关键字对相同</span>
+            <span class="kw">if</span> (tmp[sa[i]] == tmp[sa[i - <span class="num">1</span>]] &&
+                tmp[sa[i] + w] == tmp[sa[i - <span class="num">1</span>] + w])
+                rk[sa[i]] = p;
+            <span class="kw">else</span>
+                rk[sa[i]] = ++p;
+        }
+
+        <span class="kw">if</span> (p == n) <span class="kw">break</span>; <span class="cm">// 所有排名唯一，提前退出</span>
+        m = p;
+    }
+}
+
+<span class="cm">// Kasai 算法求 LCP 数组</span>
+<span class="ty">void</span> <span class="fn">buildLCP</span>() {
+    <span class="ty">int</span> h = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="kw">if</span> (rk[i] == <span class="num">1</span>) { lcp[<span class="num">1</span>] = <span class="num">0</span>; <span class="kw">continue</span>; }
+        <span class="ty">int</span> j = sa[rk[i] - <span class="num">1</span>];
+        <span class="kw">while</span> (i + h &lt;= n && j + h &lt;= n && s[i + h] == s[j + h]) h++;
+        lcp[rk[i]] = h;
+        <span class="kw">if</span> (h) h--;
+    }
+}
+
+<span class="cm">// 用法示例</span>
+<span class="ty">int</span> <span class="fn">main</span>() {
+    scanf(<span class="str">"%s"</span>, s + <span class="num">1</span>);
+    n = strlen(s + <span class="num">1</span>);
+    buildSA();
+    buildLCP();
+
+    <span class="cm">// 输出后缀数组</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        printf(<span class="str">"SA[%d] = %d, LCP[%d] = %d\n"</span>, i, sa[i], i, lcp[i]);
+
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+
+    <div class="box box-warn">
+      <div class="box-title">注意事项</div>
+      <p>模板中字符串下标从 1 开始，末尾不加特殊字符。如果需要区分多个字符串，在拼接时使用不同的分隔符（如 <code>$</code>, <code>#</code>, <code>%</code> 等不出现在原串中的字符）。</p>
+    </div>
+  </div>
+
+  <!-- Section 6: 经典例题 -->
+  <div class="section" id="problems">
+    <h2>6. 经典例题</h2>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3809" target="_blank">Luogu P3809 - 【模板】后缀排序</a></div>
+      <p>给定一个字符串，求其后缀数组。后缀数组基础模板题。</p>
+      <span class="tag tag-easy">入门</span>
+      <span class="tag tag-str">后缀数组</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4051" target="_blank">Luogu P4051 [JSOI2007] 字符加密</a></div>
+      <p>将字符串首尾相接后求后缀数组，利用 SA 找出字典序最小的循环表示。</p>
+      <span class="tag tag-mid">中等</span>
+      <span class="tag tag-str">后缀数组</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2852" target="_blank">Luogu P2852 [USACO06DEC] Milk Patterns G</a></div>
+      <p>求至少出现 K 次的最长子串长度。在 LCP 数组上用长度为 K-1 的滑动窗口。</p>
+      <span class="tag tag-mid">中等</span>
+      <span class="tag tag-str">后缀数组 + LCP</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2743" target="_blank">Luogu P2743 [USACO5.1] 乐曲主题 Musical Themes</a></div>
+      <p>求在旋律中至少出现两次且不重叠的最长主题。二分答案 + 后缀数组。</p>
+      <span class="tag tag-hard">困难</span>
+      <span class="tag tag-str">后缀数组 + 二分</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2463" target="_blank">Luogu P2463 [SDOI2008] Sandy的卡片</a></div>
+      <p>多个串的最长公共子串。将差分序列拼接后求 LCP 滑动窗口。</p>
+      <span class="tag tag-hard">困难</span>
+      <span class="tag tag-str">后缀数组 + 差分 + 滑动窗口</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3181" target="_blank">Luogu P3181 [HAOI2016] 找相同字符</a></div>
+      <p>求两个字符串的相同子串对数。拼接后利用 SA 和 LCP 分别统计。</p>
+      <span class="tag tag-hard">困难</span>
+      <span class="tag tag-str">后缀数组 + 计数</span>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">学习路径</div>
+      <p>1. 先理解后缀数组的定义和倍增法原理<br>
+         2. 背诵或手写倍增法 + 基数排序模板<br>
+         3. 掌握 Kasai 算法求 LCP<br>
+         4. 练习 P3809 &rarr; P2852 &rarr; P4051 &rarr; P2463</p>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>树状数组 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+<!-- 面包屑导航 -->
+<div class="breadcrumb">
+  <a href="../index.html">首页</a> &gt; <a href="../index.html">06 数据结构</a> &gt; 树状数组
+</div>
+
+<!-- 页面标题 -->
+<div class="page-header">
+  <h1>树状数组</h1>
+  <p class="subtitle">Binary Indexed Tree / Fenwick Tree &mdash; O(log n) 单点修改与前缀查询</p>
+  <div class="tags">
+    <span class="tag tag-base">数据结构</span>
+    <span class="tag tag-mid">树状数组</span>
+    <span class="tag tag-mid">逆序对</span>
+    <span class="tag tag-hard">二维树状数组</span>
+    <span class="tag tag-base">lowbit</span>
+  </div>
+</div>
+
+<!-- 目录 -->
+<div class="toc">
+  <h3>目录</h3>
+  <ul>
+    <li><a href="#sec1">一、树状数组概述</a></li>
+    <li><a href="#sec2">二、单点修改 + 前缀查询</a></li>
+    <li><a href="#sec3">三、区间修改 + 区间查询</a></li>
+    <li><a href="#sec4">四、求逆序对</a></li>
+    <li><a href="#sec5">五、二维树状数组</a></li>
+    <li><a href="#sec6">六、综合例题与练习</a></li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第一节：树状数组概述 -->
+<!-- ============================================================ -->
+<div class="section" id="sec1">
+  <h2>一、树状数组概述</h2>
+
+  <h3>1.1 什么是树状数组</h3>
+  <p>树状数组（Binary Indexed Tree，简称 BIT），又称 Fenwick Tree，是一种用于高效处理<strong>前缀和查询</strong>与<strong>单点更新</strong>的数据结构。它可以在 <code>O(log n)</code> 时间内完成单点修改和前缀求和操作，空间复杂度仅为 <code>O(n)</code>。</p>
+
+  <h3>1.2 lowbit 运算</h3>
+  <p>树状数组的核心是 <code>lowbit</code> 运算，它返回一个整数在二进制表示下<strong>最低位的 1 及其后面的 0</strong> 所组成的数值：</p>
+  <p style="text-align:center; font-size:1.1em; color:var(--accent); margin:16px 0;">
+    lowbit(x) = x &amp; (-x)
+  </p>
+
+  <div class="diagram">
+    <pre>
+  lowbit 运算示例：
+
+  x = 12 = 1100 (二进制)
+  -x 的补码 = 0100
+  x & (-x) = 0100 = 4
+
+  x = 10 = 1010
+  lowbit(10) = 0010 = 2
+
+  x = 7  = 0111
+  lowbit(7)  = 0001 = 1
+
+  x = 8  = 1000
+  lowbit(8)  = 1000 = 8</pre>
+  </div>
+
+  <pre><code><span class="cm">// lowbit 的两种实现方式</span>
+<span class="ty">int</span> <span class="fn">lowbit</span>(<span class="ty">int</span> x) {
+    <span class="kw">return</span> x <span class="op">&amp;</span> (<span class="op">-</span>x);  <span class="cm">// 最常用，利用补码性质</span>
+}
+</code></pre>
+
+  <h3>1.3 树状数组的结构</h3>
+  <p>树状数组用一个长度为 <code>n</code> 的数组 <code>c[]</code> 来维护信息。每个节点 <code>c[i]</code> 管理一段区间：</p>
+  <p style="text-align:center; font-size:1.05em; color:var(--accent3); margin:16px 0;">
+    c[i] 管理区间 [i - lowbit(i) + 1, i]
+  </p>
+
+  <div class="diagram">
+    <pre>
+  树状数组结构图 (n=8):
+
+       c[8] 管理 [1,8]（整个数组）
+      /    \
+   c[4]    c[6]    c[7]    c[8]
+   [1,4]   [5,6]   [7,7]   [8,8]
+   /  \    / \
+ c[2] c[3] c[5] c[6]
+ [1,2][3,3][5,5][6,6]
+ / \
+c[1] c[2]
+[1,1][2,2]
+
+  索引:  1   2   3   4   5   6   7   8
+  管理: [1] [1,2][3] [1,4][5] [5,6][7] [1,8]
+
+  c[1] = a[1]
+  c[2] = a[1] + a[2]
+  c[3] = a[3]
+  c[4] = a[1] + a[2] + a[3] + a[4]
+  c[5] = a[5]
+  c[6] = a[5] + a[6]
+  c[7] = a[7]
+  c[8] = a[1] + a[2] + ... + a[8]</pre>
+  </div>
+
+  <div class="box box-info">
+    <div class="box-title">核心思想</div>
+    <p>树状数组的本质是将前缀和的计算拆分成 <code>O(log n)</code> 段，利用二进制的性质来快速合并。每个索引 <code>i</code> 的二进制中 1 的个数决定了它需要管理多少个区间。</p>
+  </div>
+
+  <h3>1.4 时间复杂度</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>操作</th><th>朴素方法</th><th>树状数组</th></tr>
+      <tr><td>单点修改 a[i] += v</td><td>O(n) 更新前缀和</td><td><strong>O(log n)</strong></td></tr>
+      <tr><td>前缀查询 sum(1, i)</td><td>O(1) 直接查</td><td><strong>O(log n)</strong></td></tr>
+      <tr><td>区间查询 sum(l, r)</td><td>O(1) S[r]-S[l-1]</td><td><strong>O(log n)</strong></td></tr>
+      <tr><td>构建</td><td>O(n)</td><td>O(n log n) 或 O(n)</td></tr>
+      <tr><td>空间</td><td>O(n)</td><td><strong>O(n)</strong></td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第二节：单点修改 + 前缀查询 -->
+<!-- ============================================================ -->
+<div class="section" id="sec2">
+  <h2>二、单点修改 + 前缀查询</h2>
+
+  <h3>2.1 单点修改 update(i, v)</h3>
+  <p>将 <code>a[i]</code> 增加 <code>v</code>，需要更新所有包含 <code>a[i]</code> 的 <code>c[]</code> 节点。从 <code>i</code> 出发，每次加上 <code>lowbit(i)</code>，直到超出范围：</p>
+
+  <div class="steps">
+    <div class="step">
+      <strong>从索引 i 开始</strong>，更新 c[i] += v
+    </div>
+    <div class="step">
+      <strong>向上跳转</strong>：i += lowbit(i)，更新 c[i] += v
+    </div>
+    <div class="step">
+      <strong>重复</strong>直到 i > n
+    </div>
+  </div>
+
+  <div class="diagram">
+    <pre>
+  update(3, v) 的过程 (n=8):
+
+  第1步: c[3] += v,  i = 3 + lowbit(3) = 3 + 1 = 4
+  第2步: c[4] += v,  i = 4 + lowbit(4) = 4 + 4 = 8
+  第3步: c[8] += v,  i = 8 + lowbit(8) = 8 + 8 = 16 > 8, 停止
+
+  更新路径: c[3] -> c[4] -> c[8]
+  时间复杂度: O(log n)</pre>
+  </div>
+
+  <h3>2.2 前缀查询 query(i)</h3>
+  <p>求 <code>a[1] + a[2] + ... + a[i]</code>。从 <code>i</code> 出发，每次减去 <code>lowbit(i)</code>，累加对应的 <code>c[]</code> 值：</p>
+
+  <div class="steps">
+    <div class="step">
+      <strong>从索引 i 开始</strong>，累加 c[i]
+    </div>
+    <div class="step">
+      <strong>向下跳转</strong>：i -= lowbit(i)，累加 c[i]
+    </div>
+    <div class="step">
+      <strong>重复</strong>直到 i == 0
+    </div>
+  </div>
+
+  <div class="diagram">
+    <pre>
+  query(7) 的过程 (n=8):
+
+  第1步: ans += c[7],  i = 7 - lowbit(7) = 7 - 1 = 6
+  第2步: ans += c[6],  i = 6 - lowbit(6) = 6 - 2 = 4
+  第3步: ans += c[4],  i = 4 - lowbit(4) = 4 - 4 = 0, 停止
+
+  ans = c[7] + c[6] + c[4]
+      = a[7] + (a[5]+a[6]) + (a[1]+a[2]+a[3]+a[4])
+      = a[1]+a[2]+...+a[7]  ✓
+
+  查询路径: c[7] -> c[6] -> c[4]
+  时间复杂度: O(log n)</pre>
+  </div>
+
+  <h3>2.3 区间查询 sum(l, r)</h3>
+  <p>利用前缀和思想：</p>
+  <p style="text-align:center; font-size:1.05em; color:var(--accent3); margin:16px 0;">
+    sum(l, r) = query(r) - query(l - 1)
+  </p>
+
+  <h3>2.4 C++ 完整模板</h3>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;vector&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> MAXN <span class="op">=</span> <span class="num">500005</span>;
+<span class="ty">int</span> c[MAXN], n;
+
+<span class="cm">// lowbit 运算</span>
+<span class="ty">int</span> <span class="fn">lowbit</span>(<span class="ty">int</span> x) {
+    <span class="kw">return</span> x <span class="op">&amp;</span> (<span class="op">-</span>x);
+}
+
+<span class="cm">// 单点修改：将 a[i] 增加 v</span>
+<span class="ty">void</span> <span class="fn">update</span>(<span class="ty">int</span> i, <span class="ty">int</span> v) {
+    <span class="kw">while</span> (i <span class="op">&lt;=</span> n) {
+        c[i] <span class="op">+=</span> v;
+        i <span class="op">+=</span> <span class="fn">lowbit</span>(i);
+    }
+}
+
+<span class="cm">// 前缀查询：求 a[1] + a[2] + ... + a[i]</span>
+<span class="ty">int</span> <span class="fn">query</span>(<span class="ty">int</span> i) {
+    <span class="ty">int</span> s <span class="op">=</span> <span class="num">0</span>;
+    <span class="kw">while</span> (i <span class="op">&gt;</span> <span class="num">0</span>) {
+        s <span class="op">+=</span> c[i];
+        i <span class="op">-=</span> <span class="fn">lowbit</span>(i);
+    }
+    <span class="kw">return</span> s;
+}
+
+<span class="cm">// 区间查询：求 a[l] + a[l+1] + ... + a[r]</span>
+<span class="ty">int</span> <span class="fn">range_query</span>(<span class="ty">int</span> l, <span class="ty">int</span> r) {
+    <span class="kw">return</span> <span class="fn">query</span>(r) <span class="op">-</span> <span class="fn">query</span>(l <span class="op">-</span> <span class="num">1</span>);
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> m;
+    cin <span class="op">&gt;&gt;</span> n <span class="op">&gt;&gt;</span> m;
+
+    <span class="cm">// 读入初始数组并构建树状数组</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>) {
+        <span class="ty">int</span> x; cin <span class="op">&gt;&gt;</span> x;
+        <span class="fn">update</span>(i, x);
+    }
+
+    <span class="cm">// 处理操作</span>
+    <span class="kw">while</span> (m<span class="op">--</span>) {
+        <span class="ty">int</span> op, x, y;
+        cin <span class="op">&gt;&gt;</span> op <span class="op">&gt;&gt;</span> x <span class="op">&gt;&gt;</span> y;
+        <span class="kw">if</span> (op <span class="op">==</span> <span class="num">1</span>) {
+            <span class="fn">update</span>(x, y);       <span class="cm">// 操作1: a[x] += y</span>
+        } <span class="kw">else</span> {
+            cout <span class="op">&lt;&lt;</span> <span class="fn">range_query</span>(x, y) <span class="op">&lt;&lt;</span> endl; <span class="cm">// 操作2: 查询 [x,y] 和</span>
+        }
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <div class="complexity"><span class="label">单点修改</span> <span class="value">O(log n)</span></div>
+  <div class="complexity"><span class="label">前缀查询</span> <span class="value">O(log n)</span></div>
+  <div class="complexity"><span class="label">空间复杂度</span> <span class="value">O(n)</span></div>
+
+  <div class="box box-tip">
+    <div class="box-title">技巧提示</div>
+    <p>树状数组的下标必须从 <strong>1</strong> 开始（因为 <code>lowbit(0) = 0</code> 会导致死循环）。如果原数组下标从 0 开始，需要做偏移处理。</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第三节：区间修改 + 区间查询 -->
+<!-- ============================================================ -->
+<div class="section" id="sec3">
+  <h2>三、区间修改 + 区间查询</h2>
+
+  <h3>3.1 问题分析</h3>
+  <p>普通的树状数组只能做到单点修改 + 前缀查询。如果我们需要<strong>区间修改</strong>（对 [l, r] 每个元素加 v）和<strong>区间查询</strong>（求 [l, r] 的和），需要使用<strong>两个树状数组</strong>配合差分思想。</p>
+
+  <h3>3.2 数学推导</h3>
+  <p>设差分数组 <code>d[i] = a[i] - a[i-1]</code>，则：</p>
+  <p style="text-align:center; font-size:1.05em; color:var(--accent); margin:16px 0;">
+    sum(1, r) = &sum;<sub>i=1..r</sub> a[i] = &sum;<sub>i=1..r</sub> &sum;<sub>j=1..i</sub> d[j]
+  </p>
+  <p>展开后可得：</p>
+  <p style="text-align:center; font-size:1.05em; color:var(--accent3); margin:16px 0;">
+    sum(1, r) = (r+1) &times; &sum;<sub>i=1..r</sub> d[i] - &sum;<sub>i=1..r</sub> i &times; d[i]
+  </p>
+  <p>因此，我们维护两个树状数组：</p>
+  <ul>
+    <li><code>B1[]</code>：维护差分数组 <code>d[i]</code> 的前缀和</li>
+    <li><code>B2[]</code>：维护 <code>i * d[i]</code> 的前缀和</li>
+  </ul>
+
+  <h3>3.3 区间修改操作</h3>
+  <p>对区间 [l, r] 每个元素加 v，等价于差分数组上：</p>
+  <p style="text-align:center; font-size:1.05em; color:var(--accent3); margin:16px 0;">
+    d[l] += v, &nbsp;&nbsp; d[r+1] -= v
+  </p>
+  <p>对应到两个树状数组：</p>
+  <pre><code><span class="cm">// 区间 [l, r] 每个元素加 v</span>
+<span class="ty">void</span> <span class="fn">range_update</span>(<span class="ty">int</span> l, <span class="ty">int</span> r, <span class="ty">int</span> v) {
+    <span class="fn">add</span>(B1, l, v);
+    <span class="fn">add</span>(B1, r <span class="op">+</span> <span class="num">1</span>, <span class="op">-</span>v);
+    <span class="fn">add</span>(B2, l, v <span class="op">*</span> l);
+    <span class="fn">add</span>(B2, r <span class="op">+</span> <span class="num">1</span>, <span class="op">-</span>v <span class="op">*</span> (r <span class="op">+</span> <span class="num">1</span>));
+}</code></pre>
+
+  <h3>3.4 前缀查询操作</h3>
+  <pre><code><span class="cm">// 求 a[1] + a[2] + ... + a[i]</span>
+<span class="ty">int</span> <span class="fn">prefix_sum</span>(<span class="ty">int</span> i) {
+    <span class="kw">return</span> (<span class="ty">long long</span>)(i <span class="op">+</span> <span class="num">1</span>) <span class="op">*</span> <span class="fn">sum</span>(B1, i) <span class="op">-</span> <span class="fn">sum</span>(B2, i);
+}</code></pre>
+
+  <h3>3.5 完整模板</h3>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;cstring&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> MAXN <span class="op">=</span> <span class="num">500005</span>;
+<span class="ty">long long</span> B1[MAXN], B2[MAXN];
+<span class="ty">int</span> n;
+
+<span class="ty">void</span> <span class="fn">add</span>(<span class="ty">long long</span> <span class="op">*</span>c, <span class="ty">int</span> i, <span class="ty">long long</span> v) {
+    <span class="kw">while</span> (i <span class="op">&lt;=</span> n) {
+        c[i] <span class="op">+=</span> v;
+        i <span class="op">+=</span> i <span class="op">&amp;</span> (<span class="op">-</span>i);
+    }
+}
+
+<span class="ty">long long</span> <span class="fn">sum</span>(<span class="ty">long long</span> <span class="op">*</span>c, <span class="ty">int</span> i) {
+    <span class="ty">long long</span> s <span class="op">=</span> <span class="num">0</span>;
+    <span class="kw">while</span> (i <span class="op">&gt;</span> <span class="num">0</span>) {
+        s <span class="op">+=</span> c[i];
+        i <span class="op">-=</span> i <span class="op">&amp;</span> (<span class="op">-</span>i);
+    }
+    <span class="kw">return</span> s;
+}
+
+<span class="cm">// 区间 [l, r] 每个元素加 v</span>
+<span class="ty">void</span> <span class="fn">range_update</span>(<span class="ty">int</span> l, <span class="ty">int</span> r, <span class="ty">long long</span> v) {
+    <span class="fn">add</span>(B1, l, v);
+    <span class="fn">add</span>(B1, r <span class="op">+</span> <span class="num">1</span>, <span class="op">-</span>v);
+    <span class="fn">add</span>(B2, l, v <span class="op">*</span> l);
+    <span class="fn">add</span>(B2, r <span class="op">+</span> <span class="num">1</span>, <span class="op">-</span>v <span class="op">*</span> (r <span class="op">+</span> <span class="num">1</span>));
+}
+
+<span class="cm">// 求 a[1..i] 的前缀和</span>
+<span class="ty">long long</span> <span class="fn">prefix_sum</span>(<span class="ty">int</span> i) {
+    <span class="kw">return</span> (<span class="ty">long long</span>)(i <span class="op">+</span> <span class="num">1</span>) <span class="op">*</span> <span class="fn">sum</span>(B1, i) <span class="op">-</span> <span class="fn">sum</span>(B2, i);
+}
+
+<span class="cm">// 求 a[l..r] 的区间和</span>
+<span class="ty">long long</span> <span class="fn">range_sum</span>(<span class="ty">int</span> l, <span class="ty">int</span> r) {
+    <span class="kw">return</span> <span class="fn">prefix_sum</span>(r) <span class="op">-</span> <span class="fn">prefix_sum</span>(l <span class="op">-</span> <span class="num">1</span>);
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> m;
+    cin <span class="op">&gt;&gt;</span> n <span class="op">&gt;&gt;</span> m;
+
+    <span class="cm">// 读入初始数组（差分建树）</span>
+    <span class="ty">long long</span> prev <span class="op">=</span> <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>) {
+        <span class="ty">long long</span> x; cin <span class="op">&gt;&gt;</span> x;
+        <span class="fn">range_update</span>(i, i, x);  <span class="cm">// 初始值视为单点赋值</span>
+    }
+
+    <span class="kw">while</span> (m<span class="op">--</span>) {
+        <span class="ty">int</span> op; cin <span class="op">&gt;&gt;</span> op;
+        <span class="kw">if</span> (op <span class="op">==</span> <span class="num">1</span>) {
+            <span class="ty">int</span> l, r; <span class="ty">long long</span> v;
+            cin <span class="op">&gt;&gt;</span> l <span class="op">&gt;&gt;</span> r <span class="op">&gt;&gt;</span> v;
+            <span class="fn">range_update</span>(l, r, v);
+        } <span class="kw">else</span> {
+            <span class="ty">int</span> l, r;
+            cin <span class="op">&gt;&gt;</span> l <span class="op">&gt;&gt;</span> r;
+            cout <span class="op">&lt;&lt;</span> <span class="fn">range_sum</span>(l, r) <span class="op">&lt;&lt;</span> endl;
+        }
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <div class="complexity"><span class="label">区间修改</span> <span class="value">O(log n)</span></div>
+  <div class="complexity"><span class="label">区间查询</span> <span class="value">O(log n)</span></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第四节：求逆序对 -->
+<!-- ============================================================ -->
+<div class="section" id="sec4">
+  <h2>四、求逆序对</h2>
+
+  <h3>4.1 问题定义</h3>
+  <p>给定一个长度为 n 的排列（或数组），求其中<strong>逆序对</strong>的个数。逆序对是指满足 <code>i &lt; j</code> 且 <code>a[i] &gt; a[j]</code> 的数对 <code>(i, j)</code>。</p>
+
+  <h3>4.2 思路分析</h3>
+  <p>从右向左遍历数组，对于当前位置 <code>i</code>，统计已经遍历过的元素中有多少个比 <code>a[i]</code> 小，即 <code>query(a[i] - 1)</code>。当前位置的逆序对数为已遍历元素总数减去比 <code>a[i]</code> 小的个数。</p>
+
+  <div class="steps">
+    <div class="step">
+      <strong>从右向左遍历</strong>数组 a[n], a[n-1], ..., a[1]
+    </div>
+    <div class="step">
+      对于 a[i]，在树状数组中查询 <code>query(a[i] - 1)</code>，得到已遍历中小于 a[i] 的元素个数
+    </div>
+    <div class="step">
+      当前位置贡献的逆序对数 = 已遍历元素总数 - query(a[i] - 1)
+    </div>
+    <div class="step">
+      将 a[i] 插入树状数组：<code>update(a[i], 1)</code>
+    </div>
+  </div>
+
+  <h3>4.3 图解示例</h3>
+  <div class="diagram">
+    <pre>
+  数组: [3, 1, 4, 2, 5]，求逆序对数
+
+  从右向左遍历：
+
+  i=5, a[5]=5: 已遍历=0个, 比5小的=0个, 逆序对=0-0=0
+  插入 c[5]=1
+  树状数组: [0,0,0,0,1]
+
+  i=4, a[4]=2: 已遍历=1个, 比2小的=query(1)=0个, 逆序对=1-0=1
+  插入 c[2]=1
+  树状数组: [0,1,0,0,1]
+
+  i=3, a[3]=4: 已遍历=2个, 比4小的=query(3)=1个, 逆序对=2-1=1
+  插入 c[4]=1
+  树状数组: [0,1,0,1,1]
+
+  i=2, a[2]=1: 已遍历=3个, 比1小的=query(0)=0个, 逆序对=3-0=3
+  插入 c[1]=1
+  树状数组: [1,1,0,1,1]
+
+  i=1, a[1]=3: 已遍历=4个, 比3小的=query(2)=2个, 逆序对=4-2=2
+  插入 c[3]=1
+  树状数组: [1,1,1,1,1]
+
+  总逆序对 = 0 + 1 + 1 + 3 + 2 = 7</pre>
+  </div>
+
+  <h3>4.4 C++ 代码</h3>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;algorithm&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;vector&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> MAXN <span class="op">=</span> <span class="num">500005</span>;
+<span class="ty">int</span> c[MAXN], n;
+
+<span class="ty">void</span> <span class="fn">update</span>(<span class="ty">int</span> i, <span class="ty">int</span> v) {
+    <span class="kw">while</span> (i <span class="op">&lt;=</span> n) {
+        c[i] <span class="op">+=</span> v;
+        i <span class="op">+=</span> i <span class="op">&amp;</span> (<span class="op">-</span>i);
+    }
+}
+
+<span class="ty">int</span> <span class="fn">query</span>(<span class="ty">int</span> i) {
+    <span class="ty">int</span> s <span class="op">=</span> <span class="num">0</span>;
+    <span class="kw">while</span> (i <span class="op">&gt;</span> <span class="num">0</span>) {
+        s <span class="op">+=</span> c[i];
+        i <span class="op">-=</span> i <span class="op">&amp;</span> (<span class="op">-</span>i);
+    }
+    <span class="kw">return</span> s;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    cin <span class="op">&gt;&gt;</span> n;
+    <span class="ty">vector</span><span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;</span> a(n <span class="op">+</span> <span class="num">1</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>)
+        cin <span class="op">&gt;&gt;</span> a[i];
+
+    <span class="cm">// 如果值域很大，需要离散化</span>
+    <span class="cm">// 此处假设值域为 [1, n]</span>
+
+    <span class="ty">long long</span> inv <span class="op">=</span> <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> n; i <span class="op">&gt;=</span> <span class="num">1</span>; i<span class="op">--</span>) {
+        inv <span class="op">+=</span> <span class="fn">query</span>(a[i] <span class="op">-</span> <span class="num">1</span>);  <span class="cm">// 比 a[i] 小的已遍历元素个数</span>
+        <span class="fn">update</span>(a[i], <span class="num">1</span>);        <span class="cm">// 插入当前元素</span>
+    }
+    cout <span class="op">&lt;&lt;</span> inv <span class="op">&lt;&lt;</span> endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <h3>4.5 离散化处理</h3>
+  <p>当值域很大（如 <code>10^9</code>）时，需要先对数组进行<strong>离散化</strong>，将值映射到 <code>[1, n]</code> 的范围内：</p>
+  <pre><code><span class="cm">// 离散化模板</span>
+<span class="ty">vector</span><span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;</span> <span class="fn">discretize</span>(<span class="ty">vector</span><span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;&amp;</span> a) {
+    <span class="ty">vector</span><span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;</span> tmp(a.<span class="fn">begin</span>() <span class="op">+</span> <span class="num">1</span>, a.<span class="fn">end</span>());
+    <span class="fn">sort</span>(tmp.<span class="fn">begin</span>(), tmp.<span class="fn">end</span>());
+    tmp.<span class="fn">erase</span>(<span class="fn">unique</span>(tmp.<span class="fn">begin</span>(), tmp.<span class="fn">end</span>()), tmp.<span class="fn">end</span>());
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;</span> (<span class="ty">int</span>)a.<span class="fn">size</span>(); i<span class="op">++</span>)
+        a[i] <span class="op">=</span> <span class="fn">lower_bound</span>(tmp.<span class="fn">begin</span>(), tmp.<span class="fn">end</span>(), a[i]) <span class="op">-</span> tmp.<span class="fn">begin</span>() <span class="op">+</span> <span class="num">1</span>;
+    <span class="kw">return</span> a;
+}</code></pre>
+
+  <div class="complexity"><span class="label">时间复杂度</span> <span class="value">O(n log n)</span></div>
+  <div class="complexity"><span class="label">空间复杂度</span> <span class="value">O(n)</span></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第五节：二维树状数组 -->
+<!-- ============================================================ -->
+<div class="section" id="sec5">
+  <h2>五、二维树状数组</h2>
+
+  <h3>5.1 概述</h3>
+  <p>二维树状数组是树状数组在二维平面上的推广，支持<strong>单点修改</strong>和<strong>子矩阵前缀查询</strong>（即求以 (1,1) 为左上角、(i,j) 为右下角的矩阵和）。</p>
+
+  <h3>5.2 核心操作</h3>
+  <p>二维树状数组的操作是一维的自然推广：</p>
+  <ul>
+    <li><strong>单点修改</strong>：update(x, y, v) -- 对 (x,y) 加 v</li>
+    <li><strong>前缀查询</strong>：query(x, y) -- 求 (1,1) 到 (x,y) 的子矩阵和</li>
+    <li><strong>子矩阵查询</strong>：利用容斥原理，类似二维前缀和</li>
+  </ul>
+
+  <h3>5.3 子矩阵查询公式</h3>
+  <p style="text-align:center; font-size:1.05em; color:var(--accent3); margin:16px 0;">
+    sum(x1, y1, x2, y2) = query(x2,y2) - query(x1-1,y2) - query(x2,y1-1) + query(x1-1,y1-1)
+  </p>
+
+  <h3>5.4 C++ 模板</h3>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;cstring&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> MAXN <span class="op">=</span> <span class="num">5005</span>;
+<span class="ty">int</span> c[MAXN][MAXN];
+<span class="ty">int</span> n, m;
+
+<span class="ty">void</span> <span class="fn">update</span>(<span class="ty">int</span> x, <span class="ty">int</span> y, <span class="ty">int</span> v) {
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> x; i <span class="op">&lt;=</span> n; i <span class="op">+=</span> i <span class="op">&amp;</span> (<span class="op">-</span>i))
+        <span class="kw">for</span> (<span class="ty">int</span> j <span class="op">=</span> y; j <span class="op">&lt;=</span> m; j <span class="op">+=</span> j <span class="op">&amp;</span> (<span class="op">-</span>j))
+            c[i][j] <span class="op">+=</span> v;
+}
+
+<span class="ty">int</span> <span class="fn">query</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="ty">int</span> s <span class="op">=</span> <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> x; i <span class="op">&gt;</span> <span class="num">0</span>; i <span class="op">-=</span> i <span class="op">&amp;</span> (<span class="op">-</span>i))
+        <span class="kw">for</span> (<span class="ty">int</span> j <span class="op">=</span> y; j <span class="op">&gt;</span> <span class="num">0</span>; j <span class="op">-=</span> j <span class="op">&amp;</span> (<span class="op">-</span>j))
+            s <span class="op">+=</span> c[i][j];
+    <span class="kw">return</span> s;
+}
+
+<span class="cm">// 子矩阵查询：左上角 (x1,y1) 到右下角 (x2,y2)</span>
+<span class="ty">int</span> <span class="fn">range_query</span>(<span class="ty">int</span> x1, <span class="ty">int</span> y1, <span class="ty">int</span> x2, <span class="ty">int</span> y2) {
+    <span class="kw">return</span> <span class="fn">query</span>(x2, y2) <span class="op">-</span> <span class="fn">query</span>(x1<span class="op">-</span><span class="num">1</span>, y2) <span class="op">-</span> <span class="fn">query</span>(x2, y1<span class="op">-</span><span class="num">1</span>) <span class="op">+</span> <span class="fn">query</span>(x1<span class="op">-</span><span class="num">1</span>, y1<span class="op">-</span><span class="num">1</span>);
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    cin <span class="op">&gt;&gt;</span> n <span class="op">&gt;&gt;</span> m;
+
+    <span class="cm">// 读入矩阵并建树</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>)
+        <span class="kw">for</span> (<span class="ty">int</span> j <span class="op">=</span> <span class="num">1</span>; j <span class="op">&lt;=</span> m; j<span class="op">++</span>) {
+            <span class="ty">int</span> x; cin <span class="op">&gt;&gt;</span> x;
+            <span class="fn">update</span>(i, j, x);
+        }
+
+    <span class="cm">// 查询子矩阵和</span>
+    <span class="ty">int</span> q; cin <span class="op">&gt;&gt;</span> q;
+    <span class="kw">while</span> (q<span class="op">--</span>) {
+        <span class="ty">int</span> x1, y1, x2, y2;
+        cin <span class="op">&gt;&gt;</span> x1 <span class="op">&gt;&gt;</span> y1 <span class="op">&gt;&gt;</span> x2 <span class="op">&gt;&gt;</span> y2;
+        cout <span class="op">&lt;&lt;</span> <span class="fn">range_query</span>(x1, y1, x2, y2) <span class="op">&lt;&lt;</span> endl;
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <div class="complexity"><span class="label">单点修改</span> <span class="value">O(log n * log m)</span></div>
+  <div class="complexity"><span class="label">子矩阵查询</span> <span class="value">O(log n * log m)</span></div>
+
+  <div class="box box-warn">
+    <div class="box-title">注意</div>
+    <p>二维树状数组的空间复杂度为 <code>O(n * m)</code>，当 n, m 较大时（如 10^4），需要 <code>10^8</code> 的空间，可能超出限制。此时需要考虑其他方法或使用动态开点。</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第六节：综合例题与练习 -->
+<!-- ============================================================ -->
+<div class="section" id="sec6">
+  <h2>六、综合例题与练习</h2>
+
+  <h3>6.1 模板题</h3>
+  <div class="problem">
+    <div class="problem-title">洛谷 P3374 【模板】树状数组 1</div>
+    <p>单点修改 + 区间查询。直接使用基本树状数组模板。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">洛谷 P3368 【模板】树状数组 2</div>
+    <p>区间修改 + 单点查询。使用差分树状数组（只需一个 BIT 维护差分数组）。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">洛谷 P3372 【模板】线段树 1</div>
+    <p>区间修改 + 区间查询。可以用两个树状数组的方案替代线段树。</p>
+  </div>
+
+  <h3>6.2 逆序对相关</h3>
+  <div class="problem">
+    <div class="problem-title">洛谷 P1908 逆序对</div>
+    <p>经典逆序对问题，使用树状数组 + 离散化在 O(n log n) 内解决。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">AcWing 788. 逆序对的数量</div>
+    <p>求逆序对数量，可用归并排序或树状数组。注意用 long long 防溢出。</p>
+  </div>
+
+  <h3>6.3 综合应用</h3>
+  <div class="problem">
+    <div class="problem-title">洛谷 P1966 火柴排队</div>
+    <p>贪心 + 逆序对。将问题转化为求排列的逆序对数。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">洛谷 P2163 [SHOI2007] 园丁的烦恼</div>
+    <p>二维偏序问题，使用树状数组 + 离线处理。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">洛谷 P2345 [USACO04OPEN] Mooomoo</div>
+    <p>树状数组维护区间信息，结合贪心策略。</p>
+  </div>
+
+  <h3>6.4 推荐练习清单</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>题目</th><th>知识点</th><th>难度</th></tr>
+      <tr><td>洛谷 P3374 树状数组 1</td><td>单点修改 + 区间查询</td><td><span class="tag tag-easy">简单</span></td></tr>
+      <tr><td>洛谷 P3368 树状数组 2</td><td>区间修改 + 单点查询</td><td><span class="tag tag-easy">简单</span></td></tr>
+      <tr><td>洛谷 P1908 逆序对</td><td>树状数组 + 离散化</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>洛谷 P1966 火柴排队</td><td>贪心 + 逆序对</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>洛谷 P2163 园丁的烦恼</td><td>二维偏序 + 离线</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>洛谷 P3372 线段树 1</td><td>区间修改 + 区间查询（BIT版）</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>洛谷 P2345 Mooomoo</td><td>树状数组 + 贪心</td><td><span class="tag tag-hard">困难</span></td></tr>
+      <tr><td>洛谷 P4054 [JSOI2009] 计数问题</td><td>二维树状数组</td><td><span class="tag tag-mid">中等</span></td></tr>
+    </table>
+  </div>
+
+  <div class="box box-tip">
+    <div class="box-title">总结</div>
+    <p>树状数组是竞赛中最常用的数据结构之一，核心要点：</p>
+    <ul>
+      <li><strong>lowbit</strong> 是树状数组的灵魂，<code>x &amp; (-x)</code> 必须牢记</li>
+      <li>基本操作：单点修改 O(log n)、前缀查询 O(log n)</li>
+      <li>通过<strong>差分</strong>可以扩展到区间修改 + 单点查询</li>
+      <li>通过<strong>两个 BIT</strong> 可以实现区间修改 + 区间查询</li>
+      <li><strong>逆序对</strong>是树状数组的经典应用，配合离散化处理大值域</li>
+      <li>二维树状数组是一维的自然推广，支持子矩阵操作</li>
+      <li>与线段树相比，树状数组代码更短、常数更小，但功能相对有限</li>
+    </ul>
+  </div>
+</div>
+
+</div> <!-- end container -->
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>基础计算几何 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt; 几何篇 &gt; 基础计算几何
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>基础计算几何</h1>
+    <p class="subtitle">Basic Computational Geometry &mdash; 向量运算与几何基础</p>
+    <div class="tags">
+      <span class="tag tag-base">计算几何</span>
+      <span class="tag tag-mid">中等</span>
+      <span class="tag tag-math">数学</span>
+    </div>
+  </div>
+
+  <!-- Table of Contents -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#vector">向量基础</a></li>
+      <li><a href="#dot">点积 (Dot Product)</a></li>
+      <li><a href="#cross">叉积 (Cross Product)</a></li>
+      <li><a href="#line">直线与线段</a></li>
+      <li><a href="#point-to-line">点到直线距离</a></li>
+      <li><a href="#polygon-area">多边形面积</a></li>
+      <li><a href="#template">完整模板</a></li>
+      <li><a href="#problems">经典例题</a></li>
+    </ul>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 1: 向量基础 -->
+  <!-- ============================== -->
+  <div class="section" id="vector">
+    <h2>向量基础</h2>
+    <p>计算几何的核心是<strong>向量运算</strong>。一个点可以用坐标 <code>(x, y)</code> 表示，向量即两点之差。在 C++ 中，我们通常用结构体封装点和向量的操作。</p>
+
+    <h3>Point 结构体定义</h3>
+    <pre><code><span class="kw">struct</span> <span class="ty">Point</span> {
+    <span class="ty">double</span> x, y;
+    <span class="ty">Point</span>() : <span class="fn">x</span>(<span class="num">0</span>), <span class="fn">y</span>(<span class="num">0</span>) {}
+    <span class="ty">Point</span>(<span class="ty">double</span> x, <span class="ty">double</span> y) : <span class="fn">x</span>(x), <span class="fn">y</span>(y) {}
+};
+
+<span class="cm">// 向量加法</span>
+<span class="ty">Point</span> <span class="kw">operator</span>+(<span class="kw">const</span> <span class="ty">Point</span>&amp; a, <span class="kw">const</span> <span class="ty">Point</span>&amp; b) {
+    <span class="kw">return</span> <span class="ty">Point</span>(a.x + b.x, a.y + b.y);
+}
+
+<span class="cm">// 向量减法</span>
+<span class="ty">Point</span> <span class="kw">operator</span>-(<span class="kw">const</span> <span class="ty">Point</span>&amp; a, <span class="kw">const</span> <span class="ty">Point</span>&amp; b) {
+    <span class="kw">return</span> <span class="ty">Point</span>(a.x - b.x, a.y - b.y);
+}
+
+<span class="cm">// 标量乘法</span>
+<span class="ty">Point</span> <span class="kw">operator</span>*(<span class="kw">const</span> <span class="ty">Point</span>&amp; a, <span class="ty">double</span> k) {
+    <span class="kw">return</span> <span class="ty">Point</span>(a.x * k, a.y * k);
+}
+<span class="ty">Point</span> <span class="kw">operator</span>*(<span class="ty">double</span> k, <span class="kw">const</span> <span class="ty">Point</span>&amp; a) {
+    <span class="kw">return</span> a * k;
+}</code></pre>
+
+    <h3>基本辅助函数</h3>
+    <pre><code><span class="cm">// 向量模长</span>
+<span class="ty">double</span> <span class="fn">len</span>(<span class="kw">const</span> <span class="ty">Point</span>&amp; a) {
+    <span class="kw">return</span> <span class="fn">sqrt</span>(a.x * a.x + a.y * a.y);
+}
+
+<span class="cm">// 两点距离</span>
+<span class="ty">double</span> <span class="fn">dist</span>(<span class="kw">const</span> <span class="ty">Point</span>&amp; a, <span class="kw">const</span> <span class="ty">Point</span>&amp; b) {
+    <span class="kw">return</span> <span class="fn">len</span>(a - b);
+}
+
+<span class="cm">// 向量单位化</span>
+<span class="ty">Point</span> <span class="fn">normalize</span>(<span class="kw">const</span> <span class="ty">Point</span>&amp; a) {
+    <span class="ty">double</span> l = <span class="fn">len</span>(a);
+    <span class="kw">return</span> <span class="ty">Point</span>(a.x / l, a.y / l);
+}</code></pre>
+
+    <div class="box box-info">
+      <div class="box-title">注意浮点精度</div>
+      <p>计算几何中大量使用浮点数，比较时应使用 <code>eps</code> 容差：<code>const double eps = 1e-9;</code>，判断零值用 <code>fabs(x) < eps</code>。</p>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 2: 点积 -->
+  <!-- ============================== -->
+  <div class="section" id="dot">
+    <h2>点积 (Dot Product)</h2>
+    <p>点积是两个向量的内积，定义为：</p>
+    <p><code>a · b = a.x * b.x + a.y * b.y = |a| * |b| * cos(θ)</code></p>
+
+    <h3>几何意义</h3>
+    <div class="diagram">
+      <pre>
+  向量 a 和 b 的夹角为 θ
+
+         b
+        /
+       / θ
+      /_____ a
+
+  a · b &gt; 0  →  θ &lt; 90°  (锐角)
+  a · b = 0  →  θ = 90°  (垂直)
+  a · b &lt; 0  →  θ &gt; 90°  (钝角)
+      </pre>
+    </div>
+
+    <h3>代码实现</h3>
+    <pre><code><span class="ty">double</span> <span class="fn">dot</span>(<span class="kw">const</span> <span class="ty">Point</span>&amp; a, <span class="kw">const</span> <span class="ty">Point</span>&amp; b) {
+    <span class="kw">return</span> a.x * b.x + a.y * b.y;
+}
+
+<span class="cm">// 计算向量 a 和 b 的夹角 (弧度)</span>
+<span class="ty">double</span> <span class="fn">angle</span>(<span class="kw">const</span> <span class="ty">Point</span>&amp; a, <span class="kw">const</span> <span class="ty">Point</span>&amp; b) {
+    <span class="kw">return</span> <span class="fn">acos</span>(<span class="fn">dot</span>(a, b) / (<span class="fn">len</span>(a) * <span class="fn">len</span>(b)));
+}
+
+<span class="cm">// 判断两向量是否垂直</span>
+<span class="ty">bool</span> <span class="fn">isPerpendicular</span>(<span class="kw">const</span> <span class="ty">Point</span>&amp; a, <span class="kw">const</span> <span class="ty">Point</span>&amp; b) {
+    <span class="kw">return</span> <span class="fn">fabs</span>(<span class="fn">dot</span>(a, b)) < eps;
+}</code></pre>
+
+    <h3>点积的常见应用</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>应用</th><th>方法</th></tr>
+        <tr><td>判断钝角/锐角/直角</td><td>看 <code>dot(a, b)</code> 的符号</td></tr>
+        <tr><td>向量在另一向量方向的投影</td><td><code>dot(a, b) / len(b)</code></td></tr>
+        <tr><td>计算两向量夹角</td><td><code>acos(dot(a,b) / (|a|*|b|))</code></td></tr>
+        <tr><td>判断点在线段上的投影位置</td><td>计算 <code>dot(P-A, B-A)</code> 与 <code>|B-A|^2</code> 的比值</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 3: 叉积 -->
+  <!-- ============================== -->
+  <div class="section" id="cross">
+    <h2>叉积 (Cross Product)</h2>
+    <p>叉积是计算几何中最重要的运算，定义为：</p>
+    <p><code>a × b = a.x * b.y - a.y * b.x = |a| * |b| * sin(θ)</code></p>
+
+    <h3>几何意义</h3>
+    <div class="diagram">
+      <pre>
+  叉积的符号表示旋转方向
+
+       b
+      /
+     / ↺ 逆时针
+    /_____ a
+
+  a × b &gt; 0  →  b 在 a 的左侧 (逆时针, CCW)
+  a × b = 0  →  a 和 b 共线 (Collinear)
+  a × b &lt; 0  →  b 在 a 的右侧 (顺时针, CW)
+
+  |a × b| = 以 a, b 为邻边的平行四边形面积
+      </pre>
+    </div>
+
+    <h3>代码实现</h3>
+    <pre><code><span class="cm">// 叉积: a × b</span>
+<span class="ty">double</span> <span class="fn">cross</span>(<span class="kw">const</span> <span class="ty">Point</span>&amp; a, <span class="kw">const</span> <span class="ty">Point</span>&amp; b) {
+    <span class="kw">return</span> a.x * b.y - a.y * b.x;
+}
+
+<span class="cm">// 三点叉积: (B-A) × (C-A)</span>
+<span class="cm">// 表示向量 AB 到 AC 的旋转方向</span>
+<span class="ty">double</span> <span class="fn">cross</span>(<span class="kw">const</span> <span class="ty">Point</span>&amp; A, <span class="kw">const</span> <span class="ty">Point</span>&amp; B, <span class="kw">const</span> <span class="ty">Point</span>&amp; C) {
+    <span class="kw">return</span> <span class="fn">cross</span>(B - A, C - A);
+}
+
+<span class="cm">// 判断方向: 返回 -1(顺时针), 0(共线), 1(逆时针)</span>
+<span class="ty">int</span> <span class="fn">orientation</span>(<span class="kw">const</span> <span class="ty">Point</span>&amp; A, <span class="kw">const</span> <span class="ty">Point</span>&amp; B, <span class="kw">const</span> <span class="ty">Point</span>&amp; C) {
+    <span class="ty">double</span> v = <span class="fn">cross</span>(A, B, C);
+    <span class="kw">if</span> (<span class="fn">fabs</span>(v) < eps) <span class="kw">return</span> <span class="num">0</span>;       <span class="cm">// 共线</span>
+    <span class="kw">return</span> (v > <span class="num">0</span>) ? <span class="num">1</span> : -<span class="num">1</span>;          <span class="cm">// 1:逆时针, -1:顺时针</span>
+}</code></pre>
+
+    <h3>叉积的核心应用</h3>
+    <ul>
+      <li><strong>判断左右转</strong>：给定有向线段 AB，判断点 C 在左侧还是右侧</li>
+      <li><strong>计算三角形面积</strong>：<code>|cross(A,B,C)| / 2</code></li>
+      <li><strong>判断点在线段上</strong>：叉积为零且点在两端点之间</li>
+      <li><strong>线段相交判定</strong>：跨立实验</li>
+      <li><strong>凸包构建</strong>：利用叉积判断凹凸性</li>
+    </ul>
+
+    <div class="box box-warn">
+      <div class="box-title">叉积符号的坐标系约定</div>
+      <p>在标准数学坐标系（y 轴向上）中，逆时针为正；但在屏幕坐标系（y 轴向下）中，符号会反转。竞赛中通常使用标准数学坐标系，注意题目描述。</p>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 4: 直线与线段 -->
+  <!-- ============================== -->
+  <div class="section" id="line">
+    <h2>直线与线段</h2>
+
+    <h3>直线表示</h3>
+    <p>直线可以用两种方式表示：</p>
+    <ul>
+      <li><strong>两点式</strong>：给定两点 A, B，直线通过 A 和 B</li>
+      <li><strong>点向式</strong>：给定点 P 和方向向量 v，直线为 P + t * v</li>
+    </ul>
+
+    <h3>判断点在线段上</h3>
+    <pre><code><span class="cm">// 判断点 P 是否在线段 AB 上</span>
+<span class="cm">// 条件: (1) P, A, B 共线  (2) P 在 A, B 之间</span>
+<span class="ty">bool</span> <span class="fn">onSegment</span>(<span class="ty">Point</span> P, <span class="ty">Point</span> A, <span class="ty">Point</span> B) {
+    <span class="kw">return</span> <span class="fn">fabs</span>(<span class="fn">cross</span>(A, B, P)) < eps
+        &amp;&amp; <span class="fn">dot</span>(A - P, B - P) &lt; eps;
+}</code></pre>
+
+    <h3>线段相交判定 (跨立实验)</h3>
+    <p>两条线段 AB 和 CD 相交，当且仅当：</p>
+    <ol>
+      <li>C 和 D 在 AB 的<strong>两侧</strong>：<code>cross(A,B,C) * cross(A,B,D) < 0</code></li>
+      <li>A 和 B 在 CD 的<strong>两侧</strong>：<code>cross(C,D,A) * cross(C,D,B) < 0</code></li>
+    </ol>
+    <p>还需处理端点在另一线段上的退化情况。</p>
+
+    <pre><code><span class="cm">// 判断线段 AB 和 CD 是否相交</span>
+<span class="ty">bool</span> <span class="fn">segmentIntersect</span>(<span class="ty">Point</span> A, <span class="ty">Point</span> B, <span class="ty">Point</span> C, <span class="ty">Point</span> D) {
+    <span class="ty">double</span> d1 = <span class="fn">cross</span>(A, B, C);
+    <span class="ty">double</span> d2 = <span class="fn">cross</span>(A, B, D);
+    <span class="ty">double</span> d3 = <span class="fn">cross</span>(C, D, A);
+    <span class="ty">double</span> d4 = <span class="fn">cross</span>(C, D, B);
+
+    <span class="kw">if</span> (((d1 > eps &amp;&amp; d2 &lt; -eps) || (d1 &lt; -eps &amp;&amp; d2 > eps))
+     &amp;&amp; ((d3 > eps &amp;&amp; d4 &lt; -eps) || (d3 &lt; -eps &amp;&amp; d4 > eps)))
+        <span class="kw">return</span> <span class="kw">true</span>;
+
+    <span class="cm">// 处理端点共线的退化情况</span>
+    <span class="kw">if</span> (<span class="fn">fabs</span>(d1) < eps &amp;&amp; <span class="fn">onSegment</span>(C, A, B)) <span class="kw">return</span> <span class="kw">true</span>;
+    <span class="kw">if</span> (<span class="fn">fabs</span>(d2) < eps &amp;&amp; <span class="fn">onSegment</span>(D, A, B)) <span class="kw">return</span> <span class="kw">true</span>;
+    <span class="kw">if</span> (<span class="fn">fabs</span>(d3) < eps &amp;&amp; <span class="fn">onSegment</span>(A, C, D)) <span class="kw">return</span> <span class="kw">true</span>;
+    <span class="kw">if</span> (<span class="fn">fabs</span>(d4) < eps &amp;&amp; <span class="fn">onSegment</span>(B, C, D)) <span class="kw">return</span> <span class="kw">true</span>;
+
+    <span class="kw">return</span> <span class="kw">false</span>;
+}</code></pre>
+
+    <h3>直线交点</h3>
+    <pre><code><span class="cm">// 求直线 AB 和 CD 的交点</span>
+<span class="cm">// 前提: 两直线不平行</span>
+<span class="ty">Point</span> <span class="fn">lineIntersection</span>(<span class="ty">Point</span> A, <span class="ty">Point</span> B, <span class="ty">Point</span> C, <span class="ty">Point</span> D) {
+    <span class="ty">Point</span> v1 = B - A, v2 = D - C;
+    <span class="ty">double</span> t = <span class="fn">cross</span>(C - A, v2) / <span class="fn">cross</span>(v1, v2);
+    <span class="kw">return</span> A + v1 * t;
+}</code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">技巧</div>
+      <p>用参数方程 <code>P = A + t*(B-A)</code> 表示直线上的点，<code>t</code> 的值可以判断点相对于线段的位置：<code>t<0</code> 在 A 外侧，<code>0≤t≤1</code> 在线段上，<code>t>1</code> 在 B 外侧。</p>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 5: 点到直线距离 -->
+  <!-- ============================== -->
+  <div class="section" id="point-to-line">
+    <h2>点到直线距离</h2>
+    <p>点 P 到直线 AB 的距离可以用叉积计算：</p>
+    <p><code>d = |cross(B-A, P-A)| / |B-A|</code></p>
+
+    <div class="diagram">
+      <pre>
+  A─────────────B     直线 AB
+        |
+        | d             d = 点 P 到直线 AB 的距离
+        |
+        P
+
+  |cross(B-A, P-A)| = 平行四边形面积
+  |B-A| = 底边长
+  面积 / 底 = 高 = 距离
+      </pre>
+    </div>
+
+    <pre><code><span class="cm">// 点 P 到直线 AB 的距离</span>
+<span class="ty">double</span> <span class="fn">pointToLine</span>(<span class="ty">Point</span> P, <span class="ty">Point</span> A, <span class="ty">Point</span> B) {
+    <span class="kw">return</span> <span class="fn">fabs</span>(<span class="fn">cross</span>(B - A, P - A)) / <span class="fn">len</span>(B - A);
+}
+
+<span class="cm">// 点 P 到线段 AB 的距离</span>
+<span class="ty">double</span> <span class="fn">pointToSegment</span>(<span class="ty">Point</span> P, <span class="ty">Point</span> A, <span class="ty">Point</span> B) {
+    <span class="kw">if</span> (A == B) <span class="kw">return</span> <span class="fn">dist</span>(P, A);
+    <span class="ty">Point</span> v1 = B - A, v2 = P - A;
+    <span class="ty">double</span> t = <span class="fn">dot</span>(v1, v2) / <span class="fn">dot</span>(v1, v1);
+    <span class="kw">if</span> (t &lt; <span class="num">0</span>) <span class="kw">return</span> <span class="fn">dist</span>(P, A);       <span class="cm">// 投影在 A 之前</span>
+    <span class="kw">if</span> (t > <span class="num">1</span>) <span class="kw">return</span> <span class="fn">dist</span>(P, B);       <span class="cm">// 投影在 B 之后</span>
+    <span class="kw">return</span> <span class="fn">pointToLine</span>(P, A, B);        <span class="cm">// 投影在线段上</span>
+}</code></pre>
+
+    <h3>点到线段距离的三种情况</h3>
+    <div class="steps">
+      <div class="step">计算点 P 在直线 AB 上的投影参数 <code>t = dot(P-A, B-A) / dot(B-A, B-A)</code></div>
+      <div class="step">若 <code>t &lt; 0</code>，最近点为 A，距离为 <code>|PA|</code></div>
+      <div class="step">若 <code>t &gt; 1</code>，最近点为 B，距离为 <code>|PB|</code></div>
+      <div class="step">若 <code>0 &le; t &le; 1</code>，最近点为投影点，距离为点到直线距离</div>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 6: 多边形面积 -->
+  <!-- ============================== -->
+  <div class="section" id="polygon-area">
+    <h2>多边形面积 (Shoelace Formula)</h2>
+    <p>给定 n 个顶点按逆时针（或顺时针）排列的简单多边形 <code>P[0], P[1], ..., P[n-1]</code>，其面积为：</p>
+    <p><code>S = |Σ cross(P[i], P[(i+1)%n])| / 2</code></p>
+
+    <div class="diagram">
+      <pre>
+  Shoelace Formula (鞋带公式)
+
+      P1 ─── P2
+     / |       \
+   P0  |        P3        S = |Σ(x_i * y_{i+1} - x_{i+1} * y_i)| / 2
+     \ |       /
+      P5 ─── P4
+
+  等价于将多边形分解为以原点为顶点的三角形，
+  用叉积求每个三角形的有向面积并累加。
+      </pre>
+    </div>
+
+    <pre><code><span class="cm">// 多边形面积 (顶点按顺序存储)</span>
+<span class="ty">double</span> <span class="fn">polygonArea</span>(<span class="kw">const</span> <span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt;&amp; P) {
+    <span class="ty">double</span> area = <span class="num">0</span>;
+    <span class="ty">int</span> n = P.<span class="fn">size</span>();
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        area += <span class="fn">cross</span>(P[i], P[(i + <span class="num">1</span>) % n]);
+    }
+    <span class="kw">return</span> <span class="fn">fabs</span>(area) / <span class="num">2.0</span>;
+}
+
+<span class="cm">// 三角形面积 (三点)</span>
+<span class="ty">double</span> <span class="fn">triangleArea</span>(<span class="ty">Point</span> A, <span class="ty">Point</span> B, <span class="ty">Point</span> C) {
+    <span class="kw">return</span> <span class="fn">fabs</span>(<span class="fn">cross</span>(B - A, C - A)) / <span class="num">2.0</span>;
+}</code></pre>
+
+    <h3>有向面积</h3>
+    <p>如果不取绝对值，结果为<strong>有向面积</strong>：逆时针排列为正，顺时针为负。可用于判断多边形的顶点排列方向。</p>
+
+    <pre><code><span class="cm">// 判断多边形顶点排列方向</span>
+<span class="cm">// 返回 true 表示逆时针 (CCW)</span>
+<span class="ty">bool</span> <span class="fn">isCCW</span>(<span class="kw">const</span> <span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt;&amp; P) {
+    <span class="ty">double</span> area = <span class="num">0</span>;
+    <span class="ty">int</span> n = P.<span class="fn">size</span>();
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        area += <span class="fn">cross</span>(P[i], P[(i + <span class="num">1</span>) % n]);
+    <span class="kw">return</span> area > <span class="num">0</span>;
+}</code></pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n)</span>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 7: 完整模板 -->
+  <!-- ============================== -->
+  <div class="section" id="template">
+    <h2>完整 Point/Vector 模板</h2>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">double</span> eps = <span class="num">1e-9</span>;
+<span class="kw">const</span> <span class="ty">double</span> PI = <span class="fn">acos</span>(-<span class="num">1.0</span>);
+
+<span class="kw">struct</span> <span class="ty">Point</span> {
+    <span class="ty">double</span> x, y;
+    <span class="ty">Point</span>() : <span class="fn">x</span>(<span class="num">0</span>), <span class="fn">y</span>(<span class="num">0</span>) {}
+    <span class="ty">Point</span>(<span class="ty">double</span> x, <span class="ty">double</span> y) : <span class="fn">x</span>(x), <span class="fn">y</span>(y) {}
+
+    <span class="ty">Point</span> <span class="kw">operator</span>+(<span class="kw">const</span> <span class="ty">Point</span>&amp; b) <span class="kw">const</span> { <span class="kw">return</span> {x+b.x, y+b.y}; }
+    <span class="ty">Point</span> <span class="kw">operator</span>-(<span class="kw">const</span> <span class="ty">Point</span>&amp; b) <span class="kw">const</span> { <span class="kw">return</span> {x-b.x, y-b.y}; }
+    <span class="ty">Point</span> <span class="kw">operator</span>*(<span class="ty">double</span> k) <span class="kw">const</span> { <span class="kw">return</span> {x*k, y*k}; }
+    <span class="ty">Point</span> <span class="kw">operator</span>/(<span class="ty">double</span> k) <span class="kw">const</span> { <span class="kw">return</span> {x/k, y/k}; }
+    <span class="ty">bool</span>  <span class="kw">operator</span>==(<span class="kw">const</span> <span class="ty">Point</span>&amp; b) <span class="kw">const</span> {
+        <span class="kw">return</span> <span class="fn">fabs</span>(x-b.x)&lt;eps &amp;&amp; <span class="fn">fabs</span>(y-b.y)&lt;eps;
+    }
+};
+
+<span class="cm">// 点积</span>
+<span class="ty">double</span> <span class="fn">dot</span>(<span class="ty">Point</span> a, <span class="ty">Point</span> b) { <span class="kw">return</span> a.x*b.x + a.y*b.y; }
+
+<span class="cm">// 叉积</span>
+<span class="ty">double</span> <span class="fn">cross</span>(<span class="ty">Point</span> a, <span class="ty">Point</span> b) { <span class="kw">return</span> a.x*b.y - a.y*b.x; }
+<span class="ty">double</span> <span class="fn">cross</span>(<span class="ty">Point</span> A, <span class="ty">Point</span> B, <span class="ty">Point</span> C) { <span class="kw">return</span> <span class="fn">cross</span>(B-A, C-A); }
+
+<span class="cm">// 向量模长</span>
+<span class="ty">double</span> <span class="fn">len</span>(<span class="ty">Point</span> a) { <span class="kw">return</span> <span class="fn">sqrt</span>(<span class="fn">dot</span>(a,a)); }
+
+<span class="cm">// 两点距离</span>
+<span class="ty">double</span> <span class="fn">dist</span>(<span class="ty">Point</span> a, <span class="ty">Point</span> b) { <span class="kw">return</span> <span class="fn">len</span>(a-b); }
+
+<span class="cm">// 向量夹角 (弧度)</span>
+<span class="ty">double</span> <span class="fn">angle</span>(<span class="ty">Point</span> a, <span class="ty">Point</span> b) {
+    <span class="kw">return</span> <span class="fn">acos</span>(<span class="fn">clamp</span>(<span class="fn">dot</span>(a,b)/(<span class="fn">len</span>(a)*<span class="fn">len</span>(b)), -<span class="num">1.0</span>, <span class="num">1.0</span>));
+}
+
+<span class="cm">// 向量旋转 (弧度)</span>
+<span class="ty">Point</span> <span class="fn">rotate</span>(<span class="ty">Point</span> a, <span class="ty">double</span> rad) {
+    <span class="kw">return</span> {a.x*<span class="fn">cos</span>(rad)-a.y*<span class="fn">sin</span>(rad),
+            a.x*<span class="fn">sin</span>(rad)+a.y*<span class="fn">cos</span>(rad)};
+}
+
+<span class="cm">// 方向判断</span>
+<span class="ty">int</span> <span class="fn">orientation</span>(<span class="ty">Point</span> A, <span class="ty">Point</span> B, <span class="ty">Point</span> C) {
+    <span class="ty">double</span> v = <span class="fn">cross</span>(A, B, C);
+    <span class="kw">if</span> (<span class="fn">fabs</span>(v) &lt; eps) <span class="kw">return</span> <span class="num">0</span>;
+    <span class="kw">return</span> (v &gt; <span class="num">0</span>) ? <span class="num">1</span> : -<span class="num">1</span>;
+}
+
+<span class="cm">// 点在线段上</span>
+<span class="ty">bool</span> <span class="fn">onSegment</span>(<span class="ty">Point</span> P, <span class="ty">Point</span> A, <span class="ty">Point</span> B) {
+    <span class="kw">return</span> <span class="fn">fabs</span>(<span class="fn">cross</span>(A,B,P))&lt;eps &amp;&amp; <span class="fn">dot</span>(A-P,B-P)&lt;eps;
+}
+
+<span class="cm">// 线段相交</span>
+<span class="ty">bool</span> <span class="fn">segIntersect</span>(<span class="ty">Point</span> A, <span class="ty">Point</span> B, <span class="ty">Point</span> C, <span class="ty">Point</span> D) {
+    <span class="ty">double</span> d1=<span class="fn">cross</span>(A,B,C), d2=<span class="fn">cross</span>(A,B,D);
+    <span class="ty">double</span> d3=<span class="fn">cross</span>(C,D,A), d4=<span class="fn">cross</span>(C,D,B);
+    <span class="kw">if</span>(((d1&gt;eps&amp;&amp;d2&lt;-eps)||(d1&lt;-eps&amp;&amp;d2&gt;eps))
+     &amp;&amp;((d3&gt;eps&amp;&amp;d4&lt;-eps)||(d3&lt;-eps&amp;&amp;d4&gt;eps))) <span class="kw">return</span> <span class="kw">true</span>;
+    <span class="kw">if</span>(<span class="fn">fabs</span>(d1)&lt;eps &amp;&amp; <span class="fn">onSegment</span>(C,A,B)) <span class="kw">return</span> <span class="kw">true</span>;
+    <span class="kw">if</span>(<span class="fn">fabs</span>(d2)&lt;eps &amp;&amp; <span class="fn">onSegment</span>(D,A,B)) <span class="kw">return</span> <span class="kw">true</span>;
+    <span class="kw">if</span>(<span class="fn">fabs</span>(d3)&lt;eps &amp;&amp; <span class="fn">onSegment</span>(A,C,D)) <span class="kw">return</span> <span class="kw">true</span>;
+    <span class="kw">if</span>(<span class="fn">fabs</span>(d4)&lt;eps &amp;&amp; <span class="fn">onSegment</span>(B,C,D)) <span class="kw">return</span> <span class="kw">true</span>;
+    <span class="kw">return</span> <span class="kw">false</span>;
+}
+
+<span class="cm">// 直线交点</span>
+<span class="ty">Point</span> <span class="fn">lineIntersect</span>(<span class="ty">Point</span> A, <span class="ty">Point</span> B, <span class="ty">Point</span> C, <span class="ty">Point</span> D) {
+    <span class="ty">Point</span> v1=B-A, v2=D-C;
+    <span class="ty">double</span> t = <span class="fn">cross</span>(C-A, v2) / <span class="fn">cross</span>(v1, v2);
+    <span class="kw">return</span> A + v1*t;
+}
+
+<span class="cm">// 点到直线距离</span>
+<span class="ty">double</span> <span class="fn">pointToLine</span>(<span class="ty">Point</span> P, <span class="ty">Point</span> A, <span class="ty">Point</span> B) {
+    <span class="kw">return</span> <span class="fn">fabs</span>(<span class="fn">cross</span>(B-A, P-A)) / <span class="fn">len</span>(B-A);
+}
+
+<span class="cm">// 点到线段距离</span>
+<span class="ty">double</span> <span class="fn">pointToSeg</span>(<span class="ty">Point</span> P, <span class="ty">Point</span> A, <span class="ty">Point</span> B) {
+    <span class="kw">if</span>(A==B) <span class="kw">return</span> <span class="fn">dist</span>(P,A);
+    <span class="ty">double</span> t = <span class="fn">dot</span>(B-A, P-A) / <span class="fn">dot</span>(B-A, B-A);
+    <span class="kw">if</span>(t&lt;<span class="num">0</span>) <span class="kw">return</span> <span class="fn">dist</span>(P,A);
+    <span class="kw">if</span>(t&gt;<span class="num">1</span>) <span class="kw">return</span> <span class="fn">dist</span>(P,B);
+    <span class="kw">return</span> <span class="fn">pointToLine</span>(P,A,B);
+}
+
+<span class="cm">// 多边形面积</span>
+<span class="ty">double</span> <span class="fn">polygonArea</span>(<span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt;&amp; P) {
+    <span class="ty">double</span> s = <span class="num">0</span>;
+    <span class="ty">int</span> n = P.<span class="fn">size</span>();
+    <span class="kw">for</span>(<span class="ty">int</span> i=<span class="num">0</span>; i&lt;n; i++) s += <span class="fn">cross</span>(P[i], P[(i+<span class="num">1</span>)%n]);
+    <span class="kw">return</span> <span class="fn">fabs</span>(s) / <span class="num">2.0</span>;
+}</code></pre>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 8: 经典例题 -->
+  <!-- ============================== -->
+  <div class="section" id="problems">
+    <h2>经典例题</h2>
+
+    <div class="problem">
+      <div class="problem-title">POJ 2318 - TOYS</div>
+      <p>给定一个矩形区域和若干隔板，求每个子区域内的玩具数量。使用叉积判断点在直线的哪一侧，配合二分查找。</p>
+      <span class="tag tag-base">叉积</span>
+      <span class="tag tag-mid">二分</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">POJ 3304 - Segments</div>
+      <p>判断是否存在一条直线与所有给定线段相交。枚举所有端点对作为候选直线方向，验证每条线段是否与之相交。</p>
+      <span class="tag tag-base">线段相交</span>
+      <span class="tag tag-mid">枚举</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">POJ 1265 - Area</div>
+      <p>给定格点多边形，求其面积、内部格点数和边界格点数。使用 Pick 定理：<code>S = I + B/2 - 1</code>。</p>
+      <span class="tag tag-base">多边形面积</span>
+      <span class="tag tag-math">Pick定理</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">HDU 1086 - Line Segments Intersection</div>
+      <p>统计 n 条线段中相交的对数。直接 O(n^2) 枚举所有线段对，使用跨立实验判断。</p>
+      <span class="tag tag-easy">线段相交</span>
+      <span class="tag tag-base">枚举</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P1331 - 海战</div>
+      <p>在网格图中判断船只形状是否合法（矩形）。可以用叉积思想辅助判断，或直接检查 2x2 子矩阵。</p>
+      <span class="tag tag-easy">基础几何</span>
+      <span class="tag tag-base">网格</span>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">Pick 定理</div>
+      <p>对于顶点都在格点上的简单多边形，面积 <code>S</code>、内部格点数 <code>I</code>、边界格点数 <code>B</code> 满足：<code>S = I + B/2 - 1</code>。边界格点数可以通过计算每条边上 gcd(dx, dy) 得到。</p>
+    </div>
+  </div>
+
+</div>
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

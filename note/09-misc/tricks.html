@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>常用技巧 - ACM 算法笔记</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="container">
+
+  <!-- 面包屑导航 -->
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#misc">杂项</a> &gt;
+    常用技巧
+  </div>
+
+  <!-- 页面标题 -->
+  <div class="page-header">
+    <h1>常用技巧</h1>
+    <div class="subtitle">竞赛中高频使用的实用技巧 — 离散化、快速读入、对拍、随机化、卡常</div>
+    <div class="tags">
+      <span class="tag tag-base">杂项技巧</span>
+      <span class="tag tag-mid">实用工具</span>
+      <span class="tag tag-hard">卡常优化</span>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#discretize">离散化 (Coordinate Compression)</a></li>
+      <li><a href="#fastio">读入优化 (Fast I/O)</a></li>
+      <li><a href="#stresstest">对拍 (Stress Testing)</a></li>
+      <li><a href="#random">随机化算法</a></li>
+      <li><a href="#macros">常用宏定义</a></li>
+      <li><a href="#constant">卡常技巧</a></li>
+    </ul>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 1. 离散化 -->
+  <!-- ============================================================ -->
+  <div class="section" id="discretize">
+    <h2>1. 离散化 (Coordinate Compression)</h2>
+
+    <p>离散化是将值域很大的数据映射到一个连续的小值域中，同时保持原有大小关系不变。典型场景：值域为 10^9 但实际只有 10^5 个不同的值，直接开数组会爆内存，但离散化后可以用线段树、树状数组等数据结构处理。</p>
+
+    <h3>1.1 基本思想</h3>
+    <div class="steps">
+      <div class="step">收集所有需要离散化的值，放入数组</div>
+      <div class="step">排序并去重</div>
+      <div class="step">用二分查找将原值映射为下标（从 1 开始）</div>
+    </div>
+
+    <h3>1.2 手动实现</h3>
+    <pre><code><span class="cm">// 离散化模板 — 手动实现</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> MAXN = <span class="num">100005</span>;
+<span class="ty">int</span> a[MAXN];           <span class="cm">// 原始数据</span>
+<span class="ty">int</span> b[MAXN];           <span class="cm">// 去重后的有序值</span>
+<span class="ty">int</span> n, m;              <span class="cm">// n: 数据个数, m: 去重后个数</span>
+
+<span class="cm">// 离散化：将 x 映射到 [1, m] 的整数</span>
+<span class="ty">int</span> <span class="fn">discretize</span>(<span class="ty">int</span> x) {
+    <span class="kw">return</span> <span class="fn">lower_bound</span>(b + <span class="num">1</span>, b + m + <span class="num">1</span>, x) - b;
+}
+
+<span class="ty">void</span> <span class="fn">build</span>() {
+    <span class="cm">// 1. 复制并排序</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) b[i] = a[i];
+    <span class="fn">sort</span>(b + <span class="num">1</span>, b + n + <span class="num">1</span>);
+    <span class="cm">// 2. 去重</span>
+    m = <span class="fn">unique</span>(b + <span class="num">1</span>, b + n + <span class="num">1</span>) - b - <span class="num">1</span>;
+}
+
+<span class="cm">// 使用示例</span>
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;n);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;a[i]);
+    <span class="fn">build</span>();
+
+    <span class="cm">// 将原数组所有值离散化</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="ty">int</span> idx = <span class="fn">discretize</span>(a[i]);  <span class="cm">// a[i] 映射为 idx</span>
+        <span class="cm">// 现在可以用 idx 作为下标访问树状数组等</span>
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <h3>1.3 用 vector 的简洁版本</h3>
+    <pre><code><span class="cm">// 离散化 — vector 简洁版</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; vals;
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; a(n);
+
+<span class="cm">// 收集所有值</span>
+<span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+    <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;a[i]);
+    vals.<span class="fn">push_back</span>(a[i]);
+}
+
+<span class="cm">// 排序去重</span>
+<span class="fn">sort</span>(vals.<span class="fn">begin</span>(), vals.<span class="fn">end</span>());
+vals.<span class="fn">erase</span>(<span class="fn">unique</span>(vals.<span class="fn">begin</span>(), vals.<span class="fn">end</span>()), vals.<span class="fn">end</span>());
+
+<span class="cm">// 映射</span>
+<span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+    a[i] = <span class="fn">lower_bound</span>(vals.<span class="fn">begin</span>(), vals.<span class="fn">end</span>(), a[i]) - vals.<span class="fn">begin</span>() + <span class="num">1</span>;
+}</code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">常见应用场景</div>
+      <p>区间求和/覆盖问题（如 POJ 2528 海报问题）、树状数组/线段树 + 值域压缩、区间离散化（将端点排序后映射为相邻整数对）。</p>
+    </div>
+
+    <div class="complexity">
+      <span class="label">预处理</span>
+      <span class="value">O(n log n)</span>
+      <span class="label">排序 + 去重</span>
+    </div>
+    <div class="complexity">
+      <span class="label">单次查询</span>
+      <span class="value">O(log n)</span>
+      <span class="label">二分查找</span>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 2. 读入优化 -->
+  <!-- ============================================================ -->
+  <div class="section" id="fastio">
+    <h2>2. 读入优化 (Fast I/O)</h2>
+
+    <p>在竞赛中，当输入数据量达到 10^6 级别时，<code>scanf</code> 甚至 <code>cin</code> 可能成为瓶颈。此时需要手写读入优化来加速。</p>
+
+    <h3>2.1 getchar 读入整数</h3>
+    <p>最基础的快读模板，利用 <code>getchar</code> 逐字符读入，比 <code>scanf</code> 快 2~3 倍。</p>
+
+    <pre><code><span class="cm">// 快读模板 — getchar 版</span>
+<span class="kw">inline</span> <span class="ty">int</span> <span class="fn">read</span>() {
+    <span class="ty">int</span> x = <span class="num">0</span>, f = <span class="num">1</span>;
+    <span class="ty">char</span> ch = <span class="fn">getchar</span>();
+    <span class="kw">while</span> (ch &lt; <span class="str">'0'</span> || ch > <span class="str">'9'</span>) {
+        <span class="kw">if</span> (ch == <span class="str">'-'</span>) f = <span class="num">-1</span>;
+        ch = <span class="fn">getchar</span>();
+    }
+    <span class="kw">while</span> (ch >= <span class="str">'0'</span> &amp;&amp; ch &lt;= <span class="str">'9'</span>) {
+        x = x * <span class="num">10</span> + ch - <span class="str">'0'</span>;
+        ch = <span class="fn">getchar</span>();
+    }
+    <span class="kw">return</span> x * f;
+}
+
+<span class="cm">// 使用: int a = read();</span></code></pre>
+
+    <h3>2.2 fread 缓冲区读入（最快）</h3>
+    <p>使用 <code>fread</code> 将大量数据一次性读入内存缓冲区，再从缓冲区逐字节解析。这是 C++ 中最快的读入方式，比 <code>scanf</code> 快 5~10 倍。</p>
+
+    <pre><code><span class="cm">// fread 缓冲区快读 — 竞赛最快读入</span>
+<span class="kw">namespace</span> FastIO {
+    <span class="kw">const int</span> BUFSIZE = <span class="num">1</span> &lt;&lt; <span class="num">20</span>;  <span class="cm">// 1MB 缓冲区</span>
+    <span class="ty">char</span> buf[BUFSIZE], *p1 = buf, *p2 = buf;
+
+    <span class="kw">inline</span> <span class="ty">char</span> <span class="fn">getChar</span>() {
+        <span class="kw">if</span> (p1 == p2) {
+            p1 = buf;
+            p2 = buf + <span class="fn">fread</span>(buf, <span class="num">1</span>, BUFSIZE, stdin);
+            <span class="kw">if</span> (p1 == p2) <span class="kw">return</span> EOF;
+        }
+        <span class="kw">return</span> *p1++;
+    }
+
+    <span class="kw">inline</span> <span class="ty">int</span> <span class="fn">read</span>() {
+        <span class="ty">int</span> x = <span class="num">0</span>, f = <span class="num">1</span>;
+        <span class="ty">char</span> ch = <span class="fn">getChar</span>();
+        <span class="kw">while</span> (ch &lt; <span class="str">'0'</span> || ch > <span class="str">'9'</span>) {
+            <span class="kw">if</span> (ch == <span class="str">'-'</span>) f = <span class="num">-1</span>;
+            ch = <span class="fn">getChar</span>();
+        }
+        <span class="kw">while</span> (ch >= <span class="str">'0'</span> &amp;&amp; ch &lt;= <span class="str">'9'</span>) {
+            x = x * <span class="num">10</span> + (ch - <span class="str">'0'</span>);
+            ch = <span class="fn">getChar</span>();
+        }
+        <span class="kw">return</span> x * f;
+    }
+}
+<span class="kw">using</span> FastIO::<span class="fn">read</span>;</code></pre>
+
+    <h3>2.3 快速输出</h3>
+    <pre><code><span class="cm">// 快写模板 — putchar 版</span>
+<span class="ty">char</span> outbuf[<span class="num">1</span> &lt;&lt; <span class="num">20</span>];
+<span class="ty">int</span> outpos;
+
+<span class="kw">inline</span> <span class="ty">void</span> <span class="fn">writeInt</span>(<span class="ty">int</span> x) {
+    <span class="kw">if</span> (x &lt; <span class="num">0</span>) { <span class="fn">putchar</span>(<span class="str">'-'</span>); x = -x; }
+    <span class="kw">if</span> (x == <span class="num">0</span>) { <span class="fn">putchar</span>(<span class="str">'0'</span>); <span class="kw">return</span>; }
+    <span class="ty">char</span> tmp[<span class="num">20</span>];
+    <span class="ty">int</span> len = <span class="num">0</span>;
+    <span class="kw">while</span> (x) { tmp[len++] = x % <span class="num">10</span> + <span class="str">'0'</span>; x /= <span class="num">10</span>; }
+    <span class="kw">while</span> (len--) <span class="fn">putchar</span>(tmp[len]);
+}
+
+<span class="cm">// 使用: writeInt(ans); putchar('\n');</span></code></pre>
+
+    <h3>2.4 各读入方式速度对比</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>读入方式</th>
+            <th>读入 10^6 个整数</th>
+            <th>相对速度</th>
+            <th>备注</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>cin</code> (无优化)</td>
+            <td>~2000ms</td>
+            <td>1x</td>
+            <td>最慢</td>
+          </tr>
+          <tr>
+            <td><code>cin + sync_with_stdio</code></td>
+            <td>~400ms</td>
+            <td>5x</td>
+            <td>加一行优化即可</td>
+          </tr>
+          <tr>
+            <td><code>scanf</code></td>
+            <td>~350ms</td>
+            <td>6x</td>
+            <td>标准 C 读入</td>
+          </tr>
+          <tr>
+            <td><code>getchar</code> 快读</td>
+            <td>~150ms</td>
+            <td>13x</td>
+            <td>手写快读</td>
+          </tr>
+          <tr>
+            <td><code>fread</code> 缓冲区</td>
+            <td>~50ms</td>
+            <td>40x</td>
+            <td>最快方案</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">注意事项</div>
+      <p>使用 fread 缓冲区读入时，不能混用 <code>scanf</code> 或 <code>cin</code>，否则会导致数据错乱。输出同理，手写快写后不要混用 <code>printf</code> / <code>cout</code>。</p>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">最简方案</div>
+      <p>如果不想手写快读，在 <code>main</code> 函数开头加一行 <code>ios::sync_with_stdio(false); cin.tie(nullptr);</code> 就能让 <code>cin/cout</code> 接近 <code>scanf/printf</code> 的速度。</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 3. 对拍 -->
+  <!-- ============================================================ -->
+  <div class="section" id="stresstest">
+    <h2>3. 对拍 (Stress Testing)</h2>
+
+    <p>对拍是竞赛中最实用的调试技巧之一。核心思想是：写一个暴力解法作为标准答案，随机生成大量测试数据，对比暴力解法和优化解法的输出。一旦两者不一致，就找到了一个能暴露 bug 的测试用例。</p>
+
+    <h3>3.1 对拍流程</h3>
+    <div class="diagram">
+      <pre>
+  ┌─────────┐     ┌─────────┐
+  │ 随机数据 │────→│ 暴力解法 │──→ output1
+  │ 生成器   │     │ (slow)  │
+  └────┬────┘     └─────────┘
+       │
+       │          ┌─────────┐
+       └────────→│ 优化解法 │──→ output2
+                  │ (fast)  │
+                  └─────────┘
+                        │
+                   ┌────┴────┐
+                   │ 比较输出 │
+                   └────┬────┘
+                        │
+               ┌────────┴────────┐
+               │                 │
+          output1==output2    output1!=output2
+           继续测试           输出差异 + 数据
+      </pre>
+    </div>
+
+    <h3>3.2 随机数据生成器</h3>
+    <pre><code><span class="cm">// data.cpp — 随机数据生成器</span>
+<span class="pp">#include</span> <span class="str">&lt;cstdio&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;cstdlib&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;ctime&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">srand</span>(<span class="fn">time</span>(<span class="num">0</span>));
+
+    <span class="cm">// 根据题目要求生成随机数据</span>
+    <span class="ty">int</span> n = <span class="fn">rand</span>() % <span class="num">100</span> + <span class="num">1</span>;     <span class="cm">// 随机 n in [1, 100]</span>
+    <span class="fn">printf</span>(<span class="str">"%d\n"</span>, n);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="ty">int</span> x = <span class="fn">rand</span>() % <span class="num">1000</span>;    <span class="cm">// 随机数组元素</span>
+        <span class="fn">printf</span>(<span class="str">"%d "</span>, x);
+    }
+    <span class="fn">puts</span>(<span class="str">""</span>);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <h3>3.3 对拍脚本 (Windows bat)</h3>
+    <pre><code><span class="cm">@echo off</span>
+<span class="cm">:: stress_test.bat — Windows 对拍脚本</span>
+<span class="cm">:: 先编译: g++ data.cpp -o data.exe</span>
+<span class="cm">::         g++ brute.cpp -o brute.exe</span>
+<span class="cm">::         g++ solution.cpp -o solution.exe</span>
+
+<span class="kw">setlocal</span> enabledelayedexpansion
+
+<span class="kw">for</span> /L %%i <span class="kw">in</span> (1,1,10000) <span class="kw">do</span> (
+    data.exe > in.txt
+    brute.exe &lt; in.txt > out1.txt
+    solution.exe &lt; in.txt > out2.txt
+    fc out1.txt out2.txt > nul
+    <span class="kw">if</span> errorlevel 1 (
+        <span class="kw">echo</span> <span class="str">WA found at test %%i</span>
+        <span class="kw">echo</span> Input:
+        type in.txt
+        <span class="kw">echo</span> Expected:
+        type out1.txt
+        <span class="kw">echo</span> Got:
+        type out2.txt
+        <span class="kw">goto</span> :end
+    )
+)
+<span class="kw">echo</span> <span class="str">All tests passed!</span>
+:end</code></pre>
+
+    <h3>3.4 对拍脚本 (Linux bash)</h3>
+    <pre><code><span class="cm">#!/bin/bash</span>
+<span class="cm"># stress_test.sh — Linux 对拍脚本</span>
+
+g++ -o data data.cpp
+g++ -o brute brute.cpp
+g++ -o solution solution.cpp
+
+<span class="kw">for</span> ((i=1; i&lt;=10000; i++)); <span class="kw">do</span>
+    ./data > in.txt
+    ./brute &lt; in.txt > out1.txt
+    ./solution &lt; in.txt > out2.txt
+
+    <span class="kw">if</span> ! diff -q out1.txt out2.txt > /dev/null; <span class="kw">then</span>
+        <span class="kw">echo</span> <span class="str">"WA found at test $i"</span>
+        <span class="kw">echo</span> <span class="str">"Input:"</span>
+        cat in.txt
+        <span class="kw">echo</span> <span class="str">"Expected:"</span>
+        cat out1.txt
+        <span class="kw">echo</span> <span class="str">"Got:"</span>
+        cat out2.txt
+        <span class="kw">exit</span> 1
+    <span class="kw">fi</span>
+<span class="kw">done</span>
+<span class="kw">echo</span> <span class="str">"All tests passed!"</span></code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">对拍技巧</div>
+      <p>暴力解法不需要效率，只需要正确性。可以用最朴素的方法实现，哪怕时间复杂度很差。随机数据的范围要覆盖边界情况（如 n=1, n=max, 全 0, 全相同值等）。</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 4. 随机化算法 -->
+  <!-- ============================================================ -->
+  <div class="section" id="random">
+    <h2>4. 随机化算法</h2>
+
+    <p>随机化算法在竞赛中有多种应用：随机贪心、随机增量法、模拟退火等。当确定性算法难以找到最优解或容易陷入局部最优时，随机化往往能给出不错的近似解。</p>
+
+    <h3>4.1 随机数生成</h3>
+    <pre><code><span class="cm">// C++11 随机数生成 — 推荐用法</span>
+<span class="pp">#include</span> <span class="str">&lt;random&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;chrono&gt;</span>
+
+<span class="cm">// 用高精度时钟作为种子</span>
+<span class="ty">mt19937</span> <span class="fn">rng</span>(<span class="fn">chrono::steady_clock::now</span>().<span class="fn">time_since_epoch</span>().<span class="fn">count</span>());
+
+<span class="cm">// 生成 [l, r] 范围内的随机整数</span>
+<span class="ty">int</span> <span class="fn">randInt</span>(<span class="ty">int</span> l, <span class="ty">int</span> r) {
+    <span class="kw">return</span> <span class="fn">uniform_int_distribution</span>&lt;<span class="ty">int</span>&gt;(l, r)(rng);
+}
+
+<span class="cm">// 生成 [0, 1) 的随机浮点数</span>
+<span class="ty">double</span> <span class="fn">randDouble</span>() {
+    <span class="kw">return</span> <span class="fn">uniform_real_distribution</span>&lt;<span class="ty">double</span>&gt;(<span class="num">0</span>, <span class="num">1</span>)(rng);
+}
+
+<span class="cm">// 随机打乱数组</span>
+<span class="fn">shuffle</span>(a, a + n, rng);</code></pre>
+
+    <h3>4.2 随机贪心 / 随机重启</h3>
+    <p>对于容易陷入局部最优的贪心算法，可以多次随机初始化后执行贪心，取所有结果中的最优解。</p>
+
+    <pre><code><span class="cm">// 随机贪心示例：求平面上最近点对（近似）</span>
+<span class="ty">double</span> <span class="fn">randomizedGreedy</span>(<span class="ty">vector</span>&lt;<span class="ty">Point</span>&gt;&amp; pts) {
+    <span class="ty">double</span> best = <span class="num">1e18</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> iter = <span class="num">0</span>; iter &lt; <span class="num">100</span>; iter++) {
+        <span class="fn">shuffle</span>(pts.<span class="fn">begin</span>(), pts.<span class="fn">end</span>(), rng);
+        <span class="ty">double</span> cur = <span class="fn">greedySolve</span>(pts);  <span class="cm">// 某种贪心策略</span>
+        best = <span class="fn">min</span>(best, cur);
+    }
+    <span class="kw">return</span> best;
+}</code></pre>
+
+    <h3>4.3 模拟退火 (Simulated Annealing)</h3>
+    <p>模拟退火是一种通用的随机化优化算法，灵感来自金属退火过程。核心思想是：以一定概率接受比当前解更差的解，从而有机会跳出局部最优，随着"温度"下降，接受差解的概率逐渐降低。</p>
+
+    <div class="steps">
+      <div class="step">初始化一个解和初始温度 T</div>
+      <div class="step">在当前解的邻域中随机选择一个新解</div>
+      <div class="step">如果新解更优，直接接受；否则以概率 exp(-delta/T) 接受</div>
+      <div class="step">降低温度 T（通常乘以一个衰减系数，如 0.99）</div>
+      <div class="step">重复步骤 2~4 直到温度足够低</div>
+    </div>
+
+    <pre><code><span class="cm">// 模拟退火通用框架</span>
+<span class="pp">#include</span> <span class="str">&lt;cmath&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;ctime&gt;</span>
+
+<span class="ty">double</span> T;                    <span class="cm">// 当前温度</span>
+<span class="kw">const double</span> T_MIN = <span class="num">1e-8</span>;  <span class="cm">// 终止温度</span>
+<span class="kw">const double</span> DECAY = <span class="num">0.997</span>; <span class="cm">// 衰减系数</span>
+<span class="kw">const double</span> EPS = <span class="num">1e-10</span>;
+
+<span class="ty">double</span> bestAns, curAns;
+State bestState, curState;
+
+<span class="ty">double</span> <span class="fn">evaluate</span>(State&amp; s);             <span class="cm">// 评估函数</span>
+State <span class="fn">getNeighbor</span>(State&amp; s);            <span class="cm">// 邻域操作</span>
+
+<span class="ty">void</span> <span class="fn">simulatedAnnealing</span>(<span class="ty">double</span> initT) {
+    T = initT;
+    curAns = <span class="fn">evaluate</span>(curState);
+    bestAns = curAns;
+    bestState = curState;
+
+    <span class="kw">while</span> (T > T_MIN) {
+        State newState = <span class="fn">getNeighbor</span>(curState);
+        <span class="ty">double</span> newAns = <span class="fn">evaluate</span>(newState);
+        <span class="ty">double</span> delta = newAns - curAns;
+
+        <span class="cm">// 更优则接受，否则以概率 exp(delta/T) 接受</span>
+        <span class="kw">if</span> (delta > <span class="num">0</span> || <span class="fn">exp</span>(delta / T) > <span class="fn">randDouble</span>()) {
+            curAns = newAns;
+            curState = newState;
+            <span class="kw">if</span> (curAns > bestAns) {   <span class="cm">// 求最大值</span>
+                bestAns = curAns;
+                bestState = curState;
+            }
+        }
+        T *= DECAY;
+    }
+}</code></pre>
+
+    <div class="box box-info">
+      <div class="box-title">模拟退火参数调优</div>
+      <p><strong>初始温度：</strong>应足够大，使得初期大多数差解都被接受。 <strong>衰减系数：</strong>通常取 0.95~0.999，越大越慢但效果越好。 <strong>终止温度：</strong>当 T 小于某个阈值时停止。 <strong>多次运行：</strong>模拟退火结果具有随机性，通常运行多次取最优。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P1337 - <a href="https://www.luogu.com.cn/problem/P1337" target="_blank">[JSOI2004] 平衡点 / 吊打XXX</a></div>
+      <p>经典模拟退火入门题。在平面上有 n 个点，每个点有一个权值，找到一个点使所有点到该点的加权距离之和最小。</p>
+      <p><strong>思路：</strong>模拟退火，随机移动当前点的位置，评估函数为加权距离之和的相反数（因为求最小值）。</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 5. 常用宏定义 -->
+  <!-- ============================================================ -->
+  <div class="section" id="macros">
+    <h2>5. 常用宏定义</h2>
+
+    <p>宏定义可以简化代码书写，减少重复。以下是一些竞赛中常用的宏定义。</p>
+
+    <h3>5.1 基础宏</h3>
+    <pre><code><span class="cm">// 基础宏定义</span>
+<span class="pp">#define</span> <span class="fn">pb</span>   push_back
+<span class="pp">#define</span> <span class="fn">eb</span>   emplace_back
+<span class="pp">#define</span> <span class="fn">mp</span>   make_pair
+<span class="pp">#define</span> <span class="fn">fi</span>   first
+<span class="pp">#define</span> <span class="fn">se</span>   second
+<span class="pp">#define</span> <span class="fn">ALL</span>(x) (x).begin(), (x).end()
+<span class="pp">#define</span> <span class="fn">RALL</span>(x) (x).rbegin(), (x).rend()
+<span class="pp">#define</span> <span class="fn">SZ</span>(x)  (<span class="ty">int</span>)(x).size()
+
+<span class="cm">// min/max 防溢出</span>
+<span class="pp">#define</span> <span class="fn">min3</span>(a,b,c) min(a, min(b,c))
+<span class="pp">#define</span> <span class="fn">max3</span>(a,b,c) max(a, max(b,c))
+
+<span class="cm">// 快速类型声明</span>
+<span class="kw">typedef</span> <span class="ty">long long</span> <span class="ty">ll</span>;
+<span class="kw">typedef</span> <span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt; <span class="ty">pii</span>;
+<span class="kw">typedef</span> <span class="ty">pair</span>&lt;<span class="ty">ll</span>,<span class="ty">ll</span>&gt; <span class="ty">pll</span>;
+<span class="kw">typedef</span> <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="ty">vi</span>;
+<span class="kw">typedef</span> <span class="ty">vector</span>&lt;<span class="ty">ll</span>&gt; <span class="ty">vl</span>;</code></pre>
+
+    <h3>5.2 调试宏</h3>
+    <pre><code><span class="cm">// 调试宏 — 本地调试时开启，提交时注释掉</span>
+<span class="pp">#define</span> LOCAL
+<span class="pp">#ifdef</span> LOCAL
+<span class="pp">#define</span> <span class="fn">dbg</span>(x) cerr &lt;&lt; <span class="str">"["</span> &lt;&lt; <span class="fn">__LINE__</span> &lt;&lt; <span class="str">"] "</span> &lt;&lt; <span class="str">"#x"</span> &lt;&lt; <span class="str">" = "</span> &lt;&lt; (x) &lt;&lt; endl
+<span class="pp">#define</span> <span class="fn">dbgv</span>(v) cerr &lt;&lt; <span class="str">"["</span> &lt;&lt; <span class="fn">__LINE__</span> &lt;&lt; <span class="str">"] "</span> &lt;&lt; <span class="str">"#v"</span> &lt;&lt; <span class="str">" = ["</span>; \
+    <span class="kw">for</span> (<span class="ty">int</span> _i = <span class="num">0</span>; _i &lt; (v).size(); _i++) cerr &lt;&lt; (v)[_i] &lt;&lt; (<span class="str">", "</span>[_i+<span class="num">1</span>==(v).size()]); \
+    cerr &lt;&lt; <span class="str">"]"</span> &lt;&lt; endl
+<span class="pp">#else</span>
+<span class="pp">#define</span> <span class="fn">dbg</span>(x)
+<span class="pp">#define</span> <span class="fn">dbgv</span>(v)
+<span class="pp">#endif</span>
+
+<span class="cm">// 使用示例</span>
+<span class="ty">int</span> x = <span class="num">42</span>;
+<span class="fn">dbg</span>(x);                     <span class="cm">// 输出: [行号] #x = 42</span>
+<span class="ty">vi</span> v = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>};
+<span class="fn">dbgv</span>(v);                    <span class="cm">// 输出: [行号] #v = [1, 2, 3]</span></code></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">提交前务必</div>
+      <p>删除或注释掉 <code>#define LOCAL</code>，否则调试输出会影响性能和正确性。更安全的做法是用编译选项 <code>-DLOCAL</code> 控制，而非写在源码中。</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 6. 卡常技巧 -->
+  <!-- ============================================================ -->
+  <div class="section" id="constant">
+    <h2>6. 卡常技巧</h2>
+
+    <p>当算法时间复杂度正确但常数太大而 TLE 时，就需要使用卡常技巧。卡常的本质是减少 CPU 指令数和缓存未命中次数。</p>
+
+    <h3>6.1 编译器优化</h3>
+    <pre><code><span class="cm">// 编译命令：加上优化选项</span>
+<span class="cm">// g++ -O2 -std=c++17 -o solution solution.cpp</span>
+
+<span class="cm">// 常见编译优化选项：</span>
+<span class="cm">// -O2    开启几乎所有安全的优化</span>
+<span class="cm">// -O3    更激进的优化（可能增大代码体积）</span>
+<span class="cm">// -Ofast 在 O3 基础上放松浮点精度</span>
+<span class="cm">// -march=native  针对本机 CPU 架构优化</span></code></pre>
+
+    <h3>6.2 #pragma 指令</h3>
+    <pre><code><span class="cm">// GCC 特有的编译器指令</span>
+
+<span class="cm">// 开启 O2 优化（部分 OJ 支持）</span>
+<span class="pp">#pragma</span> GCC optimize(<span class="str">"O2"</span>)
+
+<span class="cm">// 循环展开提示</span>
+<span class="pp">#pragma</span> GCC optimize(<span class="str">"unroll-loops"</span>)
+
+<span class="cm">// 针对本机 CPU 优化</span>
+<span class="pp">#pragma</span> GCC target(<span class="str">"sse,sse2,sse3,ssse3,sse4,popcnt,abm,mmx,avx"</span>)
+
+<span class="cm">// 组合使用</span>
+<span class="pp">#pragma</span> GCC optimize(<span class="str">"Ofast,unroll-loops"</span>)
+<span class="pp">#pragma</span> GCC target(<span class="str">"avx2,bmi,bmi2,lzcnt,popcnt"</span>)</code></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">注意事项</div>
+      <p>部分 OJ 不支持 <code>#pragma</code> 指令，使用前需要确认。某些激进优化（如 <code>-Ofast</code>）可能导致浮点计算不精确。</p>
+    </div>
+
+    <h3>6.3 inline 与 __attribute__</h3>
+    <pre><code><span class="cm">// 强制内联 — 减少函数调用开销</span>
+<span class="kw">inline</span> <span class="ty">int</span> <span class="fn">fastMax</span>(<span class="ty">int</span> a, <span class="ty">int</span> b) {
+    <span class="kw">return</span> a > b ? a : b;
+}
+
+<span class="cm">// GCC 特有：always_inline 强制内联</span>
+<span class="kw">__attribute__</span>((always_inline)) <span class="kw">inline</span> <span class="ty">int</span> <span class="fn">fastMin</span>(<span class="ty">int</span> a, <span class="ty">int</span> b) {
+    <span class="kw">return</span> a &lt; b ? a : b;
+}
+
+<span class="cm">// 热点函数标记 — 提示编译器重点优化</span>
+<span class="kw">__attribute__</span>((hot)) <span class="ty">void</span> <span class="fn">solve</span>() { ... }</code></pre>
+
+    <h3>6.4 位运算优化</h3>
+    <pre><code><span class="cm">// 位运算替代算术运算</span>
+
+<span class="cm">// 乘除 2 的幂</span>
+x &lt;&lt; <span class="num">1</span>    <span class="cm">// 替代 x * 2</span>
+x &gt;&gt; <span class="num">1</span>    <span class="cm">// 替代 x / 2</span>
+
+<span class="cm">// 取模 2 的幂</span>
+x &amp; <span class="num">15</span>    <span class="cm">// 替代 x % 16</span>
+
+<span class="cm">// 判断奇偶</span>
+x &amp; <span class="num">1</span>     <span class="cm">// 替代 x % 2</span>
+
+<span class="cm">// 交换两个数（无需临时变量）</span>
+a ^= b; b ^= a; a ^= b;
+
+<span class="cm">// lowbit: 最低位的 1</span>
+<span class="ty">int</span> <span class="fn">lowbit</span>(<span class="ty">int</span> x) { <span class="kw">return</span> x &amp; (-x); }
+
+<span class="cm">// 判断是否为 2 的幂</span>
+<span class="ty">bool</span> <span class="fn">isPowerOf2</span>(<span class="ty">int</span> x) { <span class="kw">return</span> x &amp;&amp; !(x &amp; (x - <span class="num">1</span>)); }
+
+<span class="cm">// __builtin 系列（GCC 内置函数）</span>
+<span class="fn">__builtin_popcount</span>(x)   <span class="cm">// 二进制中 1 的个数</span>
+<span class="fn">__builtin_clz</span>(x)        <span class="cm">// 前导零个数</span>
+<span class="fn">__builtin_ctz</span>(x)        <span class="cm">// 末尾零个数</span>
+<span class="fn">__builtin_parity</span>(x)     <span class="cm">// 1 的个数的奇偶性</span></code></pre>
+
+    <h3>6.5 缓存友好</h3>
+    <pre><code><span class="cm">// 缓存友好优化</span>
+
+<span class="cm">// 1. 按行遍历二维数组（利用空间局部性）</span>
+<span class="cm">// 好的写法：</span>
+<span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+    <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; m; j++)
+        a[i][j] = <span class="num">0</span>;
+
+<span class="cm">// 差的写法（缓存不友好）：</span>
+<span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; m; j++)
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        a[i][j] = <span class="num">0</span>;
+
+<span class="cm">// 2. 使用连续内存而非指针数组</span>
+<span class="cm">// 好：int a[N][M];</span>
+<span class="cm">// 差：int *a[N]; 每行分别 new</span>
+
+<span class="cm">// 3. 数据对齐</span>
+<span class="kw">struct</span> <span class="ty">__attribute__</span>((aligned(<span class="num">64</span>))) <span class="ty">CacheLine</span> {
+    <span class="ty">int</span> data[<span class="num">16</span>];
+};</code></pre>
+
+    <h3>6.6 其他实用卡常技巧</h3>
+    <pre><code><span class="cm">// 1. register 关键字（C++17 已弃用，但部分编译器仍有效）</span>
+<span class="kw">register</span> <span class="ty">int</span> i;
+
+<span class="cm">// 2. 减少取模操作</span>
+<span class="cm">// 慢：每次加法后取模</span>
+<span class="kw">for</span> (...) { x = (x + a[i]) % MOD; }
+
+<span class="cm">// 快：累积到较大值再取模</span>
+<span class="kw">for</span> (...) {
+    x += a[i];
+    <span class="kw">if</span> (x >= MOD) x -= MOD;  <span class="cm">// 如果确定和 < 2*MOD</span>
+}
+
+<span class="cm">// 3. 用数组替代 map（配合离散化）</span>
+<span class="cm">// 慢：map&lt;int,int&gt; mp;</span>
+<span class="cm">// 快：int mp[MAX]; 配合离散化</span>
+
+<span class="cm">// 4. 手写 memset 替代循环清零</span>
+<span class="fn">memset</span>(a, <span class="num">0</span>, <span class="kw">sizeof</span>(a));
+
+<span class="cm">// 5. 循环展开</span>
+<span class="cm">// 慢：</span>
+<span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) sum += a[i];
+<span class="cm">// 快：</span>
+<span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i + <span class="num">3</span> &lt; n; i += <span class="num">4</span>) {
+    sum += a[i] + a[i+<span class="num">1</span>] + a[i+<span class="num">2</span>] + a[i+<span class="num">3</span>];
+}
+<span class="kw">for</span> (<span class="ty">int</span> i = n - n%<span class="num">4</span>; i &lt; n; i++) sum += a[i];</code></pre>
+
+    <h3>6.7 卡常效果对比</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>技巧</th>
+            <th>效果</th>
+            <th>适用场景</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>#pragma GCC optimize("O2")</code></td>
+            <td>2~5x</td>
+            <td>所有题目</td>
+          </tr>
+          <tr>
+            <td><code>ios::sync_with_stdio(false)</code></td>
+            <td>3~5x</td>
+            <td>IO 密集型</td>
+          </tr>
+          <tr>
+            <td>fread 缓冲区读入</td>
+            <td>5~10x</td>
+            <td>超大输入</td>
+          </tr>
+          <tr>
+            <td>数组替代 map</td>
+            <td>5~20x</td>
+            <td>配合离散化</td>
+          </tr>
+          <tr>
+            <td>减少取模次数</td>
+            <td>1.5~3x</td>
+            <td>模运算密集</td>
+          </tr>
+          <tr>
+            <td>缓存友好遍历</td>
+            <td>2~10x</td>
+            <td>大数组遍历</td>
+          </tr>
+          <tr>
+            <td>位运算优化</td>
+            <td>1.1~1.5x</td>
+            <td>位运算密集</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="box box-hard">
+      <div class="box-title">卡常优先级</div>
+      <p>优化算法 > 减少 IO > 编译器优化 > 数据结构选择 > 缓存优化 > 位运算微优化。不要过早卡常，先确保算法正确且复杂度最优。</p>
+    </div>
+  </div>
+
+</div>
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

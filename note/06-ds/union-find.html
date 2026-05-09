@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>并查集 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+<!-- 面包屑导航 -->
+<div class="breadcrumb">
+  <a href="../index.html">首页</a> &gt; <a href="../index.html">06 数据结构</a> &gt; 并查集
+</div>
+
+<!-- 页面标题 -->
+<div class="page-header">
+  <h1>并查集</h1>
+  <p class="subtitle">Union-Find / Disjoint Set Union (DSU) &mdash; 高效维护不相交集合的合并与查询</p>
+  <div class="tags">
+    <span class="tag tag-base">基础数据结构</span>
+    <span class="tag tag-easy">路径压缩</span>
+    <span class="tag tag-mid">按秩合并</span>
+    <span class="tag tag-mid">带权并查集</span>
+    <span class="tag tag-hard">种类并查集</span>
+  </div>
+</div>
+
+<!-- 目录 -->
+<div class="toc">
+  <h3>目录</h3>
+  <ul>
+    <li><a href="#sec1">一、并查集概述</a></li>
+    <li><a href="#sec2">二、基本实现</a></li>
+    <li><a href="#sec3">三、带权并查集</a></li>
+    <li><a href="#sec4">四、种类并查集</a></li>
+    <li><a href="#sec5">五、回滚并查集 (可撤销)</a></li>
+    <li><a href="#sec6">六、经典例题与练习</a></li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第一节：并查集概述 -->
+<!-- ============================================================ -->
+<div class="section" id="sec1">
+  <h2>一、并查集概述</h2>
+
+  <h3>1.1 什么是并查集</h3>
+  <p>并查集（Disjoint Set Union, DSU）是一种用于管理<strong>不相交集合</strong>（disjoint sets）的数据结构。它支持两种核心操作：</p>
+  <ul>
+    <li><strong>合并（Union）</strong>：将两个集合合并为一个集合</li>
+    <li><strong>查询（Find）</strong>：查询某个元素属于哪个集合（通常用"代表元"表示）</li>
+  </ul>
+  <p>并查集常用于解决<strong>连通性问题</strong>，例如判断两个节点是否在同一连通分量中、动态维护图的连通性等。</p>
+
+  <h3>1.2 核心思想</h3>
+  <p>并查集用<strong>树形结构</strong>表示每个集合：同一棵树上的所有节点属于同一集合，树根即为该集合的"代表元"。</p>
+
+  <div class="diagram">
+    <pre>
+  并查集的森林表示：
+
+  集合 A:          集合 B:
+      1                4
+     / \              /|\
+    2   3            5 6 7
+    |
+    8
+
+  代表元分别为 1 和 4
+  Find(8) = 1, Find(6) = 4
+  Union(3, 6) 后合并为一棵树</pre>
+  </div>
+
+  <h3>1.3 两种优化策略</h3>
+  <p>朴素实现的并查集在极端情况下会退化为链表，时间复杂度退化为 O(n)。通过以下两种优化，可以将均摊复杂度降至近似 O(1)：</p>
+  <div class="table-wrap">
+    <table>
+      <tr><th>优化策略</th><th>核心思想</th><th>效果</th></tr>
+      <tr><td><strong>路径压缩（Path Compression）</strong></td><td>在 Find 时将路径上所有节点直接挂到根节点</td><td>树变得极扁，近似 O(1)</td></tr>
+      <tr><td><strong>按秩合并（Union by Rank/Size）</strong></td><td>合并时将较矮的树挂到较高的树下</td><td>控制树的高度，避免退化</td></tr>
+      <tr><td><strong>两者结合</strong></td><td>同时使用路径压缩和按秩合并</td><td>均摊 O(alpha(n))，alpha 为反阿克曼函数，近似常数</td></tr>
+    </table>
+  </div>
+
+  <div class="complexity"><span class="label">单次操作均摊复杂度</span> <span class="value">O(alpha(n))</span></div>
+  <div class="complexity"><span class="label">alpha(n) 在实际范围</span> <span class="value">&le; 4</span></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第二节：基本实现 -->
+<!-- ============================================================ -->
+<div class="section" id="sec2">
+  <h2>二、基本实现</h2>
+
+  <h3>2.1 数据结构</h3>
+  <p>使用一个 <code>parent[]</code> 数组：<code>parent[i]</code> 表示节点 <code>i</code> 的父节点。若 <code>parent[i] == i</code>，则 <code>i</code> 为根节点（即代表元）。</p>
+  <p>可选地，维护 <code>rank[]</code>（秩）或 <code>size[]</code>（集合大小）用于按秩/大小合并。</p>
+
+  <h3>2.2 路径压缩图解</h3>
+  <div class="diagram">
+    <pre>
+  路径压缩前:              路径压缩后（Find(8)）:
+
+      1                        1
+     / \                     / | \
+    2   3                   2  3  8
+    |
+    8
+
+  Find(8) 的过程：
+  1. 8 -> parent[8] = 2 -> parent[2] = 1 (根)
+  2. 路径压缩：将 8 直接挂到 1 下
+  结果：parent[8] = 1, parent[2] = 1</pre>
+  </div>
+
+  <h3>2.3 按秩合并图解</h3>
+  <div class="diagram">
+    <pre>
+  合并前:                    合并后（Union(3, 6), rank 小的挂到大的下面）:
+
+  集合 A (rank=2):           合并后 (rank=2):
+      1                          1
+     / \                        /|\
+    2   3                      2 3 4
+                                /|\
+  集合 B (rank=1):             5 6 7
+      4
+     /|\
+    5 6 7
+
+  rank[1]=2 > rank[4]=1，所以 4 挂到 1 下</pre>
+  </div>
+
+  <h3>2.4 完整 C++ 模板：路径压缩 + 按秩合并</h3>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;vector&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">struct</span> <span class="ty">DSU</span> {
+    <span class="ty">vector</span><span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;</span> parent, rank, sz;
+    <span class="ty">int</span> components; <span class="cm">// 连通分量个数</span>
+
+    <span class="fn">DSU</span>(<span class="ty">int</span> n) {
+        parent.<span class="fn">resize</span>(n <span class="op">+</span> <span class="num">1</span>);
+        rank.<span class="fn">resize</span>(n <span class="op">+</span> <span class="num">1</span>, <span class="num">0</span>);
+        sz.<span class="fn">resize</span>(n <span class="op">+</span> <span class="num">1</span>, <span class="num">1</span>);
+        components <span class="op">=</span> n;
+        <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>)
+            parent[i] <span class="op">=</span> i;
+    }
+
+    <span class="cm">// 查找代表元（带路径压缩）</span>
+    <span class="ty">int</span> <span class="fn">find</span>(<span class="ty">int</span> x) {
+        <span class="kw">if</span> (parent[x] <span class="op">!=</span> x)
+            parent[x] <span class="op">=</span> <span class="fn">find</span>(parent[x]);
+        <span class="kw">return</span> parent[x];
+    }
+
+    <span class="cm">// 合并两个集合（按秩合并）</span>
+    <span class="ty">bool</span> <span class="fn">unite</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+        x <span class="op">=</span> <span class="fn">find</span>(x), y <span class="op">=</span> <span class="fn">find</span>(y);
+        <span class="kw">if</span> (x <span class="op">==</span> y) <span class="kw">return</span> <span class="kw">false</span>; <span class="cm">// 已在同一集合</span>
+
+        <span class="cm">// 按秩合并：rank 小的挂到 rank 大的下面</span>
+        <span class="kw">if</span> (rank[x] <span class="op">&lt;</span> rank[y]) <span class="fn">swap</span>(x, y);
+        parent[y] <span class="op">=</span> x;
+        sz[x] <span class="op">+=</span> sz[y];
+        <span class="kw">if</span> (rank[x] <span class="op">==</span> rank[y]) rank[x]<span class="op">++</span>;
+        components<span class="op">--</span>;
+        <span class="kw">return</span> <span class="kw">true</span>;
+    }
+
+    <span class="cm">// 判断两个元素是否在同一集合</span>
+    <span class="ty">bool</span> <span class="fn">same</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+        <span class="kw">return</span> <span class="fn">find</span>(x) <span class="op">==</span> <span class="fn">find</span>(y);
+    }
+
+    <span class="cm">// 获取 x 所在集合的大小</span>
+    <span class="ty">int</span> <span class="fn">getSize</span>(<span class="ty">int</span> x) {
+        <span class="kw">return</span> sz[<span class="fn">find</span>(x)];
+    }
+};
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, m;
+    cin <span class="op">&gt;&gt;</span> n <span class="op">&gt;&gt;</span> m;
+    <span class="ty">DSU</span> dsu(n);
+
+    <span class="kw">while</span> (m<span class="op">--</span>) {
+        <span class="ty">int</span> op, x, y;
+        cin <span class="op">&gt;&gt;</span> op <span class="op">&gt;&gt;</span> x <span class="op">&gt;&gt;</span> y;
+        <span class="kw">if</span> (op <span class="op">==</span> <span class="num">1</span>) {
+            dsu.<span class="fn">unite</span>(x, y);
+        } <span class="kw">else</span> {
+            cout <span class="op">&lt;&lt;</span> (dsu.<span class="fn">same</span>(x, y) <span class="op">?</span> <span class="str">"Yes"</span> <span class="op">:</span> <span class="str">"No"</span>) <span class="op">&lt;&lt;</span> endl;
+        }
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <div class="box box-tip">
+    <div class="box-title">递归 vs 迭代路径压缩</div>
+    <p>在数据量极大（如 n &ge; 10^7）时，递归版路径压缩可能栈溢出。可以改用迭代写法：</p>
+  </div>
+  <pre><code><span class="cm">// 迭代路径压缩（非递归）</span>
+<span class="ty">int</span> <span class="fn">find</span>(<span class="ty">int</span> x) {
+    <span class="ty">int</span> root <span class="op">=</span> x;
+    <span class="kw">while</span> (parent[root] <span class="op">!=</span> root)
+        root <span class="op">=</span> parent[root];
+    <span class="cm">// 路径压缩</span>
+    <span class="kw">while</span> (x <span class="op">!=</span> root) {
+        <span class="ty">int</span> nxt <span class="op">=</span> parent[x];
+        parent[x] <span class="op">=</span> root;
+        x <span class="op">=</span> nxt;
+    }
+    <span class="kw">return</span> root;
+}</code></pre>
+
+  <h3>2.5 只用路径压缩（简化版）</h3>
+  <pre><code><span class="kw">struct</span> <span class="ty">DSU</span> {
+    <span class="ty">vector</span><span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;</span> p;
+    <span class="fn">DSU</span>(<span class="ty">int</span> n) <span class="op">:</span> p(n <span class="op">+</span> <span class="num">1</span>) { <span class="fn">iota</span>(p.<span class="fn">begin</span>(), p.<span class="fn">end</span>(), <span class="num">0</span>); }
+    <span class="ty">int</span> <span class="fn">find</span>(<span class="ty">int</span> x) { <span class="kw">return</span> p[x] <span class="op">==</span> x <span class="op">?</span> x <span class="op">:</span> p[x] <span class="op">=</span> <span class="fn">find</span>(p[x]); }
+    <span class="ty">bool</span> <span class="fn">unite</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+        x <span class="op">=</span> <span class="fn">find</span>(x), y <span class="op">=</span> <span class="fn">find</span>(y);
+        <span class="kw">if</span> (x <span class="op">!=</span> y) { p[y] <span class="op">=</span> x; <span class="kw">return</span> <span class="kw">true</span>; }
+        <span class="kw">return</span> <span class="kw">false</span>;
+    }
+    <span class="ty">bool</span> <span class="fn">same</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) { <span class="kw">return</span> <span class="fn">find</span>(x) <span class="op">==</span> <span class="fn">find</span>(y); }
+};</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第三节：带权并查集 -->
+<!-- ============================================================ -->
+<div class="section" id="sec3">
+  <h2>三、带权并查集</h2>
+
+  <h3>3.1 概述</h3>
+  <p>带权并查集在普通并查集的基础上，为每条边赋予一个"权值"，用于维护元素之间的<strong>相对关系</strong>。常见的关系类型包括：</p>
+  <ul>
+    <li><strong>距离关系</strong>：<code>weight[x]</code> 表示 x 到其父节点的距离</li>
+    <li><strong>奇偶关系</strong>（种类并查集的基础）：用 0/1 表示同类/异类</li>
+    <li><strong>倍数关系</strong>：weight 表示 x 是父节点的多少倍</li>
+  </ul>
+
+  <h3>3.2 核心思路</h3>
+  <p>维护一个 <code>weight[]</code> 数组，<code>weight[x]</code> 表示 <code>x</code> 到 <code>parent[x]</code> 的"距离"或"权值"。路径压缩时需要同步更新权值：</p>
+  <div class="diagram">
+    <pre>
+  Find 路径压缩时的权值更新：
+
+  压缩前:  x --> p --> root
+           w1    w2
+
+  压缩后:  x ---------> root
+           w1 + w2
+
+  即：weight[x] += weight[parent[x]]
+      然后 parent[x] = root</pre>
+  </div>
+
+  <h3>3.3 完整模板：带权并查集（距离型）</h3>
+  <pre><code><span class="kw">struct</span> <span class="ty">WeightedDSU</span> {
+    <span class="ty">vector</span><span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;</span> parent, rank;
+    <span class="ty">vector</span><span class="op">&lt;</span><span class="ty">long long</span><span class="op">&gt;</span> weight; <span class="cm">// weight[x] = x 到 parent[x] 的距离</span>
+
+    <span class="fn">WeightedDSU</span>(<span class="ty">int</span> n) {
+        parent.<span class="fn">resize</span>(n <span class="op">+</span> <span class="num">1</span>);
+        rank.<span class="fn">resize</span>(n <span class="op">+</span> <span class="num">1</span>, <span class="num">0</span>);
+        weight.<span class="fn">resize</span>(n <span class="op">+</span> <span class="num">1</span>, <span class="num">0</span>);
+        <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>)
+            parent[i] <span class="op">=</span> i;
+    }
+
+    <span class="cm">// 返回 x 的根节点，同时更新 weight[x] 为 x 到根的距离</span>
+    <span class="ty">int</span> <span class="fn">find</span>(<span class="ty">int</span> x) {
+        <span class="kw">if</span> (parent[x] <span class="op">!=</span> x) {
+            <span class="ty">int</span> root <span class="op">=</span> <span class="fn">find</span>(parent[x]);
+            weight[x] <span class="op">+=</span> weight[parent[x]]; <span class="cm">// 累加路径上的权值</span>
+            parent[x] <span class="op">=</span> root;
+        }
+        <span class="kw">return</span> parent[x];
+    }
+
+    <span class="cm">// 合并：使得 weight[y] - weight[x] = w（即 y 在 x 右侧距离 w 处）</span>
+    <span class="ty">bool</span> <span class="fn">unite</span>(<span class="ty">int</span> x, <span class="ty">int</span> y, <span class="ty">long long</span> w) {
+        <span class="ty">int</span> rx <span class="op">=</span> <span class="fn">find</span>(x), ry <span class="op">=</span> <span class="fn">find</span>(y);
+        <span class="kw">if</span> (rx <span class="op">==</span> ry) <span class="kw">return</span> <span class="kw">false</span>;
+
+        <span class="cm">// 按秩合并</span>
+        <span class="kw">if</span> (rank[rx] <span class="op">&lt;</span> rank[ry]) {
+            parent[rx] <span class="op">=</span> ry;
+            weight[rx] <span class="op">=</span> weight[y] <span class="op">-</span> weight[x] <span class="op">-</span> w;
+        } <span class="kw">else</span> {
+            parent[ry] <span class="op">=</span> rx;
+            weight[ry] <span class="op">=</span> weight[x] <span class="op">-</span> weight[y] <span class="op">+</span> w;
+            <span class="kw">if</span> (rank[rx] <span class="op">==</span> rank[ry]) rank[rx]<span class="op">++</span>;
+        }
+        <span class="kw">return</span> <span class="kw">true</span>;
+    }
+
+    <span class="cm">// 返回 x 到 y 的距离（需在同一集合）</span>
+    <span class="ty">long long</span> <span class="fn">dist</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+        <span class="fn">find</span>(x); <span class="fn">find</span>(y);
+        <span class="kw">return</span> weight[y] <span class="op">-</span> weight[x];
+    }
+};</code></pre>
+
+  <h3>3.4 经典问题：食物链（POJ 1182）</h3>
+  <div class="problem">
+    <div class="problem-title">POJ 1182 食物链</div>
+    <p>动物王国中有三类动物 A, B, C，A 吃 B，B 吃 C，C 吃 A。现有 N 个动物，用 1~N 编号。给出 K 句话，每句话为以下两种之一：</p>
+    <ul>
+      <li>"1 X Y"：表示 X 和 Y 是同类</li>
+      <li>"2 X Y"：表示 X 吃 Y</li>
+    </ul>
+    <p>求假话的总数。（详见<a href="#sec4">第四节：种类并查集</a>的解法）</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第四节：种类并查集 -->
+<!-- ============================================================ -->
+<div class="section" id="sec4">
+  <h2>四、种类并查集</h2>
+
+  <h3>4.1 概述</h3>
+  <p>种类并查集（也叫"扩展域并查集"或"敌人的敌人是朋友"并查集）用于处理元素之间存在<strong>多种关系</strong>的问题。核心思想是将每个元素拆分成多个"域"，每个域代表一种关系。</p>
+
+  <h3>4.2 两种实现方式</h3>
+
+  <h4>方法一：偏移量法（带权并查集）</h4>
+  <p>用 <code>weight[x] % 3</code> 表示 x 与根节点的关系：0=同类，1=被根吃，2=吃根。</p>
+
+  <h4>方法二：扩展域法（推荐，更直观）</h4>
+  <p>将每个节点 x 拆分为多个域：<code>x</code>（自身）、<code>x + n</code>（吃 x 的）、<code>x + 2n</code>（被 x 吃的）。用并查集维护这些域之间的关系。</p>
+
+  <div class="diagram">
+    <pre>
+  扩展域法图解（食物链，N=3）：
+
+  原始节点:    1    2    3
+  自身域:      1    2    3    （同类关系）
+  天敌域:      4    5    6    （吃该节点的）
+  猎物域:      7    8    9    （被该节点吃的）
+
+  "2 1 2" 表示 1 吃 2：
+    合并(1, 8)    -- 1 和 "被2吃的" 同类
+    合并(2, 4)    -- 2 和 "吃1的" 同类
+    合并(7, 5)    -- "被1吃的" 和 "吃2的" 同类</pre>
+  </div>
+
+  <h3>4.3 完整模板：扩展域并查集</h3>
+  <pre><code><span class="kw">struct</span> <span class="ty">ExtendedDSU</span> {
+    <span class="ty">vector</span><span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;</span> parent, rank;
+    <span class="ty">int</span> n; <span class="cm">// 原始节点数</span>
+
+    <span class="fn">ExtendedDSU</span>(<span class="ty">int</span> n) <span class="op">:</span> <span class="fn">n</span>(n) {
+        parent.<span class="fn">resize</span>(<span class="num">3</span> <span class="op">*</span> n <span class="op">+</span> <span class="num">1</span>);
+        rank.<span class="fn">resize</span>(<span class="num">3</span> <span class="op">*</span> n <span class="op">+</span> <span class="num">1</span>, <span class="num">0</span>);
+        <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> <span class="num">3</span> <span class="op">*</span> n; i<span class="op">++</span>)
+            parent[i] <span class="op">=</span> i;
+    }
+
+    <span class="ty">int</span> <span class="fn">find</span>(<span class="ty">int</span> x) {
+        <span class="kw">if</span> (parent[x] <span class="op">!=</span> x)
+            parent[x] <span class="op">=</span> <span class="fn">find</span>(parent[x]);
+        <span class="kw">return</span> parent[x];
+    }
+
+    <span class="ty">void</span> <span class="fn">unite</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+        x <span class="op">=</span> <span class="fn">find</span>(x), y <span class="op">=</span> <span class="fn">find</span>(y);
+        <span class="kw">if</span> (x <span class="op">==</span> y) <span class="kw">return</span>;
+        <span class="kw">if</span> (rank[x] <span class="op">&lt;</span> rank[y]) <span class="fn">swap</span>(x, y);
+        parent[y] <span class="op">=</span> x;
+        <span class="kw">if</span> (rank[x] <span class="op">==</span> rank[y]) rank[x]<span class="op">++</span>;
+    }
+
+    <span class="ty">bool</span> <span class="fn">same</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) { <span class="kw">return</span> <span class="fn">find</span>(x) <span class="op">==</span> <span class="fn">find</span>(y); }
+
+    <span class="cm">// x 吃 y</span>
+    <span class="ty">void</span> <span class="fn">eat</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+        <span class="fn">unite</span>(x, y <span class="op">+</span> <span class="num">2</span> <span class="op">*</span> n);       <span class="cm">// x 和 "被y吃的" 同类</span>
+        <span class="fn">unite</span>(x <span class="op">+</span> n, y);             <span class="cm">// "吃x的" 和 y 同类</span>
+        <span class="fn">unite</span>(x <span class="op">+</span> <span class="num">2</span> <span class="op">*</span> n, y <span class="op">+</span> n);   <span class="cm">// "被x吃的" 和 "吃y的" 同类</span>
+    }
+
+    <span class="cm">// 判断 "x 吃 y" 是否与已有信息矛盾</span>
+    <span class="ty">bool</span> <span class="fn">canEat</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+        <span class="kw">return</span> <span class="op">!</span><span class="fn">same</span>(x, y) <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="fn">same</span>(x, y <span class="op">+</span> n);
+    }
+};</code></pre>
+
+  <h3>4.4 带权并查集解法（食物链）</h3>
+  <pre><code><span class="cm">// 食物链 - 带权并查集解法</span>
+<span class="cm">// weight[x] % 3 的含义：</span>
+<span class="cm">//   0: x 与根同类</span>
+<span class="cm">//   1: x 被根吃</span>
+<span class="cm">//   2: x 吃根</span>
+<span class="pp">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;vector&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="ty">vector</span><span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;</span> par, wt;
+
+<span class="ty">int</span> <span class="fn">find</span>(<span class="ty">int</span> x) {
+    <span class="kw">if</span> (par[x] <span class="op">!=</span> x) {
+        <span class="ty">int</span> root <span class="op">=</span> <span class="fn">find</span>(par[x]);
+        wt[x] <span class="op">+=</span> wt[par[x]];
+        par[x] <span class="op">=</span> root;
+    }
+    <span class="kw">return</span> par[x];
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, k, ans <span class="op">=</span> <span class="num">0</span>;
+    cin <span class="op">&gt;&gt;</span> n <span class="op">&gt;&gt;</span> k;
+    par.<span class="fn">resize</span>(n <span class="op">+</span> <span class="num">1</span>);
+    wt.<span class="fn">resize</span>(n <span class="op">+</span> <span class="num">1</span>, <span class="num">0</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>) par[i] <span class="op">=</span> i;
+
+    <span class="kw">while</span> (k<span class="op">--</span>) {
+        <span class="ty">int</span> d, x, y;
+        cin <span class="op">&gt;&gt;</span> d <span class="op">&gt;&gt;</span> x <span class="op">&gt;&gt;</span> y;
+        <span class="kw">if</span> (x <span class="op">&gt;</span> n <span class="op">||</span> y <span class="op">&gt;</span> n) { ans<span class="op">++</span>; <span class="kw">continue</span>; }
+
+        <span class="ty">int</span> rx <span class="op">=</span> <span class="fn">find</span>(x), ry <span class="op">=</span> <span class="fn">find</span>(y);
+        <span class="kw">if</span> (d <span class="op">==</span> <span class="num">1</span>) {
+            <span class="cm">// x 和 y 是同类</span>
+            <span class="kw">if</span> (rx <span class="op">==</span> ry) {
+                <span class="kw">if</span> ((wt[x] <span class="op">-</span> wt[y]) <span class="op">%</span> <span class="num">3</span> <span class="op">!=</span> <span class="num">0</span>) ans<span class="op">++</span>;
+            } <span class="kw">else</span> {
+                par[ry] <span class="op">=</span> rx;
+                wt[ry] <span class="op">=</span> wt[x] <span class="op">-</span> wt[y];
+            }
+        } <span class="kw">else</span> {
+            <span class="cm">// x 吃 y</span>
+            <span class="kw">if</span> (rx <span class="op">==</span> ry) {
+                <span class="kw">if</span> ((wt[x] <span class="op">-</span> wt[y] <span class="op">-</span> <span class="num">1</span>) <span class="op">%</span> <span class="num">3</span> <span class="op">!=</span> <span class="num">0</span>) ans<span class="op">++</span>;
+            } <span class="kw">else</span> {
+                par[ry] <span class="op">=</span> rx;
+                wt[ry] <span class="op">=</span> wt[x] <span class="op">-</span> wt[y] <span class="op">-</span> <span class="num">1</span>;
+            }
+        }
+    }
+    cout <span class="op">&lt;&lt;</span> ans <span class="op">&lt;&lt;</span> endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <div class="box box-info">
+    <div class="box-title">扩展域 vs 带权并查集</div>
+    <p><strong>扩展域法</strong>：更直观，将每种关系拆成独立的域，代码容易理解。空间开销较大（3 倍）。</p>
+    <p><strong>带权并查集</strong>：空间更省，实现更紧凑。但权值的计算（特别是合并时的公式推导）容易出错。</p>
+    <p>两者在时间复杂度上等价，选择自己更熟悉的写法即可。</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第五节：回滚并查集 -->
+<!-- ============================================================ -->
+<div class="section" id="sec5">
+  <h2>五、回滚并查集 (可撤销)</h2>
+
+  <h3>5.1 概述</h3>
+  <p>普通并查集的路径压缩是<strong>不可逆</strong>的：一旦压缩，原始的树结构信息就丢失了。在某些场景下（如线段树分治、时间倒流问题），我们需要能够<strong>撤销</strong>之前的合并操作。</p>
+
+  <h3>5.2 实现思路</h3>
+  <p>回滚并查集的关键限制：</p>
+  <ul>
+    <li><strong>不能使用路径压缩</strong>（因为路径压缩不可逆）</li>
+    <li><strong>只使用按秩合并</strong>（合并操作可逆：只需记录被合并的节点和之前的秩）</li>
+    <li>用一个<strong>栈</strong>记录每次合并操作的信息，撤销时从栈顶弹出并恢复</li>
+  </ul>
+
+  <div class="diagram">
+    <pre>
+  回滚并查集的栈记录：
+
+  操作          栈状态                说明
+  ─────────────────────────────────────────────
+  unite(1,2)   [(2, rank2)]          2 挂到 1 下，记录 2 的旧秩
+  unite(3,4)   [(2,r2), (4,rank4)]   4 挂到 3 下
+  undo()       [(2,r2)]              弹出栈顶，恢复 4 的父节点和秩
+  undo()       []                    弹出栈顶，恢复 2 的父节点和秩</pre>
+  </div>
+
+  <h3>5.3 完整模板</h3>
+  <pre><code><span class="kw">struct</span> <span class="ty">RollbackDSU</span> {
+    <span class="ty">vector</span><span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;</span> parent, rank, sz;
+    <span class="ty">vector</span><span class="op">&lt;</span><span class="ty">pair</span><span class="op">&lt;</span><span class="ty">int</span><span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;&gt;</span> stk; <span class="cm">// 记录被修改的节点及其旧值</span>
+    <span class="ty">int</span> comps;
+
+    <span class="fn">RollbackDSU</span>(<span class="ty">int</span> n) {
+        parent.<span class="fn">resize</span>(n <span class="op">+</span> <span class="num">1</span>);
+        rank.<span class="fn">resize</span>(n <span class="op">+</span> <span class="num">1</span>, <span class="num">0</span>);
+        sz.<span class="fn">resize</span>(n <span class="op">+</span> <span class="num">1</span>, <span class="num">1</span>);
+        comps <span class="op">=</span> n;
+        <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>) parent[i] <span class="op">=</span> i;
+    }
+
+    <span class="cm">// 不使用路径压缩的 find</span>
+    <span class="ty">int</span> <span class="fn">find</span>(<span class="ty">int</span> x) {
+        <span class="kw">while</span> (parent[x] <span class="op">!=</span> x) x <span class="op">=</span> parent[x];
+        <span class="kw">return</span> x;
+    }
+
+    <span class="ty">bool</span> <span class="fn">unite</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+        x <span class="op">=</span> <span class="fn">find</span>(x), y <span class="op">=</span> <span class="fn">find</span>(y);
+        <span class="kw">if</span> (x <span class="op">==</span> y) {
+            stk.<span class="fn">push_back</span>({<span class="num">0</span>, <span class="num">0</span>}); <span class="cm">// 无实际合并，仍需压栈保持一致性</span>
+            <span class="kw">return</span> <span class="kw">false</span>;
+        }
+        <span class="kw">if</span> (rank[x] <span class="op">&lt;</span> rank[y]) <span class="fn">swap</span>(x, y);
+        <span class="cm">// 记录被修改节点 y 的旧值</span>
+        stk.<span class="fn">push_back</span>({y, parent[y]});
+        parent[y] <span class="op">=</span> x;
+        sz[x] <span class="op">+=</span> sz[y];
+        <span class="kw">if</span> (rank[x] <span class="op">==</span> rank[y]) {
+            stk.<span class="fn">push_back</span>({<span class="op">-</span>x, rank[x]}); <span class="cm">// 负号标记为秩的修改</span>
+            rank[x]<span class="op">++</span>;
+        }
+        comps<span class="op">--</span>;
+        <span class="kw">return</span> <span class="kw">true</span>;
+    }
+
+    <span class="cm">// 撤销最近一次合并</span>
+    <span class="ty">void</span> <span class="fn">undo</span>() {
+        <span class="kw">auto</span> [node, val] <span class="op">=</span> stk.<span class="fn">back</span>();
+        stk.<span class="fn">pop_back</span>();
+        <span class="kw">if</span> (node <span class="op">&lt;</span> <span class="num">0</span>) {
+            rank[<span class="op">-</span>node] <span class="op">=</span> val; <span class="cm">// 恢复秩</span>
+            <span class="fn">undo</span>(); <span class="cm">// 继续弹出父节点的修改</span>
+        } <span class="kw">else</span> <span class="kw">if</span> (node <span class="op">!=</span> <span class="num">0</span>) {
+            sz[parent[node]] <span class="op">-=</span> sz[node];
+            parent[node] <span class="op">=</span> val;
+            comps<span class="op">++</span>;
+        }
+    }
+
+    <span class="ty">int</span> <span class="fn">snapshot</span>() { <span class="kw">return</span> stk.<span class="fn">size</span>(); }
+    <span class="ty">void</span> <span class="fn">rollback</span>(<span class="ty">int</span> snap) {
+        <span class="kw">while</span> ((<span class="ty">int</span>)stk.<span class="fn">size</span>() <span class="op">&gt;</span> snap) <span class="fn">undo</span>();
+    }
+};</code></pre>
+
+  <div class="box box-warn">
+    <div class="box-title">使用场景</div>
+    <p>回滚并查集常配合<strong>线段树分治</strong>（Segment Tree Divide and Conquer）使用，处理"在某段时间内存在某条边"的动态连通性问题。由于没有路径压缩，单次操作复杂度为 O(log n)。</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第六节：经典例题与练习 -->
+<!-- ============================================================ -->
+<div class="section" id="sec6">
+  <h2>六、经典例题与练习</h2>
+
+  <h3>6.1 基础并查集</h3>
+  <div class="problem">
+    <div class="problem-title">洛谷 P3367 【模板】并查集</div>
+    <p>最基本的并查集模板题：支持合并和查询操作。</p>
+    <p><strong>解法：</strong>直接使用路径压缩 + 按秩合并的模板。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">洛谷 P1551 亲戚</div>
+    <p>给定若干亲戚关系，判断两个人是否为亲戚。典型的并查集应用。</p>
+  </div>
+
+  <h3>6.2 带权 / 种类并查集</h3>
+  <div class="problem">
+    <div class="problem-title">POJ 1182 食物链</div>
+    <p>经典的种类并查集问题。可以用扩展域法或带权并查集解决。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">洛谷 P2024 食物链</div>
+    <p>POJ 1182 的洛谷版本。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">洛谷 P1525 关押罪犯</div>
+    <p>将罪犯分到两个监狱，使同一监狱中罪犯间的仇恨值最大值最小。扩展域并查集 + 贪心。</p>
+  </div>
+
+  <h3>6.3 进阶应用</h3>
+  <div class="problem">
+    <div class="problem-title">洛谷 P1955 程序自动分析</div>
+    <p>离散化 + 并查集。先处理所有等式约束，再检查不等式约束是否矛盾。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">洛谷 P4185 MooTube</div>
+    <p>按边权从大到小排序，用并查集维护连通性，回答"与 v 的亲密度 &ge; k 的节点数"。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">Codeforces 1217D Colored Edges</div>
+    <p>图的连通性维护，并查集判环。</p>
+  </div>
+
+  <h3>6.4 综合例题：最小生成树（Kruskal）</h3>
+  <p>并查集是 Kruskal 最小生成树算法的核心组件：</p>
+  <pre><code><span class="cm">// Kruskal 最小生成树</span>
+<span class="kw">struct</span> <span class="ty">Edge</span> { <span class="ty">int</span> u, v, w; };
+<span class="ty">bool</span> <span class="fn">cmp</span>(<span class="kw">const</span> <span class="ty">Edge</span><span class="op">&amp;</span> a, <span class="kw">const</span> <span class="ty">Edge</span><span class="op">&amp;</span> b) { <span class="kw">return</span> a.w <span class="op">&lt;</span> b.w; }
+
+<span class="ty">int</span> <span class="fn">kruskal</span>(<span class="ty">int</span> n, <span class="ty">vector</span><span class="op">&lt;</span><span class="ty">Edge</span><span class="op">&gt;&amp;</span> edges) {
+    <span class="fn">sort</span>(edges.<span class="fn">begin</span>(), edges.<span class="fn">end</span>(), cmp);
+    <span class="ty">DSU</span> dsu(n);
+    <span class="ty">int</span> mst_weight <span class="op">=</span> <span class="num">0</span>, cnt <span class="op">=</span> <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">auto</span><span class="op">&amp;</span> e <span class="op">:</span> edges) {
+        <span class="kw">if</span> (dsu.<span class="fn">unite</span>(e.u, e.v)) {
+            mst_weight <span class="op">+=</span> e.w;
+            cnt<span class="op">++</span>;
+            <span class="kw">if</span> (cnt <span class="op">==</span> n <span class="op">-</span> <span class="num">1</span>) <span class="kw">break</span>;
+        }
+    }
+    <span class="kw">return</span> cnt <span class="op">==</span> n <span class="op">-</span> <span class="num">1</span> <span class="op">?</span> mst_weight <span class="op">:</span> <span class="op">-</span><span class="num">1</span>; <span class="cm">// -1 表示不连通</span>
+}</code></pre>
+
+  <h3>6.5 推荐练习清单</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>题目</th><th>知识点</th><th>难度</th></tr>
+      <tr><td>洛谷 P3367 并查集模板</td><td>基础并查集</td><td><span class="tag tag-easy">简单</span></td></tr>
+      <tr><td>洛谷 P1551 亲戚</td><td>基础并查集</td><td><span class="tag tag-easy">简单</span></td></tr>
+      <tr><td>POJ 1182 / 洛谷 P2024 食物链</td><td>种类并查集</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>洛谷 P1525 关押罪犯</td><td>扩展域并查集</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>洛谷 P1955 程序自动分析</td><td>离散化 + 并查集</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>洛谷 P4185 MooTube</td><td>离线并查集</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>洛谷 P3366 最小生成树</td><td>Kruskal + 并查集</td><td><span class="tag tag-easy">简单</span></td></tr>
+      <tr><td>Codeforces 1559D1</td><td>并查集 + 构造</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>洛谷 P2121 拆地毯</td><td>Kruskal 变体</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>洛谷 P6854 COTS #2 旅途</td><td>带权并查集</td><td><span class="tag tag-hard">困难</span></td></tr>
+    </table>
+  </div>
+
+  <div class="box box-tip">
+    <div class="box-title">总结</div>
+    <p>并查集是竞赛中最重要的基础数据结构之一。核心要点：</p>
+    <ul>
+      <li><strong>路径压缩 + 按秩合并</strong>是标准写法，均摊 O(alpha(n)) 近似常数</li>
+      <li><strong>带权并查集</strong>用于维护元素间的相对关系（距离、奇偶等）</li>
+      <li><strong>扩展域并查集</strong>用于处理多种关系（敌人的敌人是朋友）</li>
+      <li><strong>回滚并查集</strong>用于需要撤销操作的场景，配合线段树分治</li>
+      <li>并查集也是 <strong>Kruskal 最小生成树</strong>算法的核心组件</li>
+    </ul>
+  </div>
+</div>
+
+</div> <!-- end container -->
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

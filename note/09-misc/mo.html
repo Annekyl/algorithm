@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>莫队算法 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt; 综合篇 &gt; 莫队算法
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>莫队算法</h1>
+    <p class="subtitle">Mo's Algorithm &mdash; 离线处理区间查询的优雅暴力</p>
+    <div class="tags">
+      <span class="tag tag-base">离线算法</span>
+      <span class="tag tag-mid">中等</span>
+      <span class="tag tag-hard">带修莫队</span>
+    </div>
+  </div>
+
+  <!-- Table of Contents -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#overview">莫队概述</a></li>
+      <li><a href="#basic">普通莫队</a></li>
+      <li><a href="#modified">带修莫队</a></li>
+      <li><a href="#rollback">回滚莫队</a></li>
+      <li><a href="#template">完整模板</a></li>
+      <li><a href="#problems">经典例题</a></li>
+    </ul>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 1: 莫队概述 -->
+  <!-- ============================== -->
+  <div class="section" id="overview">
+    <h2>莫队概述</h2>
+    <p><strong>莫队算法</strong>（Mo's Algorithm）是一种离线处理区间查询的算法。核心思想是将所有查询按照特定顺序排序，使得相邻查询之间的区间变化很小，从而用较低的代价从一个查询转移到下一个查询。</p>
+
+    <h3>核心思想</h3>
+    <div class="box box-info">
+      <div class="box-title">离线 + 排序 + 转移</div>
+      <p>1. <strong>离线</strong>：将所有查询预先读入<br>
+         2. <strong>排序</strong>：按照 (左端点所在块, 右端点) 排序<br>
+         3. <strong>转移</strong>：维护当前区间 [L, R]，每次 O(1) 增删元素转移到下一个查询</p>
+    </div>
+
+    <h3>适用条件</h3>
+    <ul>
+      <li>查询是<strong>离线</strong>的（不要求强制在线）</li>
+      <li>区间可以通过<strong>增加/删除端点</strong>来转移</li>
+      <li>增加/删除一个元素的复杂度为 <strong>O(1)</strong></li>
+      <li>典型问题：区间内不同元素个数、区间众数、区间 mex 等</li>
+    </ul>
+
+    <div class="diagram">
+      <pre>
+  莫队的核心：从一个查询转移到下一个查询
+
+  当前查询 [L, R]    目标查询 [L', R']
+
+  L ←───── L'         需要删除 L~L'-1 的元素
+         R ─────→ R'   需要增加 R+1~R' 的元素
+
+  每次转移的代价 = |L'-L| + |R'-R|
+  通过巧妙排序，总转移代价为 O(n * sqrt(n))
+      </pre>
+    </div>
+
+    <h3>复杂度分析</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>操作</th><th>左指针移动</th><th>右指针移动</th><th>总复杂度</th></tr>
+        <tr><td>同一块内</td><td>O(sqrt(n))</td><td>O(n)</td><td>O(n * sqrt(n))</td></tr>
+        <tr><td>跨块</td><td>O(sqrt(n))</td><td>O(n)</td><td>O(n * sqrt(n))</td></tr>
+        <tr><td>总计</td><td colspan="2">q 个查询</td><td><strong>O((n+q) * sqrt(n))</strong></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 2: 普通莫队 -->
+  <!-- ============================== -->
+  <div class="section" id="basic">
+    <h2>普通莫队</h2>
+    <p>普通莫队是最基本的形式。将序列分成 sqrt(n) 个块，查询按 (左端点所在块, 右端点) 排序。</p>
+
+    <h3>分块与排序</h3>
+    <pre><code><span class="ty">int</span> blockSize;  <span class="cm">// 块大小，通常取 sqrt(n)</span>
+
+<span class="kw">struct</span> <span class="ty">Query</span> {
+    <span class="ty">int</span> l, r, id;
+};
+
+<span class="cm">// 莫队排序: 先按左端点所在块排，同一块内按右端点排</span>
+<span class="ty">bool</span> <span class="fn">cmp</span>(<span class="kw">const</span> <span class="ty">Query</span>&amp; a, <span class="kw">const</span> <span class="ty">Query</span>&amp; b) {
+    <span class="ty">int</span> blockA = a.l / blockSize, blockB = b.l / blockSize;
+    <span class="kw">if</span> (blockA != blockB) <span class="kw">return</span> blockA &lt; blockB;
+    <span class="cm">// 奇偶性优化: 偶数块右端点升序，奇数块降序</span>
+    <span class="kw">return</span> (blockA &amp; <span class="num">1</span>) ? (a.r &gt; b.r) : (a.r &lt; b.r);
+}</code></pre>
+
+    <h3>完整流程</h3>
+    <div class="steps">
+      <div class="step">读入数组和所有查询，记录每个查询的 id</div>
+      <div class="step">设置块大小 <code>blockSize = sqrt(n)</code>，对查询排序</div>
+      <div class="step">初始化当前区间 [curL=0, curR=-1]（空区间）</div>
+      <div class="step">依次处理每个查询：
+        <ul>
+          <li>若 curL > q.l，则将 curL 左移，加入 arr[curL]</li>
+          <li>若 curR &lt; q.r，则将 curR 右移，加入 arr[curR]</li>
+          <li>若 curL &lt; q.l，则删除 arr[curL]，将 curL 右移</li>
+          <li>若 curR > q.r，则删除 arr[curR]，将 curR 左移</li>
+        </ul>
+      </div>
+      <div class="step">记录当前区间的答案到 ans[q.id]</div>
+    </div>
+
+    <h3>经典问题：区间不同元素个数</h3>
+    <p>给定数组和若干查询 [l, r]，求每个查询区间内不同元素的个数。</p>
+
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> N = <span class="num">300005</span>;
+<span class="ty">int</span> arr[N], cnt[N], ans[N], curAns;
+<span class="ty">int</span> n, q, blockSize;
+
+<span class="kw">struct</span> <span class="ty">Query</span> { <span class="ty">int</span> l, r, id; } queries[N];
+
+<span class="ty">bool</span> <span class="fn">cmp</span>(<span class="kw">const</span> <span class="ty">Query</span>&amp; a, <span class="kw">const</span> <span class="ty">Query</span>&amp; b) {
+    <span class="ty">int</span> ba = a.l / blockSize, bb = b.l / blockSize;
+    <span class="kw">if</span> (ba != bb) <span class="kw">return</span> ba &lt; bb;
+    <span class="kw">return</span> (ba &amp; <span class="num">1</span>) ? a.r &gt; b.r : a.r &lt; b.r;
+}
+
+<span class="ty">void</span> <span class="fn">add</span>(<span class="ty">int</span> pos) {
+    cnt[arr[pos]]++;
+    <span class="kw">if</span> (cnt[arr[pos]] == <span class="num">1</span>) curAns++;  <span class="cm">// 新增一种元素</span>
+}
+
+<span class="ty">void</span> <span class="fn">remove</span>(<span class="ty">int</span> pos) {
+    cnt[arr[pos]]--;
+    <span class="kw">if</span> (cnt[arr[pos]] == <span class="num">0</span>) curAns--;  <span class="cm">// 减少一种元素</span>
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;n);
+    blockSize = <span class="fn">sqrt</span>(n);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;arr[i]);
+
+    <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;q);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; q; i++) {
+        <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;queries[i].l, &amp;queries[i].r);
+        queries[i].l--; queries[i].r--;  <span class="cm">// 转为 0-indexed</span>
+        queries[i].id = i;
+    }
+
+    <span class="fn">sort</span>(queries, queries + q, cmp);
+
+    <span class="ty">int</span> curL = <span class="num">0</span>, curR = -<span class="num">1</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; q; i++) {
+        <span class="ty">int</span> L = queries[i].l, R = queries[i].r;
+        <span class="kw">while</span> (curL &gt; L) <span class="fn">add</span>(--curL);
+        <span class="kw">while</span> (curR &lt; R) <span class="fn">add</span>(++curR);
+        <span class="kw">while</span> (curL &lt; L) <span class="fn">remove</span>(curL++);
+        <span class="kw">while</span> (curR &gt; R) <span class="fn">remove</span>(curR--);
+        ans[queries[i].id] = curAns;
+    }
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; q; i++)
+        <span class="fn">printf</span>(<span class="str">"%d\n"</span>, ans[i]);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <h3>奇偶性优化</h3>
+    <p>在排序时，对奇数块按右端点降序排列，偶数块按右端点升序排列。这样右指针在相邻块之间移动时呈"蛇形"走位，减少回退次数。</p>
+
+    <div class="diagram">
+      <pre>
+  奇偶性优化 (蛇形走位)
+
+  块0(偶):  ──────────→
+  块1(奇):  ←──────────
+  块2(偶):  ──────────→
+  块3(奇):  ←──────────
+
+  右指针在块之间几乎不需要大幅回退
+      </pre>
+    </div>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O((n+q) * sqrt(n))</span>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 3: 带修莫队 -->
+  <!-- ============================== -->
+  <div class="section" id="modified">
+    <h2>带修莫队</h2>
+    <p>当查询区间的同时还有<strong>单点修改</strong>操作时，需要使用带修莫队。核心思想是在普通莫队的基础上增加一个<strong>时间维度</strong>。</p>
+
+    <h3>三维莫队</h3>
+    <p>将每个查询看作三维空间中的点 <code>(l, r, t)</code>，其中 <code>t</code> 表示该查询之前有多少次修改操作。</p>
+
+    <div class="diagram">
+      <pre>
+  带修莫队的三维排序
+
+  维度: (左端点块, 右端点块, 时间)
+
+  排序规则:
+  1. 左端点所在块 (块大小 n^(2/3))
+  2. 右端点所在块
+  3. 时间戳
+
+  块大小取 n^(2/3) 时总复杂度最优: O(n^(5/3))
+      </pre>
+    </div>
+
+    <h3>块大小的选择</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>莫队类型</th><th>块大小</th><th>时间复杂度</th></tr>
+        <tr><td>普通莫队</td><td>n^(1/2)</td><td>O(n^(3/2))</td></tr>
+        <tr><td>带修莫队</td><td>n^(2/3)</td><td>O(n^(5/3))</td></tr>
+      </table>
+    </div>
+
+    <h3>代码实现</h3>
+    <pre><code><span class="kw">struct</span> <span class="ty">Query</span> {
+    <span class="ty">int</span> l, r, t, id;  <span class="cm">// t: 该查询前的修改次数</span>
+};
+
+<span class="kw">struct</span> <span class="ty">Modify</span> {
+    <span class="ty">int</span> pos, oldVal, newVal;
+};
+
+<span class="ty">int</span> blockSize;
+
+<span class="ty">bool</span> <span class="fn">cmp</span>(<span class="kw">const</span> <span class="ty">Query</span>&amp; a, <span class="kw">const</span> <span class="ty">Query</span>&amp; b) {
+    <span class="ty">int</span> ba = a.l / blockSize, bb = b.l / blockSize;
+    <span class="kw">if</span> (ba != bb) <span class="kw">return</span> ba &lt; bb;
+    <span class="ty">int</span> ra = a.r / blockSize, rb = b.r / blockSize;
+    <span class="kw">if</span> (ra != rb) <span class="kw">return</span> ra &lt; rb;
+    <span class="kw">return</span> a.t &lt; b.t;
+}
+
+<span class="cm">// 应用第 t 次修改</span>
+<span class="ty">void</span> <span class="fn">applyModify</span>(<span class="ty">int</span> t, <span class="ty">int</span> curL, <span class="ty">int</span> curR) {
+    <span class="ty">int</span> pos = mods[t].pos;
+    <span class="cm">// 如果修改的位置在当前区间内，先删除旧值</span>
+    <span class="kw">if</span> (curL &lt;= pos &amp;&amp; pos &lt;= curR) {
+        <span class="fn">remove</span>(pos);
+    }
+    <span class="cm">// 应用修改</span>
+    arr[pos] = mods[t].newVal;
+    <span class="cm">// 如果修改的位置在当前区间内，加入新值</span>
+    <span class="kw">if</span> (curL &lt;= pos &amp;&amp; pos &lt;= curR) {
+        <span class="fn">add</span>(pos);
+    }
+}
+
+<span class="cm">// 撤销第 t 次修改</span>
+<span class="ty">void</span> <span class="fn">undoModify</span>(<span class="ty">int</span> t, <span class="ty">int</span> curL, <span class="ty">int</span> curR) {
+    <span class="ty">int</span> pos = mods[t].pos;
+    <span class="kw">if</span> (curL &lt;= pos &amp;&amp; pos &lt;= curR) {
+        <span class="fn">remove</span>(pos);
+    }
+    arr[pos] = mods[t].oldVal;
+    <span class="kw">if</span> (curL &lt;= pos &amp;&amp; pos &lt;= curR) {
+        <span class="fn">add</span>(pos);
+    }
+}
+
+<span class="ty">void</span> <span class="fn">solve</span>() {
+    <span class="ty">int</span> curL = <span class="num">0</span>, curR = -<span class="num">1</span>, curT = <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; q; i++) {
+        <span class="cm">// 先调整时间维度</span>
+        <span class="kw">while</span> (curT &lt; queries[i].t)
+            <span class="fn">applyModify</span>(++curT, curL, curR);
+        <span class="kw">while</span> (curT &gt; queries[i].t)
+            <span class="fn">undoModify</span>(curT--, curL, curR);
+
+        <span class="cm">// 再调整空间维度 (同普通莫队)</span>
+        <span class="kw">while</span> (curL &gt; queries[i].l) <span class="fn">add</span>(--curL);
+        <span class="kw">while</span> (curR &lt; queries[i].r) <span class="fn">add</span>(++curR);
+        <span class="kw">while</span> (curL &lt; queries[i].l) <span class="fn">remove</span>(curL++);
+        <span class="kw">while</span> (curR &gt; queries[i].r) <span class="fn">remove</span>(curR--);
+
+        ans[queries[i].id] = curAns;
+    }
+}</code></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">注意事项</div>
+      <p>1. 修改操作需要记录 <strong>旧值和新值</strong>，以便撤销<br>
+         2. 块大小取 <code>pow(n, 2.0/3)</code> 而非 <code>sqrt(n)</code><br>
+         3. 时间维度的调整要在空间维度之前进行</p>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 4: 回滚莫队 -->
+  <!-- ============================== -->
+  <div class="section" id="rollback">
+    <h2>回滚莫队</h2>
+    <p>回滚莫队用于<strong>add 容易但 delete 困难</strong>（或反过来）的问题。核心思想是只使用 add 操作，当右端点需要大幅回退时，暴力重建整个区间。</p>
+
+    <h3>适用场景</h3>
+    <ul>
+      <li>可以 O(1) add 但无法 O(1) delete（如维护最大值、区间众数等）</li>
+      <li>需要维护的信息<strong>不支持撤销</strong></li>
+    </ul>
+
+    <h3>算法流程</h3>
+    <div class="steps">
+      <div class="step">将查询按左端点所在块分组，每组内按右端点升序排列</div>
+      <div class="step">对于同一块内的查询：
+        <ul>
+          <li>右指针只增不减（因为按右端点排序）</li>
+          <li>左指针每次从块的右边界出发，暴力右移到查询左端点</li>
+          <li>处理完后，撤销左指针的所有操作（回滚）</li>
+        </ul>
+      </div>
+      <div class="step">跨块时，右指针需要重置到当前块的右边界</div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+  回滚莫队的指针移动
+
+  块边界  查询L  当前L
+    |       |      |
+    v       v      v
+    ┌───────┬──────┐────────────────────→ R
+    │  块内  │ 块外 │
+    └───────┴──────┘
+        ↑
+        块右边界 blockEnd
+
+  处理过程:
+  1. R 从上次位置继续向右 (只增不减)
+  2. L 从 blockEnd 向右暴力移动到查询 L
+  3. 记录答案
+  4. 撤销 L 的所有移动 (回滚到 blockEnd)
+      </pre>
+    </div>
+
+    <h3>代码实现（区间最大值出现次数）</h3>
+    <pre><code><span class="ty">int</span> blockSize;
+<span class="ty">int</span> arr[N], cnt[N], curAns;
+
+<span class="cm">// 只支持 add，不支持 delete</span>
+<span class="ty">void</span> <span class="fn">add</span>(<span class="ty">int</span> pos) {
+    cnt[arr[pos]]++;
+    curAns = <span class="fn">max</span>(curAns, cnt[arr[pos]]);
+}
+
+<span class="cm">// 回滚莫队</span>
+<span class="ty">void</span> <span class="fn">rollbackMo</span>(<span class="ty">vector</span>&lt;<span class="ty">Query</span>&gt;&amp; queries) {
+    <span class="fn">sort</span>(queries.<span class="fn">begin</span>(), queries.<span class="fn">end</span>(), [](<span class="ty">Query</span>&amp; a, <span class="ty">Query</span>&amp; b) {
+        <span class="ty">int</span> ba = a.l / blockSize, bb = b.l / blockSize;
+        <span class="kw">if</span> (ba != bb) <span class="kw">return</span> ba &lt; bb;
+        <span class="kw">return</span> a.r &lt; b.r;  <span class="cm">// 同块内右端点升序</span>
+    });
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; queries.<span class="fn">size</span>(); ) {
+        <span class="ty">int</span> block = queries[i].l / blockSize;
+        <span class="ty">int</span> blockEnd = (block + <span class="num">1</span>) * blockSize - <span class="num">1</span>;
+        <span class="ty">int</span> R = blockEnd;  <span class="cm">// 右指针从块右边界开始</span>
+
+        <span class="cm">// 处理同一块内的查询</span>
+        <span class="kw">while</span> (i &lt; queries.<span class="fn">size</span>() &amp;&amp;
+               queries[i].l / blockSize == block) {
+            <span class="ty">int</span> L = queries[i].l, r = queries[i].r;
+
+            <span class="cm">// 右指针向右扩展 (只增不减)</span>
+            <span class="kw">while</span> (R &lt; r) <span class="fn">add</span>(++R);
+
+            <span class="cm">// 保存当前状态</span>
+            <span class="ty">int</span> savedAns = curAns;
+
+            <span class="cm">// 左指针从块右边界暴力右移</span>
+            <span class="kw">while</span> (L &gt; blockEnd) {
+                <span class="fn">add</span>(L);  <span class="cm">// 注意: 这里不能用 L--</span>
+                L++;
+            }
+
+            <span class="cm">// 记录答案</span>
+            ans[queries[i].id] = curAns;
+
+            <span class="cm">// 回滚左指针的操作</span>
+            L = queries[i].l;
+            <span class="kw">while</span> (L &gt; blockEnd) {
+                L--;
+                cnt[arr[L]]--;
+            }
+            <span class="cm">// 但不能直接回滚 cnt，需要重新计算</span>
+            <span class="cm">// 更好的做法是使用备份数组</span>
+            curAns = savedAns;
+
+            i++;
+        }
+
+        <span class="cm">// 清空 cnt，为下一个块准备</span>
+        <span class="fn">memset</span>(cnt, <span class="num">0</span>, <span class="kw">sizeof</span>(cnt));
+        curAns = <span class="num">0</span>;
+    }
+}</code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">回滚莫队的变体</div>
+      <p>还有一种"不删除莫队"，适用于只能 delete 不能 add 的情况。此时左指针固定不动，右指针大幅回退时暴力重建。选择哪种取决于 add 和 delete 哪个更方便实现。</p>
+    </div>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O((n+q) * sqrt(n))</span>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 5: 完整模板 -->
+  <!-- ============================== -->
+  <div class="section" id="template">
+    <h2>完整模板</h2>
+
+    <h3>普通莫队模板</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> N = <span class="num">1e5</span> + <span class="num">5</span>;
+<span class="ty">int</span> arr[N], cnt[N], ans[N], curAns, blockSize;
+
+<span class="kw">struct</span> <span class="ty">Query</span> { <span class="ty">int</span> l, r, id; } Q[N];
+
+<span class="ty">bool</span> <span class="fn">cmp</span>(<span class="kw">const</span> <span class="ty">Query</span>&amp; a, <span class="kw">const</span> <span class="ty">Query</span>&amp; b) {
+    <span class="ty">int</span> ba = a.l/blockSize, bb = b.l/blockSize;
+    <span class="kw">if</span> (ba != bb) <span class="kw">return</span> ba &lt; bb;
+    <span class="kw">return</span> (ba&amp;<span class="num">1</span>) ? a.r &gt; b.r : a.r &lt; b.r;
+}
+
+<span class="ty">void</span> <span class="fn">add</span>(<span class="ty">int</span> pos) {
+    <span class="cm">// 根据题目修改</span>
+    cnt[arr[pos]]++;
+    <span class="kw">if</span> (cnt[arr[pos]] == <span class="num">1</span>) curAns++;
+}
+
+<span class="ty">void</span> <span class="fn">del</span>(<span class="ty">int</span> pos) {
+    <span class="cm">// 根据题目修改</span>
+    cnt[arr[pos]]--;
+    <span class="kw">if</span> (cnt[arr[pos]] == <span class="num">0</span>) curAns--;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, q;
+    <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;n, &amp;q);
+    blockSize = <span class="fn">sqrt</span>(n);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;arr[i]);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; q; i++) {
+        <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;Q[i].l, &amp;Q[i].r);
+        Q[i].l--; Q[i].r--;
+        Q[i].id = i;
+    }
+    <span class="fn">sort</span>(Q, Q+q, cmp);
+
+    <span class="ty">int</span> L = <span class="num">0</span>, R = -<span class="num">1</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; q; i++) {
+        <span class="kw">while</span> (L &gt; Q[i].l) <span class="fn">add</span>(--L);
+        <span class="kw">while</span> (R &lt; Q[i].r) <span class="fn">add</span>(++R);
+        <span class="kw">while</span> (L &lt; Q[i].l) <span class="fn">del</span>(L++);
+        <span class="kw">while</span> (R &gt; Q[i].r) <span class="fn">del</span>(R--);
+        ans[Q[i].id] = curAns;
+    }
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; q; i++)
+        <span class="fn">printf</span>(<span class="str">"%d\n"</span>, ans[i]);
+}</code></pre>
+
+    <h3>带修莫队模板</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> N = <span class="num">1e5</span> + <span class="num">5</span>;
+<span class="ty">int</span> arr[N], cnt[N], ans[N], curAns;
+<span class="ty">int</span> n, q, blockSize, nq, nm;
+
+<span class="kw">struct</span> <span class="ty">Query</span> { <span class="ty">int</span> l, r, t, id; } Q[N];
+<span class="kw">struct</span> <span class="ty">Modify</span> { <span class="ty">int</span> pos, oldV, newV; } M[N];
+
+<span class="ty">bool</span> <span class="fn">cmp</span>(<span class="kw">const</span> <span class="ty">Query</span>&amp; a, <span class="kw">const</span> <span class="ty">Query</span>&amp; b) {
+    <span class="ty">int</span> ba = a.l/blockSize, bb = b.l/blockSize;
+    <span class="kw">if</span> (ba != bb) <span class="kw">return</span> ba &lt; bb;
+    <span class="ty">int</span> ra = a.r/blockSize, rb = b.r/blockSize;
+    <span class="kw">if</span> (ra != rb) <span class="kw">return</span> ra &lt; rb;
+    <span class="kw">return</span> a.t &lt; b.t;
+}
+
+<span class="ty">void</span> <span class="fn">add</span>(<span class="ty">int</span> pos) { <span class="cm">/* 根据题目修改 */</span> }
+<span class="ty">void</span> <span class="fn">del</span>(<span class="ty">int</span> pos) { <span class="cm">/* 根据题目修改 */</span> }
+
+<span class="ty">void</span> <span class="fn">apply</span>(<span class="ty">int</span> t, <span class="ty">int</span> L, <span class="ty">int</span> R) {
+    <span class="ty">int</span> p = M[t].pos;
+    <span class="kw">if</span> (L &lt;= p &amp;&amp; p &lt;= R) <span class="fn">del</span>(p);
+    arr[p] = M[t].newV;
+    <span class="kw">if</span> (L &lt;= p &amp;&amp; p &lt;= R) <span class="fn">add</span>(p);
+}
+
+<span class="ty">void</span> <span class="fn">undo</span>(<span class="ty">int</span> t, <span class="ty">int</span> L, <span class="ty">int</span> R) {
+    <span class="ty">int</span> p = M[t].pos;
+    <span class="kw">if</span> (L &lt;= p &amp;&amp; p &lt;= R) <span class="fn">del</span>(p);
+    arr[p] = M[t].oldV;
+    <span class="kw">if</span> (L &lt;= p &amp;&amp; p &lt;= R) <span class="fn">add</span>(p);
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;n, &amp;q);
+    blockSize = <span class="fn">pow</span>(n, <span class="num">2.0</span>/<span class="num">3.0</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;arr[i]);
+    nq = nm = <span class="num">0</span>;
+    <span class="kw">while</span> (q--) {
+        <span class="ty">char</span> op; <span class="ty">int</span> x, y;
+        <span class="fn">scanf</span>(<span class="str">" %c%d%d"</span>, &amp;op, &amp;x, &amp;y);
+        <span class="kw">if</span> (op == <span class="str">'Q'</span>) {
+            Q[nq] = {x-<span class="num">1</span>, y-<span class="num">1</span>, nm, nq};
+            nq++;
+        } <span class="kw">else</span> {
+            M[nm] = {x-<span class="num">1</span>, arr[x-<span class="num">1</span>], y};
+            arr[x-<span class="num">1</span>] = y;
+            nm++;
+        }
+    }
+    <span class="cm">// 恢复 arr 到初始状态 (需要额外保存)</span>
+
+    <span class="fn">sort</span>(Q, Q+nq, cmp);
+
+    <span class="ty">int</span> L=<span class="num">0</span>, R=-<span class="num">1</span>, T=<span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; nq; i++) {
+        <span class="kw">while</span> (T &lt; Q[i].t) <span class="fn">apply</span>(++T, L, R);
+        <span class="kw">while</span> (T &gt; Q[i].t) <span class="fn">undo</span>(T--, L, R);
+        <span class="kw">while</span> (L &gt; Q[i].l) <span class="fn">add</span>(--L);
+        <span class="kw">while</span> (R &lt; Q[i].r) <span class="fn">add</span>(++R);
+        <span class="kw">while</span> (L &lt; Q[i].l) <span class="fn">del</span>(L++);
+        <span class="kw">while</span> (R &gt; Q[i].r) <span class="fn">del</span>(R--);
+        ans[Q[i].id] = curAns;
+    }
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; nq; i++)
+        <span class="fn">printf</span>(<span class="str">"%d\n"</span>, ans[i]);
+}</code></pre>
+
+    <h3>回滚莫队模板</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> N = <span class="num">1e5</span> + <span class="num">5</span>;
+<span class="ty">int</span> arr[N], cnt[N], ans[N], curAns, blockSize;
+<span class="ty">int</span> tmp[N]; <span class="cm">// 用于回滚的备份</span>
+
+<span class="kw">struct</span> <span class="ty">Query</span> { <span class="ty">int</span> l, r, id; } Q[N];
+
+<span class="ty">void</span> <span class="fn">add</span>(<span class="ty">int</span> pos) {
+    cnt[arr[pos]]++;
+    curAns = <span class="fn">max</span>(curAns, cnt[arr[pos]]);
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, q;
+    <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;n, &amp;q);
+    blockSize = <span class="fn">sqrt</span>(n);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;arr[i]);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; q; i++) {
+        <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;Q[i].l, &amp;Q[i].r);
+        Q[i].l--; Q[i].r--;
+        Q[i].id = i;
+    }
+
+    <span class="fn">sort</span>(Q, Q+q, [](<span class="ty">Query</span>&amp; a, <span class="ty">Query</span>&amp; b) {
+        <span class="ty">int</span> ba=a.l/blockSize, bb=b.l/blockSize;
+        <span class="kw">if</span>(ba!=bb) <span class="kw">return</span> ba&lt;bb;
+        <span class="kw">return</span> a.r&lt;b.r;
+    });
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; q; ) {
+        <span class="ty">int</span> block = Q[i].l / blockSize;
+        <span class="ty">int</span> R = (block+<span class="num">1</span>) * blockSize - <span class="num">1</span>;
+        curAns = <span class="num">0</span>;
+
+        <span class="kw">while</span> (i &lt; q &amp;&amp; Q[i].l/blockSize == block) {
+            <span class="kw">while</span> (R &lt; Q[i].r) <span class="fn">add</span>(++R);
+
+            <span class="ty">int</span> savedAns = curAns;
+            <span class="ty">int</span> L = Q[i].l;
+            <span class="kw">while</span> (L &lt;= <span class="fn">min</span>(Q[i].r, R)) {
+                <span class="fn">add</span>(L);
+                L++;
+            }
+            ans[Q[i].id] = curAns;
+
+            <span class="cm">// 回滚</span>
+            <span class="kw">while</span> (L &gt; Q[i].l) {
+                L--;
+                cnt[arr[L]]--;
+            }
+            curAns = savedAns;
+            i++;
+        }
+
+        <span class="fn">memset</span>(cnt, <span class="num">0</span>, <span class="kw">sizeof</span>(cnt));
+    }
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; q; i++)
+        <span class="fn">printf</span>(<span class="str">"%d\n"</span>, ans[i]);
+}</code></pre>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 6: 经典例题 -->
+  <!-- ============================== -->
+  <div class="section" id="problems">
+    <h2>经典例题</h2>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P1972 - [SDOI2009] HH的项链</div>
+      <p>经典莫队题：求区间内不同数字的个数。也可以用树状数组离线做，但莫队更直观。</p>
+      <span class="tag tag-mid">普通莫队</span>
+      <span class="tag tag-base">区间计数</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P2709 - 小B的询问</div>
+      <p>求区间内每种数字出现次数的平方和。用莫队维护 cnt 和 sum of cnt^2。</p>
+      <span class="tag tag-mid">普通莫队</span>
+      <span class="tag tag-base">计数</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P1903 - [国家集训队] 数颜色 / 维护队列</div>
+      <p>带修莫队经典题：区间不同颜色数 + 单点修改颜色。</p>
+      <span class="tag tag-hard">带修莫队</span>
+      <span class="tag tag-base">三维莫队</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P5906 - 【模板】回滚莫队</div>
+      <p>回滚莫队模板题：求区间内元素最大出现次数。</p>
+      <span class="tag tag-mid">回滚莫队</span>
+      <span class="tag tag-base">模板</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">SPOJ DQUERY - D-query</div>
+      <p>区间不同元素个数，莫队经典题。也是 HH 的项链的简化版。</p>
+      <span class="tag tag-easy">普通莫队</span>
+      <span class="tag tag-base">入门</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">Codeforces 86D - Powerful array</div>
+      <p>求区间内每种数字出现次数的平方乘以该数字的值之和。莫队维护即可。</p>
+      <span class="tag tag-mid">普通莫队</span>
+      <span class="tag tag-base">计数</span>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">莫队与其他算法的对比</div>
+      <p>1. <strong>树状数组/线段树</strong>：在线，O(q log n)，适合单点修改+区间查询<br>
+         2. <strong>莫队</strong>：离线，O((n+q) sqrt(n))，适合复杂区间统计<br>
+         3. <strong>分块</strong>：在线/离线均可，O(n sqrt(n))，适合需要修改的区间问题<br>
+         选择依据：是否强制在线、操作类型、常数大小</p>
+    </div>
+
+    <div class="box box-hard">
+      <div class="box-title">莫队的优化技巧</div>
+      <p>1. <strong>奇偶性优化</strong>：蛇形走位减少右指针回退<br>
+         2. <strong>值域离散化</strong>：当值域很大时先离散化<br>
+         3. <strong>块大小微调</strong>：实际比赛中块大小可以适当调大（如 500~700）以减少常数<br>
+         4. <strong>预处理</strong>：某些操作可以预处理前缀信息辅助莫队</p>
+    </div>
+  </div>
+
+</div>
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

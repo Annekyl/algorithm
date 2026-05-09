@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>单调队列 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+<!-- 面包屑导航 -->
+<div class="breadcrumb">
+  <a href="../index.html">首页</a> &gt; <a href="../index.html">06 数据结构</a> &gt; 单调队列
+</div>
+
+<!-- 页面标题 -->
+<div class="page-header">
+  <h1>单调队列</h1>
+  <p class="subtitle">Monotone Queue &mdash; O(n) 滑动窗口最值与 DP 优化</p>
+  <div class="tags">
+    <span class="tag tag-base">数据结构</span>
+    <span class="tag tag-mid">单调队列</span>
+    <span class="tag tag-mid">滑动窗口</span>
+    <span class="tag tag-hard">DP优化</span>
+    <span class="tag tag-base">deque</span>
+  </div>
+</div>
+
+<!-- 目录 -->
+<div class="toc">
+  <h3>目录</h3>
+  <ul>
+    <li><a href="#sec1">一、单调队列概述</a></li>
+    <li><a href="#sec2">二、滑动窗口最大/小值</a></li>
+    <li><a href="#sec3">三、DP 优化应用</a></li>
+    <li><a href="#sec4">四、综合例题与练习</a></li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第一节：单调队列概述 -->
+<!-- ============================================================ -->
+<div class="section" id="sec1">
+  <h2>一、单调队列概述</h2>
+
+  <h3>1.1 什么是单调队列</h3>
+  <p>单调队列是一种特殊的双端队列（deque），队列中的元素始终保持<strong>单调递增</strong>或<strong>单调递减</strong>的顺序。它结合了单调栈的思想和队列的滑动窗口特性，可以在 O(1) 时间内获取当前窗口内的最大值或最小值。</p>
+
+  <h3>1.2 核心思想</h3>
+  <p>单调队列的核心操作与单调栈类似，但增加了<strong>队首过期清理</strong>的功能：当队首元素已经滑出窗口时，将其从队首移除。</p>
+
+  <div class="diagram">
+    <pre>
+  单调队列 vs 单调栈：
+
+  单调栈：只在一端操作（栈顶），用于求"下一个更大/小元素"
+  单调队列：两端都可以操作，用于求"滑动窗口内的最大/小值"
+
+  单调队列的两个关键操作：
+  1. 维护单调性：从队尾弹出破坏单调性的元素
+  2. 清理过期元素：从队首弹出超出窗口范围的元素
+
+  入队：从队尾操作（类似单调栈）
+  出队：从队首操作（清理过期元素）
+  查询：队首就是当前窗口的最值</pre>
+  </div>
+
+  <h3>1.3 单调队列的类型</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>类型</th><th>队列顺序</th><th>队首元素</th><th>典型应用</th></tr>
+      <tr><td>单调递增队列</td><td>队首 &lt; 队尾</td><td>当前窗口最小值</td><td>滑动窗口最小值</td></tr>
+      <tr><td>单调递减队列</td><td>队首 &gt; 队尾</td><td>当前窗口最大值</td><td>滑动窗口最大值</td></tr>
+    </table>
+  </div>
+
+  <h3>1.4 时间复杂度</h3>
+  <p>每个元素最多入队一次、出队一次，总时间复杂度为 <code>O(n)</code>。单次查询最值为 <code>O(1)</code>。</p>
+  <div class="complexity"><span class="label">总时间复杂度</span> <span class="value">O(n)</span></div>
+  <div class="complexity"><span class="label">单次查询</span> <span class="value">O(1)</span></div>
+  <div class="complexity"><span class="label">空间复杂度</span> <span class="value">O(n)</span></div>
+
+  <div class="box box-info">
+    <div class="box-title">与优先队列的对比</div>
+    <p>优先队列（堆）也可以求滑动窗口最值，但每次操作是 O(log n)，且删除过期元素需要懒惰删除技巧。单调队列在每个元素最多操作两次的保证下，总复杂度为 O(n)，优于优先队列的 O(n log n)。</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第二节：滑动窗口最大/小值 -->
+<!-- ============================================================ -->
+<div class="section" id="sec2">
+  <h2>二、滑动窗口最大/小值</h2>
+
+  <h3>2.1 问题定义</h3>
+  <p>给定一个长度为 n 的数组和一个大小为 k 的滑动窗口，窗口从数组的最左端滑到最右端。每次窗口向右移动一个位置，求每次移动后窗口内的最大值（或最小值）。</p>
+
+  <div class="diagram">
+    <pre>
+  数组: [1, 3, -1, -3, 5, 3, 6, 7]，窗口大小 k=3
+
+  窗口位置          窗口内容        最大值
+  [1, 3, -1]        1, 3, -1         3
+     [3, -1, -3]    3, -1, -3        3
+        [-1, -3, 5] -1, -3, 5        5
+           [-3, 5, 3] -3, 5, 3       5
+              [5, 3, 6] 5, 3, 6      6
+                 [3, 6, 7] 3, 6, 7   7
+
+  最大值序列: [3, 3, 5, 5, 6, 7]</pre>
+  </div>
+
+  <h3>2.2 算法步骤</h3>
+  <div class="steps">
+    <div class="step">
+      <strong>初始化</strong>空双端队列，存下标
+    </div>
+    <div class="step">
+      <strong>遍历</strong>数组的每个元素 a[i]（i 从 0 到 n-1）
+    </div>
+    <div class="step">
+      <strong>清理队首</strong>：如果队首元素的下标已经超出窗口范围（即 <code>队首 &lt; i - k + 1</code>），从队首弹出
+    </div>
+    <div class="step">
+      <strong>维护单调性</strong>：从队尾弹出所有 <code>&lt; a[i]</code> 的元素（求最大值时用单调递减队列）
+    </div>
+    <div class="step">
+      将 i <strong>入队</strong>
+    </div>
+    <div class="step">
+      当 <code>i >= k - 1</code> 时，<strong>队首</strong>就是当前窗口的最大值
+    </div>
+  </div>
+
+  <h3>2.3 图解过程</h3>
+  <div class="diagram">
+    <pre>
+  a = [1, 3, -1, -3, 5, 3, 6, 7], k = 3
+  求滑动窗口最大值（单调递减队列，存下标）
+
+  i=0, a[0]=1: 队列为空, 入队。队列: [0(1)]
+  窗口未满 (i < k-1=2)
+
+  i=1, a[1]=3: 3 > a[队尾]=1, 弹出队尾。入队。队列: [1(3)]
+  窗口未满
+
+  i=2, a[2]=-1: -1 <= a[队尾]=3, 入队。队列: [1(3), 2(-1)]
+  窗口已满, 最大值 = a[队首] = a[1] = 3
+
+  i=3, a[3]=-3: 队首下标1 >= 3-3+1=1, 不过期。
+  -3 <= a[队尾]=-1, 入队。队列: [1(3), 2(-1), 3(-3)]
+  最大值 = a[1] = 3
+
+  i=4, a[4]=5: 队首下标1 < 4-3+1=2, 过期, 弹出队首。
+  队列: [2(-1), 3(-3)]
+  5 > a[队尾]=-3, 弹出。5 > a[队尾]=-1, 弹出。入队。
+  队列: [4(5)]
+  最大值 = a[4] = 5
+
+  i=5, a[5]=3: 3 <= a[队尾]=5, 入队。队列: [4(5), 5(3)]
+  最大值 = a[4] = 5
+
+  i=6, a[6]=6: 队首下标4 < 6-3+1=4, 不过期。
+  6 > a[队尾]=3, 弹出。6 > a[队尾]=5, 弹出。入队。
+  队列: [6(6)]
+  最大值 = a[6] = 6
+
+  i=7, a[7]=7: 队首下标6 < 7-3+1=5, 不过期。
+  7 > a[队尾]=6, 弹出。入队。
+  队列: [7(7)]
+  最大值 = a[7] = 7
+
+  结果: [3, 3, 5, 5, 6, 7]</pre>
+  </div>
+
+  <h3>2.4 C++ 模板：滑动窗口最大值</h3>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;deque&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;vector&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, k;
+    cin <span class="op">&gt;&gt;</span> n <span class="op">&gt;&gt;</span> k;
+    <span class="ty">vector</span><span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;</span> a(n);
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">0</span>; i <span class="op">&lt;</span> n; i<span class="op">++</span>)
+        cin <span class="op">&gt;&gt;</span> a[i];
+
+    <span class="cm">// 单调递减队列，存下标，队首为最大值</span>
+    deque<span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;</span> dq;
+    <span class="ty">vector</span><span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;</span> ans;
+
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">0</span>; i <span class="op">&lt;</span> n; i<span class="op">++</span>) {
+        <span class="cm">// 1. 清理过期元素：队首下标超出窗口左边界</span>
+        <span class="kw">while</span> (<span class="op">!</span>dq.<span class="fn">empty</span>() <span class="op">&amp;&amp;</span> dq.<span class="fn">front</span>() <span class="op">&lt;</span> i <span class="op">-</span> k <span class="op">+</span> <span class="num">1</span>)
+            dq.<span class="fn">pop_front</span>();
+
+        <span class="cm">// 2. 维护单调性：从队尾弹出比当前元素小的</span>
+        <span class="kw">while</span> (<span class="op">!</span>dq.<span class="fn">empty</span>() <span class="op">&amp;&amp;</span> a[dq.<span class="fn">back</span>()] <span class="op">&lt;=</span> a[i])
+            dq.<span class="fn">pop_back</span>();
+
+        <span class="cm">// 3. 当前元素入队</span>
+        dq.<span class="fn">push_back</span>(i);
+
+        <span class="cm">// 4. 窗口满时记录答案</span>
+        <span class="kw">if</span> (i <span class="op">&gt;=</span> k <span class="op">-</span> <span class="num">1</span>)
+            ans.<span class="fn">push_back</span>(a[dq.<span class="fn">front</span>()]);
+    }
+
+    <span class="kw">for</span> (<span class="ty">int</span> x <span class="op">:</span> ans)
+        cout <span class="op">&lt;&lt;</span> x <span class="op">&lt;&lt;</span> <span class="str">" "</span>;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <h3>2.5 滑动窗口最小值</h3>
+  <p>只需将单调递减队列改为单调递增队列，即改变维护单调性的比较方向：</p>
+  <pre><code><span class="cm">// 单调递增队列，队首为最小值</span>
+deque<span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;</span> dq;
+<span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">0</span>; i <span class="op">&lt;</span> n; i<span class="op">++</span>) {
+    <span class="cm">// 清理过期元素</span>
+    <span class="kw">while</span> (<span class="op">!</span>dq.<span class="fn">empty</span>() <span class="op">&amp;&amp;</span> dq.<span class="fn">front</span>() <span class="op">&lt;</span> i <span class="op">-</span> k <span class="op">+</span> <span class="num">1</span>)
+        dq.<span class="fn">pop_front</span>();
+
+    <span class="cm">// 维护单调递增：从队尾弹出比当前元素大的</span>
+    <span class="kw">while</span> (<span class="op">!</span>dq.<span class="fn">empty</span>() <span class="op">&amp;&amp;</span> a[dq.<span class="fn">back</span>()] <span class="op">&gt;=</span> a[i])
+        dq.<span class="fn">pop_back</span>();
+
+    dq.<span class="fn">push_back</span>(i);
+
+    <span class="kw">if</span> (i <span class="op">&gt;=</span> k <span class="op">-</span> <span class="num">1</span>)
+        cout <span class="op">&lt;&lt;</span> a[dq.<span class="fn">front</span>()] <span class="op">&lt;&lt;</span> <span class="str">" "</span>;
+}</code></pre>
+
+  <h3>2.6 同时求最大值和最小值</h3>
+  <pre><code><span class="cm">// 同时维护两个队列，一次遍历得到最大值和最小值</span>
+deque<span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;</span> dq_max, dq_min;
+<span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">0</span>; i <span class="op">&lt;</span> n; i<span class="op">++</span>) {
+    <span class="cm">// 清理过期</span>
+    <span class="kw">while</span> (<span class="op">!</span>dq_max.<span class="fn">empty</span>() <span class="op">&amp;&amp;</span> dq_max.<span class="fn">front</span>() <span class="op">&lt;</span> i <span class="op">-</span> k <span class="op">+</span> <span class="num">1</span>) dq_max.<span class="fn">pop_front</span>();
+    <span class="kw">while</span> (<span class="op">!</span>dq_min.<span class="fn">empty</span>() <span class="op">&amp;&amp;</span> dq_min.<span class="fn">front</span>() <span class="op">&lt;</span> i <span class="op">-</span> k <span class="op">+</span> <span class="num">1</span>) dq_min.<span class="fn">pop_front</span>();
+
+    <span class="cm">// 维护单调性</span>
+    <span class="kw">while</span> (<span class="op">!</span>dq_max.<span class="fn">empty</span>() <span class="op">&amp;&amp;</span> a[dq_max.<span class="fn">back</span>()] <span class="op">&lt;=</span> a[i]) dq_max.<span class="fn">pop_back</span>();
+    <span class="kw">while</span> (<span class="op">!</span>dq_min.<span class="fn">empty</span>() <span class="op">&amp;&amp;</span> a[dq_min.<span class="fn">back</span>()] <span class="op">&gt;=</span> a[i]) dq_min.<span class="fn">pop_back</span>();
+
+    dq_max.<span class="fn">push_back</span>(i);
+    dq_min.<span class="fn">push_back</span>(i);
+
+    <span class="kw">if</span> (i <span class="op">&gt;=</span> k <span class="op">-</span> <span class="num">1</span>) {
+        <span class="ty">int</span> mx <span class="op">=</span> a[dq_max.<span class="fn">front</span>()];
+        <span class="ty">int</span> mn <span class="op">=</span> a[dq_min.<span class="fn">front</span>()];
+        <span class="cm">// 使用最大值和最小值做进一步处理</span>
+    }
+}</code></pre>
+
+  <div class="box box-tip">
+    <div class="box-title">实现技巧</div>
+    <p>1. 队列中存<strong>下标</strong>而非值，方便判断元素是否过期<br>
+    2. 过期判断：<code>dq.front() &lt; i - k + 1</code> 表示队首元素已不在当前窗口内<br>
+    3. 可以用 <code>std::deque</code> 或手写数组模拟双端队列（常数更小）</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第三节：DP 优化应用 -->
+<!-- ============================================================ -->
+<div class="section" id="sec3">
+  <h2>三、DP 优化应用</h2>
+
+  <h3>3.1 问题模式</h3>
+  <p>当 DP 的转移方程中涉及<strong>区间最值</strong>时，可以使用单调队列优化。典型模式：</p>
+  <p style="text-align:center; font-size:1.05em; color:var(--accent); margin:16px 0;">
+    dp[i] = min/max{ dp[j] + cost(j, i) } &nbsp;&nbsp; 其中 j 属于某个滑动窗口
+  </p>
+
+  <h3>3.2 经典问题：最大子段和（滑动窗口版本）</h3>
+  <p>给定数组和窗口大小 k，求长度不超过 k 的连续子段的最大和。</p>
+
+  <div class="diagram">
+    <pre>
+  问题：dp[i] = S[i] - min{ S[j] }, 其中 i-k <= j <= i-1
+
+  S[i] 是前缀和，我们需要在窗口 [i-k, i-1] 中找到最小的 S[j]
+
+  用单调递增队列维护前缀和的最小值：
+  - 队首始终是当前窗口内的最小前缀和
+  - dp[i] = S[i] - S[队首]
+
+  时间复杂度: O(n)</pre>
+  </div>
+
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;deque&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;climits&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, k;
+    cin <span class="op">&gt;&gt;</span> n <span class="op">&gt;&gt;</span> k;
+
+    <span class="cm">// 前缀和</span>
+    <span class="ty">long long</span> S <span class="op">=</span> <span class="num">0</span>;
+    <span class="ty">long long</span> ans <span class="op">=</span> LLONG_MIN;
+    deque<span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;</span> dq;  <span class="cm">// 存下标，单调递增队列</span>
+
+    <span class="cm">// 初始：S[0] = 0 入队</span>
+    dq.<span class="fn">push_back</span>(<span class="num">0</span>);
+    <span class="ty">long long</span> S_arr[n <span class="op">+</span> <span class="num">1</span>];
+    S_arr[<span class="num">0</span>] <span class="op">=</span> <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>) {
+        <span class="ty">int</span> x; cin <span class="op">&gt;&gt;</span> x;
+        S <span class="op">+=</span> x;
+        S_arr[i] <span class="op">=</span> S;
+
+        <span class="cm">// 清理过期元素</span>
+        <span class="kw">while</span> (<span class="op">!</span>dq.<span class="fn">empty</span>() <span class="op">&amp;&amp;</span> dq.<span class="fn">front</span>() <span class="op">&lt;</span> i <span class="op">-</span> k)
+            dq.<span class="fn">pop_front</span>();
+
+        <span class="cm">// 更新答案：S[i] - S[最小的j]</span>
+        <span class="kw">if</span> (<span class="op">!</span>dq.<span class="fn">empty</span>())
+            ans <span class="op">=</span> <span class="fn">max</span>(ans, S <span class="op">-</span> S_arr[dq.<span class="fn">front</span>()]);
+
+        <span class="cm">// 维护单调递增</span>
+        <span class="kw">while</span> (<span class="op">!</span>dq.<span class="fn">empty</span>() <span class="op">&amp;&amp;</span> S_arr[dq.<span class="fn">back</span>()] <span class="op">&gt;=</span> S)
+            dq.<span class="fn">pop_back</span>();
+        dq.<span class="fn">push_back</span>(i);
+    }
+    cout <span class="op">&lt;&lt;</span> ans <span class="op">&lt;&lt;</span> endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <h3>3.3 经典问题：修剪草坪</h3>
+  <p>洛谷 P2627 修剪草坪：n 头牛排成一排，每头牛有一个效率值。选择一些牛组成团队，但不能连续选择超过 k 头牛。求团队效率总和的最大值。</p>
+
+  <div class="diagram">
+    <pre>
+  状态转移方程：
+  dp[i] = max(dp[i-1],  max{ dp[j-1] + sum(j, i) })  (i-k <= j <= i)
+
+  其中 sum(j, i) = S[i] - S[j-1]
+
+  变形：dp[i] = max(dp[i-1], S[i] + max{ dp[j-1] - S[j-1] })
+                (i-k <= j <= i)
+
+  用单调递减队列维护 dp[j-1] - S[j-1] 的最大值</pre>
+  </div>
+
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;deque&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> MAXN <span class="op">=</span> <span class="num">100005</span>;
+<span class="ty">long long</span> a[MAXN], S[MAXN], dp[MAXN];
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, k;
+    cin <span class="op">&gt;&gt;</span> n <span class="op">&gt;&gt;</span> k;
+
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>) {
+        cin <span class="op">&gt;&gt;</span> a[i];
+        S[i] <span class="op">=</span> S[i<span class="op">-</span><span class="num">1</span>] <span class="op">+</span> a[i];
+    }
+
+    deque<span class="op">&lt;</span><span class="ty">int</span><span class="op">&gt;</span> dq;
+    dq.<span class="fn">push_back</span>(<span class="num">0</span>);  <span class="cm">// 哨兵</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>) {
+        <span class="cm">// 清理过期</span>
+        <span class="kw">while</span> (<span class="op">!</span>dq.<span class="fn">empty</span>() <span class="op">&amp;&amp;</span> dq.<span class="fn">front</span>() <span class="op">&lt;</span> i <span class="op">-</span> k <span class="op">-</span> <span class="num">1</span>)
+            dq.<span class="fn">pop_front</span>();
+
+        <span class="cm">// 转移：选或不选第 i 头牛</span>
+        dp[i] <span class="op">=</span> <span class="fn">max</span>(dp[i<span class="op">-</span><span class="num">1</span>], S[i] <span class="op">+</span> (dq.<span class="fn">empty</span>() <span class="op">?</span> <span class="num">0</span> <span class="op">:</span> dp[dq.<span class="fn">front</span>()<span class="op">-</span><span class="num">1</span>] <span class="op">-</span> S[dq.<span class="fn">front</span>()]));
+
+        <span class="cm">// 维护单调递减：dp[j-1] - S[j-1] 从大到小</span>
+        <span class="kw">while</span> (<span class="op">!</span>dq.<span class="fn">empty</span>() <span class="op">&amp;&amp;</span>
+               dp[dq.<span class="fn">back</span>()<span class="op">-</span><span class="num">1</span>] <span class="op">-</span> S[dq.<span class="fn">back</span>()] <span class="op">&lt;=</span> dp[i<span class="op">-</span><span class="num">1</span>] <span class="op">-</span> S[i])
+            dq.<span class="fn">pop_back</span>();
+        dq.<span class="fn">push_back</span>(i);
+    }
+    cout <span class="op">&lt;&lt;</span> dp[n] <span class="op">&lt;&lt;</span> endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <h3>3.4 单调队列优化 DP 的一般步骤</h3>
+  <div class="steps">
+    <div class="step">
+      <strong>写出朴素 DP 方程</strong>，找到转移中涉及区间最值的部分
+    </div>
+    <div class="step">
+      <strong>分离变量</strong>：将转移式中只与 j 有关的部分和只与 i 有关的部分分开
+    </div>
+    <div class="step">
+      <strong>确定队列类型</strong>：求最大值用单调递减队列，求最小值用单调递增队列
+    </div>
+    <div class="step">
+      <strong>确定窗口范围</strong>：即 j 的合法取值范围，用于判断过期
+    </div>
+    <div class="step">
+      <strong>实现</strong>：维护单调性 + 清理过期 + 更新答案
+    </div>
+  </div>
+
+  <div class="box box-warn">
+    <div class="box-title">常见错误</div>
+    <p>1. 过期条件写错：注意窗口是 <code>[i-k, i]</code> 还是 <code>[i-k, i-1]</code>，边界差 1<br>
+    2. 入队时机：有些问题需要先更新答案再入队，有些需要先入队再更新<br>
+    3. 队列为空的判断：转移时需要检查队列是否为空</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第四节：综合例题与练习 -->
+<!-- ============================================================ -->
+<div class="section" id="sec4">
+  <h2>四、综合例题与练习</h2>
+
+  <h3>4.1 模板题</h3>
+  <div class="problem">
+    <div class="problem-title">洛谷 P1886 滑动窗口 / AcWing 154. 滑动窗口</div>
+    <p>经典滑动窗口最大值和最小值。使用单调队列模板，一次遍历求出所有窗口的最值。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">LeetCode 239. 滑动窗口最大值</div>
+    <p>与上题相同，使用单调递减队列。</p>
+  </div>
+
+  <h3>4.2 DP 优化题</h3>
+  <div class="problem">
+    <div class="problem-title">洛谷 P2627 [USACO08NOV] 修剪草坪</div>
+    <p>不能连续选超过 k 头牛，求最大效率。单调队列优化 DP。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">洛谷 P2564 [SCOI2009] 生日礼物</div>
+    <p>滑动窗口 + 单调队列思想，维护窗口内包含所有颜色的最小区间。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">洛谷 P3088 [USACO13NOV] Crowded Cows S</div>
+    <p>从左右两个方向分别用单调队列维护窗口内的最大值，判断是否"拥挤"。</p>
+  </div>
+
+  <h3>4.3 综合应用</h3>
+  <div class="problem">
+    <div class="problem-title">洛谷 P1714 切蛋糕</div>
+    <p>求长度不超过 m 的连续子段的最大和。用前缀和 + 单调队列维护窗口最小值。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">洛谷 P2216 [HAOI2007] 理想的正方形</div>
+    <p>二维滑动窗口：先对每行求窗口最值，再对每列求窗口最值。两次单调队列。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">洛谷 P2034 选择数字</div>
+    <p>不能连续选超过 k 个数，求最大和。单调队列优化 DP。</p>
+  </div>
+
+  <h3>4.4 推荐练习清单</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>题目</th><th>知识点</th><th>难度</th></tr>
+      <tr><td>洛谷 P1886 滑动窗口</td><td>单调队列模板</td><td><span class="tag tag-easy">简单</span></td></tr>
+      <tr><td>LeetCode 239 滑动窗口最大值</td><td>单调递减队列</td><td><span class="tag tag-hard">困难</span></td></tr>
+      <tr><td>洛谷 P1714 切蛋糕</td><td>前缀和 + 单调队列</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>洛谷 P2627 修剪草坪</td><td>单调队列优化 DP</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>洛谷 P2034 选择数字</td><td>单调队列优化 DP</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>洛谷 P3088 Crowded Cows</td><td>双方向单调队列</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>洛谷 P2216 理想的正方形</td><td>二维滑动窗口</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>洛谷 P2564 生日礼物</td><td>滑动窗口 + 贪心</td><td><span class="tag tag-hard">困难</span></td></tr>
+      <tr><td>洛谷 P3957 跳房子</td><td>二分 + 单调队列优化 DP</td><td><span class="tag tag-hard">困难</span></td></tr>
+      <tr><td>洛谷 P5665 划分</td><td>单调队列优化 DP</td><td><span class="tag tag-hard">困难</span></td></tr>
+    </table>
+  </div>
+
+  <h3>4.5 手写双端队列模板</h3>
+  <p>在对常数要求较高的场景下，可以用数组模拟双端队列：</p>
+  <pre><code><span class="cm">// 数组模拟双端队列（常数更小）</span>
+<span class="kw">const</span> <span class="ty">int</span> MAXN <span class="op">=</span> <span class="num">1000005</span>;
+<span class="ty">int</span> dq[MAXN];     <span class="cm">// 存下标</span>
+<span class="ty">int</span> head <span class="op">=</span> <span class="num">0</span>, tail <span class="op">=</span> <span class="num">0</span>;  <span class="cm">// [head, tail) 左闭右开</span>
+
+<span class="cm">// 队尾入队</span>
+<span class="ty">void</span> <span class="fn">push_back</span>(<span class="ty">int</span> x) { dq[tail<span class="op">++</span>] <span class="op">=</span> x; }
+<span class="cm">// 队首出队</span>
+<span class="ty">void</span> <span class="fn">pop_front</span>() { head<span class="op">++</span>; }
+<span class="cm">// 队尾出队</span>
+<span class="ty">void</span> <span class="fn">pop_back</span>() { tail<span class="op">--</span>; }
+<span class="cm">// 队首元素</span>
+<span class="ty">int</span> <span class="fn">front</span>() { <span class="kw">return</span> dq[head]; }
+<span class="cm">// 队尾元素</span>
+<span class="ty">int</span> <span class="fn">back</span>() { <span class="kw">return</span> dq[tail <span class="op">-</span> <span class="num">1</span>]; }
+<span class="cm">// 是否为空</span>
+<span class="ty">bool</span> <span class="fn">empty</span>() { <span class="kw">return</span> head <span class="op">==</span> tail; }</code></pre>
+
+  <div class="box box-tip">
+    <div class="box-title">总结</div>
+    <p>单调队列是滑动窗口最值和 DP 优化的核心工具，核心要点：</p>
+    <ul>
+      <li>单调队列 = <strong>单调栈</strong>的两端操作版本 + <strong>过期清理</strong></li>
+      <li>队列中存<strong>下标</strong>，方便判断元素是否过期</li>
+      <li>两个核心操作：从队尾维护单调性，从队首清理过期元素</li>
+      <li>滑动窗口最值：O(n) 时间，优于优先队列的 O(n log n)</li>
+      <li>DP 优化：当转移涉及区间最值时，分离变量后用单调队列维护</li>
+      <li>手写数组模拟 deque 可以进一步减小常数</li>
+    </ul>
+  </div>
+</div>
+
+</div> <!-- end container -->
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

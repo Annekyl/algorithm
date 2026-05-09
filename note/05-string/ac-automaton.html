@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AC自动机 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#05-string">字符串</a> &gt;
+    AC自动机
+  </div>
+
+  <!-- Header -->
+  <div class="page-header">
+    <h1>AC 自动机</h1>
+    <p class="subtitle">Aho-Corasick Automaton &mdash; 多模式串匹配利器</p>
+    <div class="tags">
+      <span class="tag tag-hard">高级</span>
+      <span class="tag tag-str">字符串</span>
+      <span class="tag tag-base">Trie + KMP</span>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#overview">AC自动机概述</a></li>
+      <li><a href="#fail">fail指针的构建</a></li>
+      <li><a href="#match">匹配过程</a></li>
+      <li><a href="#fail-tree">fail树及其应用</a></li>
+      <li><a href="#dp">AC自动机上DP</a></li>
+      <li><a href="#template">C++ 完整模板</a></li>
+      <li><a href="#problems">经典例题</a></li>
+    </ul>
+  </div>
+
+  <!-- Section 1: 概述 -->
+  <div class="section" id="overview">
+    <h2>1. AC自动机概述</h2>
+    <p>AC自动机（Aho-Corasick Automaton）是用于<strong>多模式串匹配</strong>的经典算法。它将多个模式串构建成一棵 Trie 树，并在 Trie 上附加类似 KMP 的 fail 指针，从而实现对文本串的一次扫描中同时匹配所有模式串。</p>
+
+    <h3>核心思想</h3>
+    <p>AC自动机 = <strong>Trie</strong>（存储所有模式串） + <strong>fail指针</strong>（失配时快速跳转，类似KMP的next数组）</p>
+
+    <div class="diagram">
+      <pre>
+模式串集合: {"he", "she", "his", "hers"}
+
+              (root)
+             /  |  \
+            h   s   h
+            |   |   |
+            e   h   e  (fail -> root的h的e)
+            |   |       \
+            r   e        r
+            |             |
+            s             s
+
+匹配文本串 "ushers" 时，同时找到 "she", "he", "hers"
+      </pre>
+    </div>
+
+    <h3>复杂度</h3>
+    <div class="complexity">
+      <span class="label">构建</span>
+      <span class="value">O(sum|s_i| &times; |&Sigma;|)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">匹配</span>
+      <span class="value">O(n + 匹配次数)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间</span>
+      <span class="value">O(sum|s_i| &times; |&Sigma;|)</span>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">与 KMP 的对比</div>
+      <p>KMP 解决<strong>单模式串</strong>匹配，AC自动机解决<strong>多模式串</strong>匹配。AC自动机的 fail 指针本质上与 KMP 的 next 数组含义相同——都表示"当前匹配失败后应该跳到哪里继续匹配"。</p>
+    </div>
+  </div>
+
+  <!-- Section 2: fail指针 -->
+  <div class="section" id="fail">
+    <h2>2. fail指针的构建</h2>
+    <p>fail 指针是 AC自动机的核心。对于 Trie 上的节点 <code>u</code>，<code>fail[u]</code> 指向 Trie 中代表 <code>u</code> 对应字符串的<strong>最长真后缀</strong>（同时也是某个模式串的前缀）所在的节点。</p>
+
+    <h3>BFS 构建过程</h3>
+    <div class="steps">
+      <div class="step">
+        <strong>初始化：</strong>将根节点的所有子节点入队，它们的 fail 指针指向根节点。
+      </div>
+      <div class="step">
+        <strong>BFS遍历：</strong>每次取出队首节点 <code>u</code>，遍历它的每个子节点 <code>v = ch[u][c]</code>。
+      </div>
+      <div class="step">
+        <strong>转移：</strong>令 <code>p = fail[u]</code>，沿着 fail 链向上跳直到找到一个节点有字符 <code>c</code> 的子节点，或者回到根节点。然后设置 <code>fail[v] = ch[p][c]</code>。
+      </div>
+      <div class="step">
+        <strong>优化：</strong>实际实现中常用"路径压缩"技巧：如果 <code>ch[p][c]</code> 不存在，直接令 <code>ch[p][c] = ch[fail[p]][c]</code>，这样匹配时就不需要沿 fail 链跳转。
+      </div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+模式串: "abc", "bc", "c"
+
+Trie:
+      root
+       |
+       a
+       |
+       b
+       |
+       c  <-- "abc" 的末尾
+
+fail 指针:
+  fail[a] = root
+  fail[b] = root
+  fail[c(abc)] = 节点 'c'(bc)   // "abc" 的最长后缀在 Trie 中
+  fail[bc]  = 节点 'c'          // "bc" 的最长后缀在 Trie 中
+  fail[c]   = root              // "c" 无更短后缀
+
+匹配 "abc":
+  a -> b -> c (找到"abc")
+       沿 fail 到 bc 的 c (找到"bc")
+            沿 fail 到 c (找到"c")
+      </pre>
+    </div>
+
+    <h3>详细 BFS 代码逻辑</h3>
+    <pre><span class="cm">// BFS 构建 fail 指针（含路径压缩优化）</span>
+<span class="ty">void</span> <span class="fn">build</span>() {
+    queue&lt;<span class="ty">int</span>&gt; q;
+    <span class="cm">// 根节点的子节点 fail 都指向根</span>
+    <span class="kw">for</span> (<span class="ty">int</span> c = <span class="num">0</span>; c &lt; <span class="num">26</span>; c++) {
+        <span class="kw">if</span> (ch[root][c]) {
+            fail[ch[root][c]] = root;
+            q.push(ch[root][c]);
+        } <span class="kw">else</span> {
+            ch[root][c] = root; <span class="cm">// 路径压缩</span>
+        }
+    }
+    <span class="kw">while</span> (!q.empty()) {
+        <span class="ty">int</span> u = q.front(); q.pop();
+        <span class="kw">for</span> (<span class="ty">int</span> c = <span class="num">0</span>; c &lt; <span class="num">26</span>; c++) {
+            <span class="kw">if</span> (ch[u][c]) {
+                fail[ch[u][c]] = ch[fail[u]][c];
+                q.push(ch[u][c]);
+            } <span class="kw">else</span> {
+                ch[u][c] = ch[fail[u]][c]; <span class="cm">// 路径压缩</span>
+            }
+        }
+    }
+}</pre>
+  </div>
+
+  <!-- Section 3: 匹配过程 -->
+  <div class="section" id="match">
+    <h2>3. 匹配过程</h2>
+    <p>匹配过程非常直观：从根节点开始，沿文本串逐字符走 Trie。如果当前节点没有对应字符的子节点，就沿 fail 指针跳转（在路径压缩优化后可直接走 <code>ch[u][c]</code>）。每到达一个节点，检查它是否是某个模式串的结尾。</p>
+
+    <h3>匹配步骤</h3>
+    <div class="steps">
+      <div class="step">
+        <strong>初始化：</strong>令当前节点 <code>p = root</code>。
+      </div>
+      <div class="step">
+        <strong>逐字符转移：</strong>对于文本串的每个字符 <code>c</code>，令 <code>p = ch[p][c]</code>（在路径压缩优化下这一步 O(1)）。
+      </div>
+      <div class="step">
+        <strong>统计匹配：</strong>从当前节点 <code>p</code> 出发，沿 fail 链向上遍历，每个经过的模式串结尾节点都是一个匹配。或者使用 <code>cnt</code> 数组累加后统一处理。
+      </div>
+      <div class="step">
+        <strong>优化统计：</strong>在 BFS 构建 fail 时，将每个节点的 <code>cnt</code> 累加到 <code>fail</code> 节点上（即 <code>cnt[fail[u]] += cnt[u]</code>），这样匹配时只需查看每个节点的 <code>cnt</code> 值即可。
+      </div>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">匹配统计技巧</div>
+      <p>在 BFS 建 fail 之后，按 BFS 序（即队列出序的逆序）将 <code>cnt[u]</code> 加到 <code>cnt[fail[u]]</code> 上，这样每个节点的 <code>cnt</code> 就表示"经过该节点时总共匹配了多少个模式串"。匹配时只需对每个位置查看当前节点的 <code>cnt</code> 即可。</p>
+    </div>
+
+    <pre><span class="cm">// 匹配函数</span>
+<span class="ty">int</span> <span class="fn">query</span>(<span class="kw">const</span> <span class="ty">string</span> &amp;text) {
+    <span class="ty">int</span> p = root, res = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">char</span> ch : text) {
+        <span class="ty">int</span> c = ch - <span class="str">'a'</span>;
+        p = <span class="kw">this</span>-&gt;ch[p][c]; <span class="cm">// 路径压缩后直接走</span>
+        res += cnt[p];       <span class="cm">// 累加当前节点的匹配数</span>
+    }
+    <span class="kw">return</span> res;
+}</pre>
+  </div>
+
+  <!-- Section 4: fail树 -->
+  <div class="section" id="fail-tree">
+    <h2>4. fail树及其应用</h2>
+    <p>AC自动机的 fail 指针构成一棵以 root 为根的<strong>有根树</strong>，称为 <strong>fail树</strong>。每个节点在 fail 树上的父节点就是它的 fail 指针指向的节点。</p>
+
+    <h3>fail树的性质</h3>
+    <ul>
+      <li><code>fail[v]</code> 是 <code>v</code> 在 fail 树上的父节点</li>
+      <li>节点 <code>v</code> 在 fail 树上的子树中所有节点，都以 <code>v</code> 对应的字符串为后缀</li>
+      <li>匹配一个模式串时，文本串中所有经过的节点在 fail 树上都位于该模式串末尾节点的子树中</li>
+    </ul>
+
+    <h3>常见应用</h3>
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>应用场景</th>
+          <th>方法</th>
+        </tr>
+        <tr>
+          <td>求每个模式串在文本中出现的次数</td>
+          <td>在 fail 树上对匹配经过的节点 +1，子树求和即为每个模式串的出现次数（树状数组 + DFS序 或 拓扑序累加）</td>
+        </tr>
+        <tr>
+          <td>求两个模式串是否互为子串</td>
+          <td>在 Trie 上较短串的末尾节点是否在较长串末尾节点在 fail 树上的子树中</td>
+        </tr>
+        <tr>
+          <td>求模式串之间的包含关系</td>
+          <td>fail 树上的祖先-后代关系</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="diagram">
+      <pre>
+fail 树示例（模式串 "abc", "bc", "c"）:
+
+         root
+        / | \
+       a  b  c
+       |  |
+       b  c
+       |
+       c
+
+节点 c(abc) 的子树 = {c(abc)}, 包含 "c" 的后缀信息
+节点 c(bc)  的子树 = {c(bc)},  包含 "c" 的后缀信息
+节点 c      的子树 = {c},      本身
+
+匹配 "abc" 时经过: a, b, c(abc)
+c(abc) 的 cnt 包含了所有以 "c" 结尾的模式串信息
+      </pre>
+    </div>
+  </div>
+
+  <!-- Section 5: AC自动机上DP -->
+  <div class="section" id="dp">
+    <h2>5. AC自动机上DP</h2>
+    <p>AC自动机上的 DP 是一类经典问题：<strong>构造一个长度为 n 的串，使得它不包含任何给定的模式串作为子串</strong>，求方案数。这类问题通过在 AC自动机的状态上做 DP 来解决。</p>
+
+    <h3>状态定义</h3>
+    <p><code>dp[i][j]</code> = 长度为 <code>i</code>、当前在 AC自动机的第 <code>j</code> 个节点的合法方案数。</p>
+
+    <h3>转移</h3>
+    <p>对于每个状态 <code>dp[i][j]</code>，枚举下一个字符 <code>c</code>，转移到 <code>dp[i+1][ch[j][c]]</code>。但需要排除转移到"危险节点"（即某个模式串的结尾，或 fail 链上包含模式串结尾的节点）的情况。</p>
+
+    <pre><span class="cm">// AC自动机上 DP：构造长度为 n 的不含禁止模式串的串的方案数</span>
+<span class="ty">int</span> <span class="fn">solve</span>(<span class="ty">int</span> n) {
+    <span class="cm">// dp[i][j]: 长度为i, 在AC自动机节点j的方案数</span>
+    vector&lt;vector&lt;<span class="ty">int</span>&gt;&gt; dp(n + <span class="num">1</span>, vector&lt;<span class="ty">int</span>&gt;(tot + <span class="num">1</span>, <span class="num">0</span>));
+    dp[<span class="num">0</span>][root] = <span class="num">1</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt;= tot; j++) {
+            <span class="kw">if</span> (danger[j]) <span class="kw">continue</span>; <span class="cm">// 危险节点不可达</span>
+            <span class="kw">for</span> (<span class="ty">int</span> c = <span class="num">0</span>; c &lt; <span class="num">26</span>; c++) {
+                <span class="ty">int</span> nxt = ch[j][c];
+                <span class="kw">if</span> (!danger[nxt]) {
+                    dp[i + <span class="num">1</span>][nxt] += dp[i][j];
+                }
+            }
+        }
+    }
+    <span class="ty">int</span> ans = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt;= tot; j++)
+        <span class="kw">if</span> (!danger[j]) ans += dp[n][j];
+    <span class="kw">return</span> ans;
+}</pre>
+
+    <div class="box box-warn">
+      <div class="box-title">标记危险节点</div>
+      <p>在构建 fail 之后，需要标记"危险节点"：如果节点 <code>u</code> 是某个模式串的末尾，或者 <code>fail[u]</code> 是危险节点，则 <code>u</code> 也是危险节点。可以在 BFS 构建 fail 时同步处理：<code>danger[u] |= danger[fail[u]]</code>。</p>
+    </div>
+  </div>
+
+  <!-- Section 6: 完整模板 -->
+  <div class="section" id="template">
+    <h2>6. C++ 完整模板</h2>
+
+    <h3>数组版 AC自动机</h3>
+    <pre><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">struct</span> <span class="ty">ACAutomaton</span> {
+    <span class="kw">static</span> <span class="kw">const</span> <span class="ty">int</span> MAXN = <span class="num">1000010</span>;  <span class="cm">// 总节点数上限</span>
+    <span class="kw">static</span> <span class="kw">const</span> <span class="ty">int</span> SIGMA = <span class="num">26</span>;       <span class="cm">// 字符集大小</span>
+
+    <span class="ty">int</span> ch[MAXN][SIGMA];  <span class="cm">// Trie 转移表（含路径压缩）</span>
+    <span class="ty">int</span> fail[MAXN];       <span class="cm">// fail 指针</span>
+    <span class="ty">int</span> cnt[MAXN];        <span class="cm">// 匹配计数</span>
+    <span class="ty">bool</span> danger[MAXN];    <span class="cm">// 危险节点标记</span>
+    <span class="ty">int</span> tot;               <span class="cm">// 节点总数</span>
+
+    <span class="ty">void</span> <span class="fn">init</span>() {
+        memset(ch, <span class="num">0</span>, <span class="kw">sizeof</span>(ch));
+        memset(fail, <span class="num">0</span>, <span class="kw">sizeof</span>(fail));
+        memset(cnt, <span class="num">0</span>, <span class="kw">sizeof</span>(cnt));
+        memset(danger, <span class="num">0</span>, <span class="kw">sizeof</span>(danger));
+        tot = <span class="num">0</span>;
+    }
+
+    <span class="ty">int</span> <span class="fn">newNode</span>() {
+        ++tot;
+        memset(ch[tot], <span class="num">0</span>, <span class="kw">sizeof</span>(ch[tot]));
+        fail[tot] = cnt[tot] = danger[tot] = <span class="num">0</span>;
+        <span class="kw">return</span> tot;
+    }
+
+    <span class="ty">void</span> <span class="fn">insert</span>(<span class="kw">const</span> <span class="ty">string</span> &amp;s) {
+        <span class="ty">int</span> u = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">char</span> c : s) {
+            <span class="ty">int</span> v = c - <span class="str">'a'</span>;
+            <span class="kw">if</span> (!ch[u][v]) ch[u][v] = newNode();
+            u = ch[u][v];
+        }
+        cnt[u]++;        <span class="cm">// 该节点是一个模式串的结尾</span>
+        danger[u] = <span class="kw">true</span>; <span class="cm">// 标记危险</span>
+    }
+
+    <span class="ty">void</span> <span class="fn">build</span>() {
+        queue&lt;<span class="ty">int</span>&gt; q;
+        <span class="kw">for</span> (<span class="ty">int</span> c = <span class="num">0</span>; c &lt; SIGMA; c++) {
+            <span class="kw">if</span> (ch[<span class="num">0</span>][c]) {
+                fail[ch[<span class="num">0</span>][c]] = <span class="num">0</span>;
+                q.push(ch[<span class="num">0</span>][c]);
+            } <span class="kw">else</span> {
+                ch[<span class="num">0</span>][c] = <span class="num">0</span>;
+            }
+        }
+        <span class="kw">while</span> (!q.empty()) {
+            <span class="ty">int</span> u = q.front(); q.pop();
+            danger[u] |= danger[fail[u]]; <span class="cm">// 继承危险标记</span>
+            <span class="kw">for</span> (<span class="ty">int</span> c = <span class="num">0</span>; c &lt; SIGMA; c++) {
+                <span class="kw">if</span> (ch[u][c]) {
+                    fail[ch[u][c]] = ch[fail[u]][c];
+                    q.push(ch[u][c]);
+                } <span class="kw">else</span> {
+                    ch[u][c] = ch[fail[u]][c]; <span class="cm">// 路径压缩</span>
+                }
+            }
+        }
+    }
+
+    <span class="cm">// 匹配：统计文本串中出现了多少个模式串</span>
+    <span class="ty">int</span> <span class="fn">query</span>(<span class="kw">const</span> <span class="ty">string</span> &amp;text) {
+        <span class="ty">int</span> p = <span class="num">0</span>, res = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">char</span> c : text) {
+            p = ch[p][c - <span class="str">'a'</span>];
+            <span class="cm">// 方法1: 沿fail链累加</span>
+            <span class="kw">for</span> (<span class="ty">int</span> t = p; t && cnt[t] != -<span class="num">1</span>; t = fail[t]) {
+                res += cnt[t];
+                cnt[t] = -<span class="num">1</span>; <span class="cm">// 防止重复计数</span>
+            }
+        }
+        <span class="kw">return</span> res;
+    }
+
+    <span class="cm">// 方法2: 用拓扑序累加 cnt 到 fail（适合需要每个模式串出现次数的场景）</span>
+    <span class="ty">void</span> <span class="fn">topoCount</span>() {
+        vector&lt;<span class="ty">int</span>&gt; indeg(tot + <span class="num">1</span>, <span class="num">0</span>);
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= tot; i++) indeg[fail[i]]++;
+        queue&lt;<span class="ty">int</span>&gt; q;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= tot; i++)
+            <span class="kw">if</span> (indeg[i] == <span class="num">0</span>) q.push(i);
+        <span class="kw">while</span> (!q.empty()) {
+            <span class="ty">int</span> u = q.front(); q.pop();
+            cnt[fail[u]] += cnt[u];
+            <span class="kw">if</span> (--indeg[fail[u]] == <span class="num">0</span>) q.push(fail[u]);
+        }
+    }
+};</pre>
+
+    <div class="box box-info">
+      <div class="box-title">动态开点版</div>
+      <p>如果字符集很大（如 128 个 ASCII 字符），可使用 <code>unordered_map</code> 或 <code>vector&lt;pair&gt;</code> 代替固定数组来存储转移，节省空间。</p>
+    </div>
+  </div>
+
+  <!-- Section 7: 经典例题 -->
+  <div class="section" id="problems">
+    <h2>7. 经典例题</h2>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3808" target="_blank">Luogu P3808 - 【模板】AC自动机（简单版）</a></div>
+      <p>给定 n 个模式串和一个文本串，求有多少个模式串在文本串中出现过。</p>
+      <span class="tag tag-easy">入门</span>
+      <span class="tag tag-str">AC自动机</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3796" target="_blank">Luogu P3796 - 【模板】AC自动机（加强版）</a></div>
+      <p>给定 n 个模式串和一个文本串，求每个模式串的出现次数。</p>
+      <span class="tag tag-mid">中等</span>
+      <span class="tag tag-str">AC自动机</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P5357" target="_blank">Luogu P5357 - 【模板】AC自动机（二次加强版）</a></div>
+      <p>给定 n 个模式串和一个文本串，输出每个模式串的出现次数。模式串可能重复。</p>
+      <span class="tag tag-mid">中等</span>
+      <span class="tag tag-str">AC自动机 + fail树</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2292" target="_blank">Luogu P2292 - 方程的解</a></div>
+      <p>AC自动机上 DP 典型题，求不包含任何禁止单词的字符串方案数。</p>
+      <span class="tag tag-hard">困难</span>
+      <span class="tag tag-str">AC自动机 + DP</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4052" target="_blank">Luogu P4052 - [JSOI2007] 文本生成器</a></div>
+      <p>求长度为 m 的文本串中至少包含一个给定单词的方案数。正难则反，用 AC自动机上 DP 求不包含任何单词的方案数。</p>
+      <span class="tag tag-hard">困难</span>
+      <span class="tag tag-str">AC自动机 + DP</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2414" target="_blank">Luogu P2414 - [NOI2011] 阿狸的打字机</a></div>
+      <p>fail树 + 树状数组经典题，利用 fail 树的 DFS 序维护匹配信息。</p>
+      <span class="tag tag-hard">困难</span>
+      <span class="tag tag-str">AC自动机 + fail树 + 树状数组</span>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">学习建议</div>
+      <p>建议按难度递进学习：先做 P3808 理解基本原理，再做 P3796 / P5357 熟悉 fail 树，最后挑战 P4052 / P2414 掌握 AC自动机上 DP 和 fail 树的进阶应用。</p>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

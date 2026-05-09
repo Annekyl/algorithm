@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>可持久化数据结构 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+<!-- 面包屑导航 -->
+<div class="breadcrumb">
+  <a href="../index.html">首页</a> &gt; <a href="../index.html">06 数据结构篇</a> &gt; 可持久化数据结构
+</div>
+
+<!-- 页面标题 -->
+<div class="page-header">
+  <h1>可持久化数据结构</h1>
+  <p class="subtitle">Persistent Data Structures &mdash; 支持历史版本回溯的高级数据结构</p>
+  <div class="tags">
+    <span class="tag tag-hard">主席树</span>
+    <span class="tag tag-mid">路径复制</span>
+    <span class="tag tag-base">权值线段树</span>
+    <span class="tag tag-dp">版本管理</span>
+    <span class="tag tag-math">离散化</span>
+  </div>
+</div>
+
+<!-- 目录 -->
+<div class="toc">
+  <h3>目录</h3>
+  <ul>
+    <li><a href="#sec1">一、可持久化概述</a></li>
+    <li><a href="#sec2">二、可持久化数组</a></li>
+    <li><a href="#sec3">三、主席树（可持久化线段树）</a></li>
+    <li><a href="#sec4">四、可持久化并查集（简介）</a></li>
+    <li><a href="#sec5">五、综合应用与经典题目</a></li>
+    <li><a href="#sec6">六、完整模板与复杂度总结</a></li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第一节：可持久化概述 -->
+<!-- ============================================================ -->
+<div class="section" id="sec1">
+  <h2>一、可持久化概述</h2>
+
+  <h3>1.1 什么是可持久化</h3>
+  <p>在普通数据结构中，每次修改操作都会<strong>覆盖</strong>原有状态。而<strong>可持久化数据结构</strong>（Persistent Data Structure）在每次修改后，不仅保留最新版本，还保留了修改前的所有历史版本。查询时可以访问任意历史版本的数据。</p>
+
+  <div class="box box-info">
+    <div class="box-title">核心思想</div>
+    <p>可持久化的本质是：<strong>修改时不破坏旧版本，而是创建新版本</strong>。新旧版本之间通过<strong>共享未改变的部分</strong>来节省空间。</p>
+  </div>
+
+  <h3>1.2 路径复制（Path Copying）</h3>
+  <p>实现可持久化最常用的技术是<strong>路径复制</strong>。其核心做法是：</p>
+  <ol>
+    <li>当修改某个节点时，<strong>不直接修改原节点</strong>，而是复制一份新节点</li>
+    <li>新节点继承原节点的所有信息，然后在新节点上执行修改</li>
+    <li>从根到被修改叶子的<strong>整条路径</strong>上的节点都需要复制</li>
+    <li>不在路径上的节点，新旧版本<strong>共享引用</strong></li>
+  </ol>
+
+  <div class="diagram">
+    <pre>
+  路径复制示意图（修改叶子节点 v3 的值）
+
+  旧版本 T1 (root1)              新版本 T2 (root2)
+        [A]                            [A']          <-- 复制
+       /   \                          /    \
+     [B]   [C]                      [B']   [C]       <-- B 复制, C 共享
+     / \   / \                      / \    / \
+   v1  v2 v3 v4                  v1  v2 [v3'] v4     <-- v3 复制, 其余共享
+
+  * [A'], [B'], [v3'] 为新创建的节点
+  * [C], v1, v2, v4 直接从旧版本引用，不额外消耗空间
+</pre>
+  </div>
+
+  <div class="box box-tip">
+    <div class="box-title">空间分析</div>
+    <p>对于一棵深度为 <code>h</code> 的树，每次单点修改仅需复制 <code>O(h)</code> 个节点。对于平衡树或线段树，<code>h = O(log n)</code>，因此每次修改仅增加 <code>O(log n)</code> 的空间。</p>
+  </div>
+
+  <h3>1.3 适用场景</h3>
+  <p>可持久化数据结构适用于以下场景：</p>
+  <ul>
+    <li><strong>需要访问历史版本</strong>：如撤销操作、时光旅行</li>
+    <li><strong>区间第 k 小查询</strong>：主席树的经典应用</li>
+    <li><strong>离线处理可持久化并查集</strong>：按时间维度维护连通性</li>
+    <li><strong>函数式编程</strong>：不可变数据结构天然支持持久化</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第二节：可持久化数组 -->
+<!-- ============================================================ -->
+<div class="section" id="sec2">
+  <h2>二、可持久化数组</h2>
+
+  <h3>2.1 问题描述</h3>
+  <p>可持久化数组需要支持以下操作：</p>
+  <ul>
+    <li><code>update(ver, pos, val)</code>：基于版本 <code>ver</code> 创建新版本，将下标 <code>pos</code> 处的值修改为 <code>val</code></li>
+    <li><code>query(ver, pos)</code>：查询版本 <code>ver</code> 中下标 <code>pos</code> 处的值</li>
+  </ul>
+
+  <h3>2.2 基于可持久化线段树的实现</h3>
+  <p>最常用的实现方式是用<strong>可持久化线段树</strong>（即主席树的简化版本）。线段树的每个叶子对应数组的一个位置，每次修改从根到叶子路径复制，其余子树共享。</p>
+
+  <div class="diagram">
+    <pre>
+  可持久化数组示例：a = {1, 3, 5, 7}，修改 a[2] = 10
+
+  版本 0:                    版本 1:
+       [1,4]                      [1,4']        <-- 新根
+       /    \                      /    \
+    [1,2]   [3,4]              [1,2']  [3,4]    <-- 左子树复制
+    /  \    /  \               /  \     /  \
+   1    3  5    7             1   10   5    7    <-- a[2] 修改
+
+  版本 1 共享了版本 0 的右子树 [3,4] -> {5, 7}
+</pre>
+  </div>
+
+  <h3>2.3 可持久化 Trie 实现</h3>
+  <p>另一种方式是使用<strong>可持久化 Trie</strong>，特别适用于位运算相关的可持久化数组。01-Trie 可以在 <code>O(log C)</code> 时间内完成单点修改与查询（其中 <code>C</code> 为值域大小），且同样支持路径复制。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第三节：主席树 -->
+<!-- ============================================================ -->
+<div class="section" id="sec3">
+  <h2>三、主席树（可持久化线段树）</h2>
+
+  <h3>3.1 核心思想</h3>
+  <p><strong>主席树</strong>（Chairman Tree）是对权值线段树的可持久化。其核心思路是：</p>
+  <ol>
+    <li>对原数组的值进行<strong>离散化</strong>（坐标压缩），将值域映射到 <code>[1, m]</code></li>
+    <li>维护 <code>n</code> 棵权值线段树，第 <code>i</code> 棵表示前 <code>i</code> 个元素的权值分布</li>
+    <li>相邻两棵线段树之间仅相差一个元素的插入，因此共享大量结构</li>
+  </ol>
+
+  <div class="box box-info">
+    <div class="box-title">什么是"权值线段树"</div>
+    <p>权值线段树的下标是<strong>值域</strong>而非原数组下标。每个节点记录的是：在当前区间内的值出现了多少次。例如 <code>tree[l..r]</code> 表示值在 <code>[l, r]</code> 范围内出现了多少次。</p>
+  </div>
+
+  <h3>3.2 构建过程详解</h3>
+  <p>以数组 <code>a = {3, 1, 4, 1, 5, 9, 2, 6}</code> 为例，求解区间 <code>[l, r]</code> 的第 <code>k</code> 小值。</p>
+
+  <h4>Step 1: 离散化</h4>
+  <div class="steps">
+    <div class="step">对原数组去重排序，得到有序序列 <code>{1, 2, 3, 4, 5, 6, 9}</code></div>
+    <div class="step">建立映射：1&rarr;1, 2&rarr;2, 3&rarr;3, 4&rarr;4, 5&rarr;5, 6&rarr;6, 9&rarr;7</div>
+    <div class="step">原数组映射为 <code>{3, 1, 4, 1, 5, 7, 2, 6}</code>，值域变为 <code>[1, 7]</code></div>
+  </div>
+
+  <h4>Step 2: 逐个插入，建立版本链</h4>
+  <p>从空树开始，依次插入 <code>a[1], a[2], ..., a[n]</code>，每插入一个元素就产生一个新版本：</p>
+
+  <div class="diagram">
+    <pre>
+  版本链：T0 --insert a[1]--> T1 --insert a[2]--> T2 --...--> Tn
+
+  T0: 空树（所有节点计数为 0）
+  T1: 包含 a[1]=3 的权值线段树
+  T2: 包含 a[1..2]={3,1} 的权值线段树
+  T3: 包含 a[1..3]={3,1,4} 的权值线段树
+  ...
+  Ti: 包含 a[1..i] 的权值线段树
+
+  每次插入只复制 O(log m) 个节点，总空间 O(n log m)
+</pre>
+  </div>
+
+  <h4>Step 3: 建树过程图解</h4>
+  <div class="diagram">
+    <pre>
+  原数组 a:  [3]  [1]  [4]  [1]  [5]  [9]  [2]  [6]
+  离散化:    [3]  [1]  [4]  [1]  [5]  [7]  [2]  [6]
+
+  值域 [1,7]，建立权值线段树：
+
+  T0 (空树):               T1 (插入 3):
+       [1,7] count=0            [1,7] count=1
+       /      \                  /       \
+    [1,4]    [5,7]            [1,4]     [5,7]
+    /  \     /  \              /  \      /  \
+  [1,2][3,4][5,6][7]        [1,2][3,4][5,6][7]
+   0    0    0   0            0    1    0    0
+
+  T2 (再插入 1):            T3 (再插入 4):
+       [1,7] count=2            [1,7] count=3
+       /      \                  /       \
+    [1,4]    [5,7]            [1,4]     [5,7]    <-- 共享
+    /  \     /  \              /  \      /  \
+  [1,2][3,4][5,6][7]        [1,2][3,4][5,6][7]
+   1    1    0    0            1    2    0    0
+</pre>
+  </div>
+
+  <h3>3.3 区间第 k 小查询</h3>
+  <p>查询 <code>[l, r]</code> 区间第 <code>k</code> 小值的关键技巧：</p>
+  <p style="text-align:center; font-size:1.05em; color:var(--accent); margin:16px 0;">
+    <code>T[r]</code> 的节点计数 - <code>T[l-1]</code> 的节点计数 = <code>[l, r]</code> 区间内的计数
+  </p>
+
+  <div class="box box-info">
+    <div class="box-title">差分思想</div>
+    <p><code>T[i]</code> 记录的是前 <code>i</code> 个元素的权值分布。那么 <code>T[r] - T[l-1]</code> 恰好是区间 <code>[l, r]</code> 的权值分布。这样无需为每个区间单独建树，用两个版本做差即可！</p>
+  </div>
+
+  <h4>查询过程</h4>
+  <div class="steps">
+    <div class="step">令 <code>nodeR = T[r]</code> 的根，<code>nodeL = T[l-1]</code> 的根，当前考察值域 <code>[lo, hi]</code></div>
+    <div class="step">计算左子树中区间 <code>[l, r]</code> 的元素个数：<code>cnt = T[r].left.cnt - T[l-1].left.cnt</code></div>
+    <div class="step">若 <code>k &le; cnt</code>，说明第 <code>k</code> 小在左子树中，递归进入左子树</div>
+    <div class="step">若 <code>k &gt; cnt</code>，说明第 <code>k</code> 小在右子树中，<code>k -= cnt</code>，递归进入右子树</div>
+    <div class="step">到达叶子节点时，<code>lo</code> 即为第 <code>k</code> 小值的离散化编号，反向映射回原值即可</div>
+  </div>
+
+  <div class="diagram">
+    <pre>
+  查询 a[2..6] = {1,4,1,5,9} 的第 3 小值
+
+  使用 T6 和 T1 做差分
+
+  T6 根: [1,7] cnt=6      T1 根: [1,7] cnt=1
+  差分:  [1,7] cnt=5       (区间内共 5 个元素)
+
+  第一步：看左子树 [1,4]
+    T6左.cnt = 4, T1左.cnt = 1  =>  cnt = 3
+    k=3 &le; cnt=3, 进入左子树
+
+  第二步：看 [1,2]（左子树的左子树）
+    T6.cnt = 2, T1.cnt = 1  =>  cnt = 1
+    k=3 &gt; cnt=1, k=3-1=2, 进入右子树 [3,4]
+
+  第三步：看 [3,4] 的左子树 [3,3]
+    T6.cnt = 1, T1.cnt = 0  =>  cnt = 1
+    k=2 &gt; cnt=1, k=2-1=1, 进入右子树 [4,4]
+
+  第四步：叶子 [4,4]，cnt >= k
+    答案 = 离散化值 4 &rarr; 原值 4  &check;
+</pre>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第四节：可持久化并查集 -->
+<!-- ============================================================ -->
+<div class="section" id="sec4">
+  <h2>四、可持久化并查集（简介）</h2>
+
+  <h3>4.1 问题背景</h3>
+  <p>可持久化并查集需要支持<strong>历史版本的查询</strong>，即在任意版本上查询两个元素是否连通。</p>
+
+  <h3>4.2 实现思路</h3>
+  <p>并查集的核心是父节点数组 <code>fa[]</code>。要实现可持久化，可以使用<strong>可持久化数组</strong>（基于可持久化线段树）来维护 <code>fa[]</code> 和 <code>rank[]</code> 数组。</p>
+  <p>但由于路径压缩会修改大量节点，不利于路径复制，因此可持久化并查集通常使用<strong>按秩合并</strong>（union by rank）而不使用路径压缩。</p>
+
+  <div class="box box-warn">
+    <div class="box-title">注意事项</div>
+    <p>可持久化并查集的时间复杂度为 <code>O(log^2 n)</code> 每次操作，空间复杂度也较高。在实际竞赛中较少出现，了解思路即可。</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第五节：综合应用与经典题目 -->
+<!-- ============================================================ -->
+<div class="section" id="sec5">
+  <h2>五、综合应用与经典题目</h2>
+
+  <h3>5.1 静态区间第 k 小</h3>
+  <p>这是主席树最经典的应用。</p>
+
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3834" target="_blank">Luogu P3834 【模板】可持久化线段树 2</a></div>
+    <p>给定 <code>n</code> 个整数构成的序列，<code>m</code> 次查询，每次查询区间 <code>[l, r]</code> 中的第 <code>k</code> 小值。</p>
+    <p><strong>数据范围</strong>：<code>1 &le; n, m &le; 2&times;10^5</code>，<code>|a[i]| &le; 10^9</code></p>
+    <p><strong>思路</strong>：离散化 + 主席树，查询时两棵线段树同步走，<code>O(log n)</code> 每次查询。</p>
+  </div>
+
+  <h4>完整 C++ 代码</h4>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> MAXN = <span class="num">200005</span>;
+
+<span class="ty">int</span> n, m, a[MAXN], b[MAXN], cnt;
+<span class="ty">int</span> root[MAXN];          <span class="cm">// 每个版本的根节点编号</span>
+
+<span class="kw">struct</span> <span class="ty">Node</span> {
+    <span class="ty">int</span> ls, rs, cnt;     <span class="cm">// 左儿子、右儿子、区间计数</span>
+} tr[MAXN * <span class="num">40</span>];         <span class="cm">// 开 n*log(n) 的空间</span>
+
+<span class="cm">// 建空树</span>
+<span class="ty">int</span> <span class="fn">build</span>(<span class="ty">int</span> lo, <span class="ty">int</span> hi) {
+    <span class="ty">int</span> p = ++cnt;
+    tr[p].cnt = <span class="num">0</span>;
+    <span class="kw">if</span> (lo == hi) <span class="kw">return</span> p;
+    <span class="ty">int</span> mid = (lo + hi) &gt;&gt; <span class="num">1</span>;
+    tr[p].ls = <span class="fn">build</span>(lo, mid);
+    tr[p].rs = <span class="fn">build</span>(mid + <span class="num">1</span>, hi);
+    <span class="kw">return</span> p;
+}
+
+<span class="cm">// 在旧版本 prev 的基础上，插入值 pos，返回新版本根</span>
+<span class="ty">int</span> <span class="fn">update</span>(<span class="ty">int</span> prev, <span class="ty">int</span> lo, <span class="ty">int</span> hi, <span class="ty">int</span> pos) {
+    <span class="ty">int</span> p = ++cnt;
+    tr[p] = tr[prev];         <span class="cm">// 复制旧节点</span>
+    tr[p].cnt++;              <span class="cm">// 计数 +1</span>
+    <span class="kw">if</span> (lo == hi) <span class="kw">return</span> p;
+    <span class="ty">int</span> mid = (lo + hi) &gt;&gt; <span class="num">1</span>;
+    <span class="kw">if</span> (pos &lt;= mid)
+        tr[p].ls = <span class="fn">update</span>(tr[prev].ls, lo, mid, pos);
+    <span class="kw">else</span>
+        tr[p].rs = <span class="fn">update</span>(tr[prev].rs, mid + <span class="num">1</span>, hi, pos);
+    <span class="kw">return</span> p;
+}
+
+<span class="cm">// 查询：T[r] - T[l-1] 的第 k 小</span>
+<span class="ty">int</span> <span class="fn">query</span>(<span class="ty">int</span> u, <span class="ty">int</span> v, <span class="ty">int</span> lo, <span class="ty">int</span> hi, <span class="ty">int</span> k) {
+    <span class="kw">if</span> (lo == hi) <span class="kw">return</span> lo;
+    <span class="ty">int</span> mid = (lo + hi) &gt;&gt; <span class="num">1</span>;
+    <span class="ty">int</span> cnt = tr[tr[v].ls].cnt - tr[tr[u].ls].cnt;
+    <span class="kw">if</span> (k &lt;= cnt)
+        <span class="kw">return</span> <span class="fn">query</span>(tr[u].ls, tr[v].ls, lo, mid, k);
+    <span class="kw">else</span>
+        <span class="kw">return</span> <span class="fn">query</span>(tr[u].rs, tr[v].rs, mid + <span class="num">1</span>, hi, k - cnt);
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    ios::sync_with_stdio(<span class="num">false</span>);
+    cin.tie(<span class="num">nullptr</span>);
+
+    cin &gt;&gt; n &gt;&gt; m;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        cin &gt;&gt; a[i];
+        b[i] = a[i];
+    }
+
+    <span class="cm">// 离散化</span>
+    sort(b + <span class="num">1</span>, b + n + <span class="num">1</span>);
+    <span class="ty">int</span> sz = unique(b + <span class="num">1</span>, b + n + <span class="num">1</span>) - b - <span class="num">1</span>;
+
+    <span class="cm">// 建空树 + 逐个插入</span>
+    root[<span class="num">0</span>] = <span class="fn">build</span>(<span class="num">1</span>, sz);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="ty">int</span> pos = lower_bound(b + <span class="num">1</span>, b + sz + <span class="num">1</span>, a[i]) - b;
+        root[i] = <span class="fn">update</span>(root[i - <span class="num">1</span>], <span class="num">1</span>, sz, pos);
+    }
+
+    <span class="cm">// 查询</span>
+    <span class="kw">while</span> (m--) {
+        <span class="ty">int</span> l, r, k;
+        cin &gt;&gt; l &gt;&gt; r &gt;&gt; k;
+        <span class="ty">int</span> ans = <span class="fn">query</span>(root[l - <span class="num">1</span>], root[r], <span class="num">1</span>, sz, k);
+        cout &lt;&lt; b[ans] &lt;&lt; <span class="str">"\n"</span>;
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <h3>5.2 区间内元素计数</h3>
+  <p>查询区间 <code>[l, r]</code> 中值在 <code>[a, b]</code> 范围内的元素个数。这相当于在权值线段树的 <code>[a, b]</code> 区间上做查询：</p>
+  <pre><code><span class="cm">// 查询区间 [l,r] 中值在 [ql, qr] 内的元素个数</span>
+<span class="ty">int</span> <span class="fn">queryCount</span>(<span class="ty">int</span> u, <span class="ty">int</span> v, <span class="ty">int</span> lo, <span class="ty">int</span> hi, <span class="ty">int</span> ql, <span class="ty">int</span> qr) {
+    <span class="kw">if</span> (ql &lt;= lo &amp;&amp; hi &lt;= qr)
+        <span class="kw">return</span> tr[v].cnt - tr[u].cnt;
+    <span class="ty">int</span> mid = (lo + hi) &gt;&gt; <span class="num">1</span>;
+    <span class="ty">int</span> res = <span class="num">0</span>;
+    <span class="kw">if</span> (ql &lt;= mid) res += <span class="fn">queryCount</span>(tr[u].ls, tr[v].ls, lo, mid, ql, qr);
+    <span class="kw">if</span> (qr &gt; mid)  res += <span class="fn">queryCount</span>(tr[u].rs, tr[v].rs, mid + <span class="num">1</span>, hi, ql, qr);
+    <span class="kw">return</span> res;
+}</code></pre>
+
+  <h3>5.3 更多应用</h3>
+  <div class="table-wrap">
+    <table>
+      <tr>
+        <th>应用</th>
+        <th>说明</th>
+        <th>复杂度</th>
+      </tr>
+      <tr>
+        <td>区间第 k 小</td>
+        <td>两棵主席树差分，二分查找</td>
+        <td>O(log n) / 次</td>
+      </tr>
+      <tr>
+        <td>区间内 &le; x 的元素个数</td>
+        <td>在权值线段树上区间查询</td>
+        <td>O(log n) / 次</td>
+      </tr>
+      <tr>
+        <td>区间内值在 [a,b] 的个数</td>
+        <td>权值线段树区间求和</td>
+        <td>O(log n) / 次</td>
+      </tr>
+      <tr>
+        <td>带修区间第 k 小</td>
+        <td>主席树 + 树状数组（复杂度更高）</td>
+        <td>O(log^2 n) / 次</td>
+      </tr>
+      <tr>
+        <td>可持久化 Trie</td>
+        <td>区间最大异或和</td>
+        <td>O(log C) / 次</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第六节：完整模板与复杂度总结 -->
+<!-- ============================================================ -->
+<div class="section" id="sec6">
+  <h2>六、完整模板与复杂度总结</h2>
+
+  <h3>6.1 主席树通用模板</h3>
+  <pre><code><span class="kw">struct</span> <span class="ty">PersistentSegTree</span> {
+    <span class="kw">struct</span> <span class="ty">Node</span> {
+        <span class="ty">int</span> ls, rs, cnt;
+    };
+
+    <span class="ty">int</span> n;                   <span class="cm">// 离散化后的值域大小</span>
+    <span class="ty">int</span> cnt;                 <span class="cm">// 节点计数器</span>
+    vector&lt;<span class="ty">Node</span>&gt; tr;         <span class="cm">// 所有节点</span>
+    vector&lt;<span class="ty">int</span>&gt; root;        <span class="cm">// 版本根数组</span>
+
+    <span class="fn">PersistentSegTree</span>(<span class="ty">int</span> maxVer, <span class="ty">int</span> maxVal)
+        : cnt(<span class="num">0</span>), n(maxVal) {
+        tr.resize(maxVer * <span class="num">40</span>);
+        root.resize(maxVer);
+    }
+
+    <span class="ty">int</span> <span class="fn">_build</span>(<span class="ty">int</span> lo, <span class="ty">int</span> hi) {
+        <span class="ty">int</span> p = ++cnt;
+        tr[p].cnt = <span class="num">0</span>;
+        <span class="kw">if</span> (lo == hi) <span class="kw">return</span> p;
+        <span class="ty">int</span> mid = (lo + hi) &gt;&gt; <span class="num">1</span>;
+        tr[p].ls = <span class="fn">_build</span>(lo, mid);
+        tr[p].rs = <span class="fn">_build</span>(mid + <span class="num">1</span>, hi);
+        <span class="kw">return</span> p;
+    }
+
+    <span class="ty">int</span> <span class="fn">_update</span>(<span class="ty">int</span> prev, <span class="ty">int</span> lo, <span class="ty">int</span> hi, <span class="ty">int</span> pos) {
+        <span class="ty">int</span> p = ++cnt;
+        tr[p] = tr[prev];
+        tr[p].cnt++;
+        <span class="kw">if</span> (lo == hi) <span class="kw">return</span> p;
+        <span class="ty">int</span> mid = (lo + hi) &gt;&gt; <span class="num">1</span>;
+        <span class="kw">if</span> (pos &lt;= mid)
+            tr[p].ls = <span class="fn">_update</span>(tr[prev].ls, lo, mid, pos);
+        <span class="kw">else</span>
+            tr[p].rs = <span class="fn">_update</span>(tr[prev].rs, mid + <span class="num">1</span>, hi, pos);
+        <span class="kw">return</span> p;
+    }
+
+    <span class="ty">int</span> <span class="fn">_kth</span>(<span class="ty">int</span> u, <span class="ty">int</span> v, <span class="ty">int</span> lo, <span class="ty">int</span> hi, <span class="ty">int</span> k) {
+        <span class="kw">if</span> (lo == hi) <span class="kw">return</span> lo;
+        <span class="ty">int</span> mid = (lo + hi) &gt;&gt; <span class="num">1</span>;
+        <span class="ty">int</span> cnt = tr[tr[v].ls].cnt - tr[tr[u].ls].cnt;
+        <span class="kw">if</span> (k &lt;= cnt)
+            <span class="kw">return</span> <span class="fn">_kth</span>(tr[u].ls, tr[v].ls, lo, mid, k);
+        <span class="kw">else</span>
+            <span class="kw">return</span> <span class="fn">_kth</span>(tr[u].rs, tr[v].rs, mid + <span class="num">1</span>, hi, k - cnt);
+    }
+
+    <span class="cm">// 对外接口</span>
+    <span class="ty">void</span> <span class="fn">build</span>()                   { root[<span class="num">0</span>] = <span class="fn">_build</span>(<span class="num">1</span>, n); }
+    <span class="ty">void</span> <span class="fn">insert</span>(<span class="ty">int</span> ver, <span class="ty">int</span> pos) { root[ver] = <span class="fn">_update</span>(root[ver - <span class="num">1</span>], <span class="num">1</span>, n, pos); }
+    <span class="ty">int</span>  <span class="fn">kth</span>(<span class="ty">int</span> l, <span class="ty">int</span> r, <span class="ty">int</span> k)  { <span class="kw">return</span> <span class="fn">_kth</span>(root[l - <span class="num">1</span>], root[r], <span class="num">1</span>, n, k); }
+};</code></pre>
+
+  <h3>6.2 复杂度分析</h3>
+  <div class="table-wrap">
+    <table>
+      <tr>
+        <th>操作</th>
+        <th>时间复杂度</th>
+        <th>空间复杂度</th>
+      </tr>
+      <tr>
+        <td>离散化</td>
+        <td>O(n log n)</td>
+        <td>O(n)</td>
+      </tr>
+      <tr>
+        <td>建空树</td>
+        <td>O(m)  &nbsp;（m = 离散化后值域大小）</td>
+        <td>O(m)</td>
+      </tr>
+      <tr>
+        <td>插入一个元素（新建版本）</td>
+        <td>O(log m)</td>
+        <td>O(log m)</td>
+      </tr>
+      <tr>
+        <td>构建全部 n 个版本</td>
+        <td>O(n log m)</td>
+        <td>O(n log m)</td>
+      </tr>
+      <tr>
+        <td>区间第 k 小查询</td>
+        <td>O(log m)</td>
+        <td>O(1)</td>
+      </tr>
+      <tr>
+        <td><strong>总体</strong></td>
+        <td><strong>O((n+m) log n)</strong></td>
+        <td><strong>O(n log n)</strong></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="complexity">
+    <span class="label">预处理：</span>
+    <span class="value">O(n log n)</span>
+  </div>
+  <div class="complexity">
+    <span class="label">单次查询：</span>
+    <span class="value">O(log n)</span>
+  </div>
+  <div class="complexity">
+    <span class="label">空间总量：</span>
+    <span class="value">O(n log n)</span>
+  </div>
+
+  <h3>6.3 常见坑点与优化</h3>
+  <div class="box box-warn">
+    <div class="box-title">常见错误</div>
+    <ul>
+      <li><strong>空间开小了</strong>：主席树节点数约为 <code>n * ceil(log2(n)) + 5*n</code>，一般开 <code>40*n</code> 即可</li>
+      <li><strong>离散化后忘记映射</strong>：查询答案时要反向映射回原值</li>
+      <li><strong>版本编号混淆</strong>：<code>root[i]</code> 对应前 <code>i</code> 个元素，查询 <code>[l,r]</code> 时用 <code>root[l-1]</code> 和 <code>root[r]</code></li>
+      <li><strong>建空树时 cnt 初始值</strong>：<code>cnt</code> 从 0 开始，<code>++cnt</code> 分配新节点</li>
+    </ul>
+  </div>
+
+  <div class="box box-tip">
+    <div class="box-title">空间优化技巧</div>
+    <p>如果值域很大但实际元素不多（稀疏值域），离散化是必须的。对于动态开点的主席树，可以用 <code>vector</code> 代替数组，避免预估空间大小。</p>
+  </div>
+
+  <h3>6.4 推荐练习题</h3>
+
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3834" target="_blank">Luogu P3834 - 【模板】可持久化线段树 2</a></div>
+    <p>静态区间第 k 小，主席树入门必做。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3919" target="_blank">Luogu P3919 - 【模板】可持久化数组</a></div>
+    <p>可持久化数组模板题，单点修改 + 历史版本查询。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2617" target="_blank">Luogu P2617 - Dynamic Rankings</a></div>
+    <p>带修改的区间第 k 小，需要主席树 + 树状数组，难度较高。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P3567" target="_blank">Luogu P3567 - [POI2014] KUR-Couriers</a></div>
+    <p>区间内出现次数超过一半的元素，主席树变体应用。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4137" target="_blank">Luogu P4137 - Rmq Problem / mex</a></div>
+    <p>区间 mex 问题，可持久化权值线段树应用。</p>
+  </div>
+</div>
+
+</div><!-- /.container -->
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

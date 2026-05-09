@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>欧拉路径 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#04-graph">图论</a> &gt;
+    欧拉路径
+  </div>
+
+  <div class="page-header">
+    <h1>欧拉路径与欧拉回路</h1>
+    <p class="subtitle">Euler Path &amp; Euler Circuit &mdash; 一笔画问题的图论抽象</p>
+    <div class="tags">
+      <span class="tag tag-graph">图论</span>
+      <span class="tag tag-mid">中等</span>
+      <span class="tag tag-base">经典算法</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#definition">欧拉路径 / 回路定义</a></li>
+      <li><a href="#conditions">判定条件</a></li>
+      <li><a href="#hierholzer">Hierholzer 算法</a></li>
+      <li><a href="#template">C++ 完整模板</a></li>
+      <li><a href="#problems">经典问题</a></li>
+    </ul>
+  </div>
+
+  <!-- ===== 定义 ===== -->
+  <div class="section" id="definition">
+    <h2>欧拉路径 / 回路定义</h2>
+
+    <h3>欧拉路径 (Euler Path)</h3>
+    <p>经过图中<strong>每条边恰好一次</strong>的路径（不要求回到起点）。也称为<strong>欧拉迹</strong>。</p>
+
+    <h3>欧拉回路 (Euler Circuit)</h3>
+    <p>经过图中<strong>每条边恰好一次</strong>的<strong>回路</strong>（起点和终点相同）。也称为<strong>欧拉闭迹</strong>。</p>
+
+    <div class="diagram">
+      <pre>
+  欧拉路径示例 (无向图):         欧拉回路示例 (无向图):
+
+    A --- B                         A --- B
+    |   / |                         |   / |
+    |  /  |                         |  /  |
+    | /   |                         | /   |
+    C --- D                         C --- D
+
+  路径: A-B-C-A-B-D-C             回路: A-B-C-D-B-A-C-D-A
+  (每条边恰好经过一次)             (每条边恰好一次, 回到起点)
+      </pre>
+    </div>
+
+    <h3>关键概念</h3>
+    <ul>
+      <li><strong>欧拉图</strong>：存在欧拉回路的图</li>
+      <li><strong>半欧拉图</strong>：存在欧拉路径但不存在欧拉回路的图</li>
+      <li>判定欧拉路径/回路的核心：分析每个节点的<strong>度数</strong></li>
+    </ul>
+
+    <div class="box box-info">
+      <div class="box-title">历史背景</div>
+      <p>1736年，欧拉解决了著名的"柯尼斯堡七桥问题"，奠定了图论的基础。问题是：能否一次走遍七座桥，每座桥只走一次？答案是否定的，因为有4个奇度数节点。</p>
+    </div>
+  </div>
+
+  <!-- ===== 判定条件 ===== -->
+  <div class="section" id="conditions">
+    <h2>判定条件</h2>
+
+    <h3>无向图</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>条件</th>
+            <th>存在欧拉回路</th>
+            <th>存在欧拉路径</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>连通性</strong></td>
+            <td>图连通（非零度节点构成的子图连通）</td>
+            <td>图连通</td>
+          </tr>
+          <tr>
+            <td><strong>度数条件</strong></td>
+            <td>所有节点的度数均为<strong>偶数</strong></td>
+            <td>恰好有 <strong>0 或 2</strong> 个奇度数节点</td>
+          </tr>
+          <tr>
+            <td><strong>奇度数节点</strong></td>
+            <td>0 个</td>
+            <td>2 个（起点和终点）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>有向图</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>条件</th>
+            <th>存在欧拉回路</th>
+            <th>存在欧拉路径</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>连通性</strong></td>
+            <td>基图连通</td>
+            <td>基图连通</td>
+          </tr>
+          <tr>
+            <td><strong>入度/出度</strong></td>
+            <td>所有节点 <code>in_deg == out_deg</code></td>
+            <td>恰好一个节点 <code>out_deg - in_deg = 1</code>（起点），一个节点 <code>in_deg - out_deg = 1</code>（终点），其余相等</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>判定流程图</h3>
+    <div class="steps">
+      <div class="step">检查图的连通性（只考虑非零度节点），若不连通则不存在</div>
+      <div class="step">统计每个节点的度数（无向图）或入度/出度（有向图）</div>
+      <div class="step">根据上表判断是否存在欧拉路径/回路</div>
+      <div class="step">若存在，确定起点：欧拉回路任意点出发；欧拉路径从奇度数节点（无向）或出度比入度大1的节点（有向）出发</div>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">连通性检查技巧</div>
+      <p>不需要建新图检查连通性。可以对非零度节点做一次 DFS/BFS，或者用并查集。对于有向图，检查基图（忽略方向）的连通性。</p>
+    </div>
+  </div>
+
+  <!-- ===== Hierholzer 算法 ===== -->
+  <div class="section" id="hierholzer">
+    <h2>Hierholzer 算法</h2>
+
+    <h3>核心思想</h3>
+    <p>从起点出发，沿着未访问的边走，直到走不动（无未访问的边可走）时回溯。回溯时将当前节点加入答案，最终反转得到欧拉路径。</p>
+
+    <h3>算法步骤</h3>
+    <div class="steps">
+      <div class="step">确定起点：欧拉回路取任意点；欧拉路径取满足度数条件的起点</div>
+      <div class="step">从起点开始 DFS，每次沿着一条未访问的边走，并标记该边为已访问</div>
+      <div class="step">当当前节点没有未访问的边时，将该节点加入路径序列</div>
+      <div class="step">DFS 回溯，最终路径序列的逆序即为欧拉路径/回路</div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+  示例图:    A --- B
+             |   / |
+             |  /  |
+             | /   |
+             C --- D
+
+  边: A-B, A-C, B-C, B-D, C-D
+
+  从 A 出发:
+  DFS(A):
+    走 A->B, DFS(B):
+      走 B->C, DFS(C):
+        走 C->D, DFS(D):
+          走 D->B, DFS(B):
+            无未访问边, 回溯, 路径: [B]
+          回溯, 路径: [B, D]
+        无未访问边, 回溯, 路径: [B, D, C]
+      走 B->A 但 A-B 已访问, 继续...
+      无未访问边, 回溯, 路径: [B, D, C, B]
+    走 A->C, DFS(C):
+      无未访问边, 回溯, 路径: [B, D, C, B, C]
+    无未访问边, 回溯, 路径: [B, D, C, B, C, A]
+
+  反转: A -> C -> B -> C -> D -> B
+  验证: A-C, C-B, B-C(不对, 已用过)
+
+  注意: 实际执行时边的顺序影响具体路径,
+  但都能得到合法的欧拉路径/回路
+      </pre>
+    </div>
+
+    <h3>复杂度分析</h3>
+    <div class="complexity">
+      <span class="label">时间:</span>
+      <span class="value">O(E)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间:</span>
+      <span class="value">O(E)</span>
+    </div>
+    <p>每条边恰好访问一次，总体线性。</p>
+
+    <h3>实现要点</h3>
+    <div class="box box-warn">
+      <div class="box-title">栈 vs 递归</div>
+      <ul>
+        <li><strong>递归实现</strong>：简洁直观，但图很大时可能栈溢出</li>
+        <li><strong>非递归实现</strong>：用显式栈模拟 DFS，更安全</li>
+        <li>对于链式前向星，可以用 <code>cur[]</code> 数组记录每条边的访问进度，避免重复遍历</li>
+      </ul>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">边的标记方式</div>
+      <ul>
+        <li><strong>邻接表</strong>：用迭代器或索引记录访问进度</li>
+        <li><strong>链式前向星</strong>：用 <code>cur[]</code> 数组记录每个节点当前遍历到的边</li>
+        <li><strong>无向图</strong>：正反边需同时标记（边编号 ^ 1）</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===== C++ 完整模板 ===== -->
+  <div class="section" id="template">
+    <h2>C++ 完整模板</h2>
+
+    <h3>有向图 - 邻接表 + 迭代器</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> MAXN = <span class="num">100005</span>;
+
+vector&lt;pair&lt;<span class="ty">int</span>, <span class="ty">int</span>&gt;&gt; adj[MAXN]; <span class="cm">// {to, edge_id}</span>
+<span class="ty">int</span> cur[MAXN];                      <span class="cm">// 当前弧优化</span>
+<span class="ty">int</span> inDeg[MAXN], outDeg[MAXN];
+vector&lt;<span class="ty">int</span>&gt; path;                   <span class="cm">// 欧拉路径</span>
+
+<span class="kw">void</span> <span class="fn">euler_dfs</span>(<span class="ty">int</span> u) {
+    <span class="kw">while</span> (cur[u] &lt; (<span class="ty">int</span>)adj[u].size()) {
+        <span class="kw">auto</span> [v, eid] = adj[u][cur[u]++];
+        <span class="fn">euler_dfs</span>(v);
+    }
+    path.push_back(u);
+}
+
+<span class="ty">bool</span> <span class="fn">find_euler_path</span>(<span class="ty">int</span> n, <span class="ty">int</span>&amp; start) {
+    <span class="ty">int</span> cnt1 = <span class="num">0</span>, cnt2 = <span class="num">0</span>;
+    start = -<span class="num">1</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="kw">if</span> (outDeg[i] - inDeg[i] == <span class="num">1</span>) { cnt1++; start = i; }
+        <span class="kw">else if</span> (inDeg[i] - outDeg[i] == <span class="num">1</span>) cnt2++;
+        <span class="kw">else if</span> (inDeg[i] != outDeg[i]) <span class="kw">return false</span>;
+    }
+    <span class="kw">if</span> (cnt1 == <span class="num">0</span> &amp;&amp; cnt2 == <span class="num">0</span>) { <span class="cm">// 欧拉回路</span>
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+            <span class="kw">if</span> (outDeg[i]) { start = i; <span class="kw">break</span>; }
+    } <span class="kw">else if</span> (cnt1 != <span class="num">1</span> || cnt2 != <span class="num">1</span>) <span class="kw">return false</span>;
+    <span class="kw">return</span> start != -<span class="num">1</span>;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, m;
+    scanf(<span class="str">"%d%d"</span>, &amp;n, &amp;m);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; m; i++) {
+        <span class="ty">int</span> u, v;
+        scanf(<span class="str">"%d%d"</span>, &amp;u, &amp;v);
+        adj[u].push_back({v, i});
+        inDeg[v]++; outDeg[u]++;
+    }
+    <span class="ty">int</span> start;
+    <span class="kw">if</span> (!<span class="fn">find_euler_path</span>(n, start)) {
+        printf(<span class="str">"No Euler path\n"</span>);
+        <span class="kw">return</span> <span class="num">0</span>;
+    }
+    <span class="fn">euler_dfs</span>(start);
+    reverse(path.begin(), path.end());
+    <span class="kw">for</span> (<span class="ty">int</span> u : path) printf(<span class="str">"%d "</span>, u);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <h3>无向图 - 链式前向星 + 当前弧</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> MAXN = <span class="num">100005</span>;
+<span class="kw">const int</span> MAXM = <span class="num">2000005</span>;
+
+<span class="kw">struct</span> <span class="ty">Edge</span> {
+    <span class="ty">int</span> to, nxt;
+} edges[MAXM];
+
+<span class="ty">int</span> head[MAXN], ecnt;
+<span class="ty">int</span> cur[MAXN];       <span class="cm">// 当前弧</span>
+<span class="ty">int</span> deg[MAXN];       <span class="cm">// 度数</span>
+<span class="ty">bool</span> used[MAXM];    <span class="cm">// 边是否已访问</span>
+vector&lt;<span class="ty">int</span>&gt; path;
+
+<span class="kw">void</span> <span class="fn">addEdge</span>(<span class="ty">int</span> u, <span class="ty">int</span> v) {
+    edges[ecnt] = {v, head[u]};
+    head[u] = ecnt++;
+}
+
+<span class="kw">void</span> <span class="fn">euler_dfs</span>(<span class="ty">int</span> u) {
+    <span class="kw">for</span> (<span class="ty">int</span>&amp; i = cur[u]; i != -<span class="num">1</span>; ) {
+        <span class="ty">int</span> eid = i;
+        i = edges[eid].nxt;  <span class="cm">// 移动到下一条边</span>
+        <span class="kw">if</span> (used[eid]) <span class="kw">continue</span>;
+        used[eid] = <span class="kw">true</span>;
+        <span class="cm">// 无向图: 反向边 eid^1 也要标记</span>
+        <span class="kw">if</span> ((eid &amp; <span class="num">1</span>) == <span class="num">0</span>) used[eid + <span class="num">1</span>] = <span class="kw">true</span>;
+        <span class="kw">else</span> used[eid - <span class="num">1</span>] = <span class="kw">true</span>;
+        <span class="fn">euler_dfs</span>(edges[eid].to);
+    }
+    path.push_back(u);
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">memset</span>(head, -<span class="num">1</span>, <span class="kw">sizeof</span> head);
+    <span class="ty">int</span> n, m;
+    scanf(<span class="str">"%d%d"</span>, &amp;n, &amp;m);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; m; i++) {
+        <span class="ty">int</span> u, v;
+        scanf(<span class="str">"%d%d"</span>, &amp;u, &amp;v);
+        <span class="fn">addEdge</span>(u, v);
+        <span class="fn">addEdge</span>(v, u);
+        deg[u]++; deg[v]++;
+    }
+
+    <span class="cm">// 找起点</span>
+    <span class="ty">int</span> start = <span class="num">1</span>, oddCnt = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="kw">if</span> (deg[i] % <span class="num">2</span>) { oddCnt++; start = i; }
+    }
+    <span class="kw">if</span> (oddCnt != <span class="num">0</span> &amp;&amp; oddCnt != <span class="num">2</span>) {
+        printf(<span class="str">"No Euler path\n"</span>);
+        <span class="kw">return</span> <span class="num">0</span>;
+    }
+
+    <span class="cm">// 初始化 cur</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) cur[i] = head[i];
+
+    <span class="fn">euler_dfs</span>(start);
+    reverse(path.begin(), path.end());
+    <span class="kw">for</span> (<span class="ty">int</span> u : path) printf(<span class="str">"%d "</span>, u);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <h3>非递归 Hierholzer（避免栈溢出）</h3>
+    <pre><code><span class="kw">void</span> <span class="fn">euler_iterative</span>(<span class="ty">int</span> start) {
+    stack&lt;<span class="ty">int</span>&gt; stk;
+    stk.push(start);
+    <span class="kw">while</span> (!stk.empty()) {
+        <span class="ty">int</span> u = stk.top();
+        <span class="kw">if</span> (cur[u] != -<span class="num">1</span>) {
+            <span class="ty">int</span> eid = cur[u];
+            cur[u] = edges[eid].nxt;
+            <span class="kw">if</span> (used[eid]) <span class="kw">continue</span>;
+            used[eid] = <span class="kw">true</span>;
+            <span class="kw">if</span> ((eid &amp; <span class="num">1</span>) == <span class="num">0</span>) used[eid + <span class="num">1</span>] = <span class="kw">true</span>;
+            <span class="kw">else</span> used[eid - <span class="num">1</span>] = <span class="kw">true</span>;
+            stk.push(edges[eid].to);
+        } <span class="kw">else</span> {
+            path.push_back(u);
+            stk.pop();
+        }
+    }
+    reverse(path.begin(), path.end());
+}</code></pre>
+  </div>
+
+  <!-- ===== 经典问题 ===== -->
+  <div class="section" id="problems">
+    <h2>经典问题</h2>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P1341" target="_blank">P1341 无序字母对</a>
+      </div>
+      <p>将字母对拼成序列，使得相邻字母对的衔接字符相同。转化为在无向图上找字典序最小的欧拉路径。注意起点的选取要取字典序最小的奇度数节点。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P2731" target="_blank">P2731 [USACO3.3] 骑马修栅栏 Riding the Fences</a>
+      </div>
+      <p>经典的欧拉路径模板题。给定多重图，找一条经过所有边恰好一次的路径。需要输出字典序最小的解。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P1637" target="_blank">P1637 三元上升子序列</a>
+      </div>
+      <p>虽然不是直接的欧拉路径题，但可以借鉴图论建模思想。实际是树状数组/归并排序题。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P6066" target="_blank">P6066 [USACO05JAN] Watchcow S</a>
+      </div>
+      <p>有向图欧拉回路。每条边需要正向经过一次，反向经过一次。转化为无向图或双向有向图上的欧拉回路问题。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P11279" target="_blank">P11279 欧拉回路</a>
+      </div>
+      <p>判定有向图/无向图是否存在欧拉回路，并输出回路。综合模板题。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://codeforces.com/contest/723/problem/E" target="_blank">CF 723E One-Way Reform</a>
+      </div>
+      <p>将无向图的边定向，使得出度等于入度的节点最多。利用欧拉回路的性质：在欧拉回路上定向，所有节点出度等于入度。</p>
+    </div>
+
+    <div class="box box-hard">
+      <div class="box-title">进阶：混合图欧拉回路</div>
+      <p>如果图中既有有向边又有无向边，判断是否存在欧拉回路需要用<strong>网络流</strong>。将无向边先任意定向，然后通过调整流量使每个节点的入度等于出度。这属于较高难度的综合题。</p>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

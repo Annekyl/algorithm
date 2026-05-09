@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KMP算法 - ACM算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#05-string">字符串篇</a> &gt;
+    KMP算法
+  </div>
+
+  <div class="page-header">
+    <h1>KMP算法</h1>
+    <p class="subtitle">Knuth-Morris-Pratt 字符串匹配算法 &mdash; 利用已匹配信息避免重复比较</p>
+    <div class="tags">
+      <span class="tag tag-str">字符串</span>
+      <span class="tag tag-base">基础算法</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#overview">1. KMP概述</a></li>
+      <li><a href="#next-array">2. next数组</a></li>
+      <li><a href="#matching">3. KMP匹配过程</a></li>
+      <li><a href="#next-app">4. next数组的应用</a></li>
+      <li><a href="#template">5. 完整C++模板</a></li>
+      <li><a href="#problems">6. 经典题目</a></li>
+    </ul>
+  </div>
+
+  <!-- Section 1: KMP概述 -->
+  <div class="section" id="overview">
+    <h2>1. KMP概述</h2>
+
+    <h3>1.1 什么是模式匹配</h3>
+    <p>给定一个 <strong>文本串</strong> <code>S</code>（长度为 n）和一个 <strong>模式串</strong> <code>P</code>（长度为 m），在 S 中找到 P 出现的所有位置。这是字符串处理中最基本的问题之一。</p>
+
+    <h3>1.2 暴力匹配的缺陷</h3>
+    <p>朴素算法（暴力匹配）在每次失配时，将模式串右移一位重新从头比较，时间复杂度为 O(nm)。其核心问题在于：<strong>已经匹配过的信息被完全丢弃了</strong>。</p>
+
+    <div class="diagram">
+<pre>
+文本串 S:  A B A B C A B A B C A B D
+模式串 P:  A B A B C A B D
+           ^^^^^^^^x  失配！
+暴力做法:  回退到第二位重新开始
+           A B A B C A B A B C A B D
+             A B A B C A B D
+KMP做法:   利用已匹配的"ABAB"信息，直接跳到有意义的位置继续
+           A B A B C A B A B C A B D
+                 A B A B C A B D
+</pre>
+    </div>
+
+    <h3>1.3 为什么是 O(n+m)</h3>
+    <p>KMP 算法的核心思想是：当发生失配时，不回退文本串的指针，而是利用模式串自身的结构信息（<code>next</code> 数组），将模式串尽可能多地向右滑动，从而跳过不可能匹配成功的位置。</p>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n + m)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(m)</span>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">核心思想</div>
+      <p>KMP 的精髓在于：<strong>文本串的指针永远不回退</strong>。通过预处理模式串得到 <code>next</code> 数组，在匹配失败时，根据 <code>next</code> 数组决定模式串的滑动距离，从而实现线性时间匹配。</p>
+    </div>
+  </div>
+
+  <!-- Section 2: next数组 -->
+  <div class="section" id="next-array">
+    <h2>2. next数组</h2>
+
+    <h3>2.1 定义</h3>
+    <p><code>next[i]</code> 表示模式串 <code>P</code> 的子串 <code>P[0..i]</code> 中，<strong>最长的相等前后缀的长度</strong>。即：</p>
+    <ul>
+      <li>令 <code>k = next[i]</code>，则 <code>P[0..k-1] = P[i-k+1..i]</code></li>
+      <li>且 k 是满足条件的<strong>最大值</strong></li>
+    </ul>
+
+    <div class="box box-info">
+      <div class="box-title">前后缀的含义</div>
+      <p>对于字符串 <code>"ABAB"</code>：</p>
+      <ul>
+        <li>前缀：<code>"A"</code>, <code>"AB"</code>, <code>"ABA"</code>（不含自身的所有头部子串）</li>
+        <li>后缀：<code>"B"</code>, <code>"AB"</code>, <code>"BAB"</code>（不含自身的所有尾部子串）</li>
+        <li>最长相等前后缀：<code>"AB"</code>，长度为 2</li>
+      </ul>
+    </div>
+
+    <h3>2.2 构造过程详细推导</h3>
+    <p>以模式串 <code>P = "ABABABD"</code> 为例，逐步构造 next 数组：</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>i</th><th>P[i]</th><th>子串 P[0..i]</th><th>最长相等前后缀</th><th>next[i]</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>0</td><td>A</td><td>"A"</td><td>无（单字符无前后缀）</td><td>0</td></tr>
+          <tr><td>1</td><td>B</td><td>"AB"</td><td>前缀"A" != 后缀"B"</td><td>0</td></tr>
+          <tr><td>2</td><td>A</td><td>"ABA"</td><td>"A" = "A"，长度1</td><td>1</td></tr>
+          <tr><td>3</td><td>B</td><td>"ABAB"</td><td>"AB" = "AB"，长度2</td><td>2</td></tr>
+          <tr><td>4</td><td>A</td><td>"ABABA"</td><td>"ABA" = "ABA"，长度3</td><td>3</td></tr>
+          <tr><td>5</td><td>B</td><td>"ABABAB"</td><td>"ABAB" = "ABAB"，长度4</td><td>4</td></tr>
+          <tr><td>6</td><td>D</td><td>"ABABABD"</td><td>无相等前后缀</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>2.3 next数组的构造算法</h3>
+    <p>构造 next 数组本身也可以用类似 KMP 匹配的思路来实现，利用已有的 next 值来加速后续的计算：</p>
+
+    <div class="steps">
+      <div class="step">
+        <strong>初始化：</strong><code>next[0] = 0</code>，令 <code>j = 0</code>（j 指向当前最长相等前后缀的下一个位置）
+      </div>
+      <div class="step">
+        <strong>从 i = 1 开始遍历：</strong>若 <code>P[i] == P[j]</code>，则 <code>next[i] = j + 1</code>，<code>j++</code>
+      </div>
+      <div class="step">
+        <strong>若 P[i] != P[j]：</strong>令 <code>j = next[j-1]</code>（回退到上一个匹配位置的 next 值），继续尝试匹配，直到 <code>j == 0</code> 或匹配成功
+      </div>
+      <div class="step">
+        <strong>若 j 回退到 0 仍不匹配：</strong><code>next[i] = 0</code>
+      </div>
+    </div>
+
+    <div class="diagram">
+<pre>
+模式串 P:  A  B  A  B  A  B  D
+下标:      0  1  2  3  4  5  6
+next:      0  0  1  2  3  4  0
+
+构造过程演示 (关键步骤):
+i=2, P[2]='A', j=1 -> P[2]!=P[1], j=next[0]=0 -> P[2]==P[0], next[2]=1, j=1
+i=3, P[3]='B', j=1 -> P[3]==P[1], next[3]=2, j=2
+i=4, P[4]='A', j=2 -> P[4]==P[2], next[4]=3, j=3
+i=5, P[5]='B', j=3 -> P[5]==P[3], next[5]=4, j=4
+i=6, P[6]='D', j=4 -> P[6]!=P[4], j=next[3]=2 -> P[6]!=P[2], j=next[1]=0 -> P[6]!=P[0], next[6]=0
+</pre>
+    </div>
+
+    <h3>2.4 next数组构造代码</h3>
+    <pre><span class="cm">// 构造 next 数组（也称为 "前缀函数" 或 "failure function"）</span>
+<span class="cm">// next[i] = P[0..i] 的最长相等前后缀长度</span>
+<span class="ty">void</span> <span class="fn">buildNext</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; P, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; nxt) {
+    <span class="ty">int</span> m = P.<span class="fn">size</span>();
+    nxt.<span class="fn">resize</span>(m);
+    nxt[<span class="num">0</span>] = <span class="num">0</span>;
+    <span class="ty">int</span> j = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; m; i++) {
+        <span class="kw">while</span> (j &gt; <span class="num">0</span> &amp;&amp; P[i] != P[j])
+            j = nxt[j - <span class="num">1</span>];   <span class="cm">// 回退</span>
+        <span class="kw">if</span> (P[i] == P[j])
+            j++;
+        nxt[i] = j;
+    }
+}</pre>
+  </div>
+
+  <!-- Section 3: KMP匹配过程 -->
+  <div class="section" id="matching">
+    <h2>3. KMP匹配过程</h2>
+
+    <h3>3.1 匹配算法</h3>
+    <p>有了 next 数组后，KMP 匹配的核心思想是：</p>
+    <ul>
+      <li>用指针 <code>i</code> 遍历文本串 S，用指针 <code>j</code> 遍历模式串 P</li>
+      <li>当 <code>S[i] == P[j]</code> 时，两个指针同时前进</li>
+      <li>当 <code>S[i] != P[j]</code> 时，<strong>i 不回退</strong>，将 <code>j</code> 跳转到 <code>next[j-1]</code></li>
+      <li>当 <code>j == m</code> 时，说明匹配成功，记录位置</li>
+    </ul>
+
+    <h3>3.2 逐步模拟</h3>
+    <p>以 <code>S = "ABABABCA"</code>，<code>P = "ABABC"</code> 为例：</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>步骤</th><th>i</th><th>j</th><th>S[i]</th><th>P[j]</th><th>操作</th><th>next</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>0</td><td>0</td><td>A</td><td>A</td><td>匹配，i++, j++</td><td>next=[0,0,1,2,0]</td></tr>
+          <tr><td>2</td><td>1</td><td>1</td><td>B</td><td>B</td><td>匹配，i++, j++</td><td></td></tr>
+          <tr><td>3</td><td>2</td><td>2</td><td>A</td><td>A</td><td>匹配，i++, j++</td><td></td></tr>
+          <tr><td>4</td><td>3</td><td>3</td><td>B</td><td>B</td><td>匹配，i++, j++</td><td></td></tr>
+          <tr><td>5</td><td>4</td><td>4</td><td>A</td><td>C</td><td>失配！j=next[3]=2</td><td></td></tr>
+          <tr><td>6</td><td>4</td><td>2</td><td>A</td><td>A</td><td>匹配，i++, j++</td><td></td></tr>
+          <tr><td>7</td><td>5</td><td>3</td><td>B</td><td>B</td><td>匹配，i++, j++</td><td></td></tr>
+          <tr><td>8</td><td>6</td><td>4</td><td>C</td><td>C</td><td>匹配，i++, j++</td><td></td></tr>
+          <tr><td>9</td><td>-</td><td>5</td><td>-</td><td>-</td><td>j==m，匹配成功！位置=i-m=2</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="diagram">
+<pre>
+第5步失配时的状态:
+  S: A B A B A B C A
+         i=4
+  P:     A B A B C
+             j=4 -> 失配
+  j 回退到 next[3]=2:
+  S: A B A B A B C A
+         i=4
+  P:       A B A B C
+             j=2 -> 继续匹配
+</pre>
+    </div>
+
+    <h3>3.3 KMP匹配代码</h3>
+    <pre><span class="cm">// KMP 模式匹配，返回所有匹配位置（0-indexed）</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">kmpSearch</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; S, <span class="kw">const</span> <span class="ty">string</span>&amp; P) {
+    <span class="ty">int</span> n = S.<span class="fn">size</span>(), m = P.<span class="fn">size</span>();
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; nxt;
+    <span class="fn">buildNext</span>(P, nxt);
+
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; pos;   <span class="cm">// 存储所有匹配位置</span>
+    <span class="ty">int</span> j = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="kw">while</span> (j &gt; <span class="num">0</span> &amp;&amp; S[i] != P[j])
+            j = nxt[j - <span class="num">1</span>];
+        <span class="kw">if</span> (S[i] == P[j])
+            j++;
+        <span class="kw">if</span> (j == m) {
+            pos.<span class="fn">push_back</span>(i - m + <span class="num">1</span>);
+            j = nxt[j - <span class="num">1</span>];  <span class="cm">// 继续寻找下一个匹配</span>
+        }
+    }
+    <span class="kw">return</span> pos;
+}</pre>
+
+    <div class="box box-warn">
+      <div class="box-title">常见陷阱</div>
+      <p>匹配成功后不要忘记将 <code>j = nxt[j-1]</code>，而不是将 <code>j</code> 置为 0。这是因为模式串的后缀可能同时也是下一次匹配的前缀。</p>
+    </div>
+  </div>
+
+  <!-- Section 4: next数组的应用 -->
+  <div class="section" id="next-app">
+    <h2>4. next数组的应用</h2>
+
+    <h3>4.1 最小循环节（最小周期）</h3>
+    <p>对于长度为 n 的字符串 S，若其存在循环节（即 S 可以由某个子串重复若干次得到），则 <strong>最小循环节长度</strong> 为：</p>
+
+    <div class="box box-tip">
+      <div class="box-title">最小循环节公式</div>
+      <p><code>len = n - next[n-1]</code></p>
+      <p>当且仅当 <code>n % len == 0</code> 时，S 是由长度为 len 的子串重复 <code>n/len</code> 次构成的。</p>
+    </div>
+
+    <div class="diagram">
+<pre>
+例: S = "ABABAB"  (n=6)
+next = [0, 0, 1, 2, 3, 4]
+
+最小循环节长度 = 6 - next[5] = 6 - 4 = 2
+6 % 2 == 0，所以 "ABABAB" = "AB" 重复 3 次
+
+例: S = "ABCABC"  (n=6)
+next = [0, 0, 0, 1, 2, 3]
+
+最小循环节长度 = 6 - next[5] = 6 - 3 = 3
+6 % 3 == 0，所以 "ABCABC" = "ABC" 重复 2 次
+
+例: S = "ABCABD"  (n=6)
+next = [0, 0, 0, 1, 2, 0]
+
+最小循环节长度 = 6 - next[5] = 6 - 0 = 6
+6 % 6 == 0，循环节就是整个串本身（无更小循环节）
+</pre>
+    </div>
+
+    <h3>4.2 回文串判断</h3>
+    <p>利用 KMP 可以判断一个串是否为回文串。将原串 S 和它的反转 <code>S'</code> 拼接为 <code>S + "#" + S'</code>（<code>#</code> 为分隔符），然后计算新串的 next 数组。如果 <code>next[last] == n</code>，则 S 是回文串。</p>
+
+    <pre><span class="cm">// 利用 KMP 判断回文串</span>
+<span class="ty">bool</span> <span class="fn">isPalindrome</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; s) {
+    <span class="ty">string</span> rev = s;
+    <span class="fn">reverse</span>(rev.<span class="fn">begin</span>(), rev.<span class="fn">end</span>());
+    <span class="ty">string</span> t = s + <span class="str">"#"</span> + rev;
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; nxt;
+    <span class="fn">buildNext</span>(t, nxt);
+    <span class="kw">return</span> nxt.<span class="fn">back</span>() == (<span class="ty">int</span>)s.<span class="fn">size</span>();
+}</pre>
+
+    <h3>4.3 最短循环节（补充）</h3>
+    <p>如果字符串不完全由循环节构成，但想知道"至少添加几个字符能让它成为循环串"，也可以用 next 数组解决：</p>
+    <ul>
+      <li>令 <code>len = n - next[n-1]</code></li>
+      <li>若 <code>n % len != 0</code>，则需要添加 <code>len - n % len</code> 个字符</li>
+    </ul>
+
+    <h3>4.4 统计前缀出现次数</h3>
+    <p>利用 next 数组可以快速统计模式串的每个前缀在文本串中出现的次数，这在某些计数类问题中非常有用。</p>
+  </div>
+
+  <!-- Section 5: 完整C++模板 -->
+  <div class="section" id="template">
+    <h2>5. 完整C++模板</h2>
+
+    <h3>5.1 标准 KMP 模板</h3>
+    <pre><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">struct</span> <span class="ty">KMP</span> {
+    <span class="ty">string</span> p;
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; nxt;
+
+    <span class="fn">KMP</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; pattern) : p(pattern) {
+        <span class="ty">int</span> m = p.<span class="fn">size</span>();
+        nxt.<span class="fn">resize</span>(m);
+        nxt[<span class="num">0</span>] = <span class="num">0</span>;
+        <span class="ty">int</span> j = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; m; i++) {
+            <span class="kw">while</span> (j &gt; <span class="num">0</span> &amp;&amp; p[i] != p[j])
+                j = nxt[j - <span class="num">1</span>];
+            <span class="kw">if</span> (p[i] == p[j]) j++;
+            nxt[i] = j;
+        }
+    }
+
+    <span class="cm">// 返回所有匹配位置</span>
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">match</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; s) {
+        <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; res;
+        <span class="ty">int</span> j = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; (<span class="ty">int</span>)s.<span class="fn">size</span>(); i++) {
+            <span class="kw">while</span> (j &gt; <span class="num">0</span> &amp;&amp; s[i] != p[j])
+                j = nxt[j - <span class="num">1</span>];
+            <span class="kw">if</span> (s[i] == p[j]) j++;
+            <span class="kw">if</span> (j == (<span class="ty">int</span>)p.<span class="fn">size</span>()) {
+                res.<span class="fn">push_back</span>(i - j + <span class="num">1</span>);
+                j = nxt[j - <span class="num">1</span>];
+            }
+        }
+        <span class="kw">return</span> res;
+    }
+
+    <span class="cm">// 最小循环节长度</span>
+    <span class="ty">int</span> <span class="fn">minPeriod</span>() {
+        <span class="ty">int</span> n = p.<span class="fn">size</span>();
+        <span class="ty">int</span> len = n - nxt[n - <span class="num">1</span>];
+        <span class="kw">return</span> (n % len == <span class="num">0</span>) ? len : n;
+    }
+};
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">ios</span>::<span class="fn">sync_with_stdio</span>(<span class="kw">false</span>);
+    cin.<span class="fn">tie</span>(<span class="kw">nullptr</span>);
+
+    <span class="ty">string</span> text, pattern;
+    cin &gt;&gt; text &gt;&gt; pattern;
+
+    <span class="ty">KMP</span> <span class="fn">kmp</span>(pattern);
+    <span class="ty">auto</span> pos = kmp.<span class="fn">match</span>(text);
+
+    <span class="kw">for</span> (<span class="ty">int</span> p : pos)
+        cout &lt;&lt; p + <span class="num">1</span> &lt;&lt; <span class="str">"\n"</span>;  <span class="cm">// 1-indexed 输出</span>
+    <span class="kw">for</span> (<span class="ty">int</span> x : kmp.nxt)
+        cout &lt;&lt; x &lt;&lt; <span class="str">" "</span>;
+
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+
+    <h3>5.2 扩展 KMP（Z 函数）</h3>
+    <p>Z 函数（也称为 Z-algorithm）是另一个重要的字符串匹配工具。<code>Z[i]</code> 表示 <code>S</code> 与 <code>S[i..n-1]</code> 的最长公共前缀长度。</p>
+
+    <pre><span class="cm">// Z 函数（扩展 KMP）</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">zFunction</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; s) {
+    <span class="ty">int</span> n = s.<span class="fn">size</span>();
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; z(n, <span class="num">0</span>);
+    z[<span class="num">0</span>] = n;
+    <span class="ty">int</span> l = <span class="num">0</span>, r = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; n; i++) {
+        <span class="kw">if</span> (i &lt;= r)
+            z[i] = <span class="fn">min</span>(r - i + <span class="num">1</span>, z[i - l]);
+        <span class="kw">while</span> (i + z[i] &lt; n &amp;&amp; s[z[i]] == s[i + z[i]])
+            z[i]++;
+        <span class="kw">if</span> (i + z[i] - <span class="num">1</span> &gt; r)
+            l = i, r = i + z[i] - <span class="num">1</span>;
+    }
+    <span class="kw">return</span> z;
+}</pre>
+  </div>
+
+  <!-- Section 6: 经典题目 -->
+  <div class="section" id="problems">
+    <h2>6. 经典题目</h2>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P3375" target="_blank">P3375 [模板] KMP字符串匹配</a>
+      </div>
+      <p>标准 KMP 模板题，输出所有匹配位置和 next 数组。</p>
+      <span class="tag tag-base">模板题</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P4391" target="_blank">P4391 [BOI2009] Radio Transmission 无线传输</a>
+      </div>
+      <p>给定一个循环串的某个子串，求最小循环节长度。直接使用 <code>n - next[n-1]</code> 即可。</p>
+      <span class="tag tag-easy">简单</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P4824" target="_blank">P4824 [USACO15FEB] Censoring G</a>
+      </div>
+      <p>在文本串中不断删除模式串，使用 KMP + 栈来模拟删除过程。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P3435" target="_blank">P3435 [POI2006] OKR-Periods of Words</a>
+      </div>
+      <p>利用 next 数组的性质，求每个前缀的最小周期，并求和。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P2375" target="_blank">P2375 [NOI2014] 动物园</a>
+      </div>
+      <p>KMP 的进阶应用，需要同时维护 next 数组和"安全的" next 数组（限制长度）。</p>
+      <span class="tag tag-hard">困难</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://codeforces.com/contest/126/problem/B" target="_blank">CF 126B Password</a>
+      </div>
+      <p>找一个既是前缀又是后缀、同时出现在中间的最长子串。利用 next 数组的链式回退性质。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

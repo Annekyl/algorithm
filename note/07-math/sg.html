@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>博弈论 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#07-math">数学</a> &gt;
+    博弈论
+  </div>
+
+  <div class="page-header">
+    <h1>博弈论</h1>
+    <p class="subtitle">Game Theory &mdash; 公平组合博弈的分析与求解</p>
+    <div class="tags">
+      <span class="tag tag-math">数学</span>
+      <span class="tag tag-mid">中等</span>
+      <span class="tag tag-base">基础算法</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#overview">博弈论概述</a></li>
+      <li><a href="#nim">Nim 游戏</a></li>
+      <li><a href="#sg">SG 函数 (Sprague-Grundy)</a></li>
+      <li><a href="#bash">巴什博弈 (Bash Game)</a></li>
+      <li><a href="#wythoff">威佐夫博弈 (Wythoff Game)</a></li>
+      <li><a href="#anti">Anti-Nim 与 Anti-SG</a></li>
+      <li><a href="#template">C++ 完整模板</a></li>
+      <li><a href="#problems">经典问题</a></li>
+    </ul>
+  </div>
+
+  <!-- ===== 博弈论概述 ===== -->
+  <div class="section" id="overview">
+    <h2>博弈论概述</h2>
+
+    <h3>公平组合博弈 (Impartial Game)</h3>
+    <p>公平组合博弈满足以下条件：</p>
+    <ul>
+      <li><strong>两名玩家</strong>轮流行动</li>
+      <li><strong>信息完全公开</strong>，无随机因素</li>
+      <li>双方拥有<strong>完全相同的合法操作</strong>（公平性）</li>
+      <li>无法行动者<strong>输</strong>（Normal Play Convention，正常玩法）</li>
+      <li>游戏<strong>必然在有限步内结束</strong></li>
+    </ul>
+
+    <h3>P-position 与 N-position</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>状态类型</th><th>含义</th><th>特征</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>P-position</strong> (Previous)</td><td>前一个玩家（即刚完成操作的玩家）必胜</td><td>当前玩家必败</td></tr>
+          <tr><td><strong>N-position</strong> (Next)</td><td>下一个玩家（即将操作的玩家）必胜</td><td>当前玩家必胜</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>判定规则</h3>
+    <div class="steps">
+      <div class="step">所有无法操作的终态为 P-position</div>
+      <div class="step">能转移到任何 P-position 的状态为 N-position</div>
+      <div class="step">只能转移到 N-position 的状态为 P-position</div>
+      <div class="step">递归应用以上规则，即可判断每个状态的胜负</div>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">SG 定理</div>
+      <p>对于多个独立子游戏组成的复合游戏，其 SG 值等于各子游戏 SG 值的异或和。SG = 0 为 P-position（必败），SG != 0 为 N-position（必胜）。</p>
+    </div>
+  </div>
+
+  <!-- ===== Nim 游戏 ===== -->
+  <div class="section" id="nim">
+    <h2>Nim 游戏</h2>
+
+    <h3>规则</h3>
+    <p>有 n 堆石子，每堆有 a[i] 个。两名玩家轮流操作，每次从某一堆中取走至少一个石子（可以取完）。无法操作者输。</p>
+
+    <h3>Bouton 定理</h3>
+    <p><strong>先手必胜当且仅当所有堆石子数的异或和不为 0。</strong></p>
+    <p><code>a[0] ^ a[1] ^ ... ^ a[n-1] != 0  =>  先手必胜</code></p>
+    <p><code>a[0] ^ a[1] ^ ... ^ a[n-1] == 0  =>  先手必败</code></p>
+
+    <div class="diagram">
+      <pre>
+  例：三堆石子 (3, 5, 7)
+
+  3 = 011
+  5 = 101
+  7 = 111
+  ----------
+  XOR = 001  (不为0，先手必胜)
+
+  先手策略：从第3堆取4个，变为 (3, 5, 3)
+  3 ^ 5 ^ 3 = 011 ^ 101 ^ 011 = 101 ^ 011 ^ 011 = 101 ^ 000 = ...
+  实际：011 ^ 101 ^ 011 = (011 ^ 011) ^ 101 = 000 ^ 101 = 101
+  不对，重新算：
+  3 ^ 5 ^ 3 = 3 ^ 3 ^ 5 = 0 ^ 5 = 5 != 0，还需调整
+
+  正确策略：令目标异或为0
+  设取第i堆使得 XOR^a[i]^x = 0，则 x = XOR^a[i]
+  取第2堆(5)：x = 001 ^ 101 = 100 = 4 < 5 ✓
+  变为 (3, 4, 7): 011 ^ 100 ^ 111 = 000 ✓
+      </pre>
+    </div>
+
+    <h3>证明思路</h3>
+    <div class="steps">
+      <div class="step">终态 (0,0,...,0) 的异或为 0，是 P-position</div>
+      <div class="step">若当前异或 != 0，一定存在操作使其变为 0（N-position 性质）</div>
+      <div class="step">若当前异或 == 0，任何操作都会使其变为非 0（P-position 性质）</div>
+    </div>
+
+    <div class="complexity">
+      <span class="label">判断胜负</span>
+      <span class="value">O(n)</span>
+    </div>
+  </div>
+
+  <!-- ===== SG 函数 ===== -->
+  <div class="section" id="sg">
+    <h2>SG 函数 (Sprague-Grundy)</h2>
+
+    <h3>mex 运算</h3>
+    <p><strong>mex (Minimum Excluded)</strong>：给定一个非负整数集合 S，mex(S) 是不在 S 中的最小非负整数。</p>
+    <div class="diagram">
+      <pre>
+  mex({})       = 0
+  mex({0})      = 1
+  mex({1})      = 0
+  mex({0, 1})   = 2
+  mex({0, 2})   = 1
+  mex({0, 1, 2}) = 3
+  mex({1, 2, 3}) = 0
+      </pre>
+    </div>
+
+    <h3>SG 函数定义</h3>
+    <p>对于游戏状态 x，定义 SG 函数：</p>
+    <p><code>SG(x) = mex({ SG(y) | y 是 x 的后继状态 })</code></p>
+
+    <h3>SG 定理</h3>
+    <p>对于由 n 个独立子游戏组成的复合游戏，先手必胜当且仅当：</p>
+    <p><code>SG(game_1) ^ SG(game_2) ^ ... ^ SG(game_n) != 0</code></p>
+
+    <div class="box box-tip">
+      <div class="box-title">Nim 是 SG 的特例</div>
+      <p>Nim 游戏中每堆石子的 SG 值恰好等于该堆石子数。Nim 的异或判胜法就是 SG 定理的直接应用。</p>
+    </div>
+
+    <h3>SG 函数的计算</h3>
+    <div class="steps">
+      <div class="step">确定终态：无法操作的状态 SG = 0</div>
+      <div class="step">对于每个状态 x，找出所有后继状态 y</div>
+      <div class="step">递归计算所有 SG(y)</div>
+      <div class="step">SG(x) = mex({所有 SG(y)})</div>
+    </div>
+
+    <h3>SG 函数的性质</h3>
+    <ul>
+      <li>终态的 SG 值为 0</li>
+      <li>SG(x) = 0 当且仅当 x 是 P-position（必败态）</li>
+      <li>SG(x) != 0 当且仅当 x 是 N-position（必胜态）</li>
+      <li>SG 值具有周期性（很多博弈问题中）</li>
+    </ul>
+  </div>
+
+  <!-- ===== 巴什博弈 ===== -->
+  <div class="section" id="bash">
+    <h2>巴什博弈 (Bash Game)</h2>
+
+    <h3>规则</h3>
+    <p>一堆 n 个石子，两名玩家轮流取，每次可以取 1 ~ m 个。取走最后一个石子的人获胜。</p>
+
+    <h3>结论</h3>
+    <p><strong>先手必胜当且仅当 n % (m+1) != 0。</strong></p>
+
+    <div class="diagram">
+      <pre>
+  n = 10, m = 3
+
+  状态:  0  1  2  3  4  5  6  7  8  9  10
+  SG:    0  1  2  3  0  1  2  3  0  1   2
+
+  SG(n) = n % (m+1) = n % 4
+  先手必败: n = 0, 4, 8, 12, ... (4的倍数)
+  先手必胜: n = 其他
+      </pre>
+    </div>
+
+    <h3>证明</h3>
+    <div class="steps">
+      <div class="step">n = 0 时，先手无法操作，必败</div>
+      <div class="step">n = k*(m+1) 时，先手取 x 个 (1<=x<=m)，后手取 (m+1-x) 个，使石子减少 (m+1) 个，仍为 (m+1) 的倍数</div>
+      <div class="step">最终后手将石子减到 0，先手必败</div>
+      <div class="step">n != k*(m+1) 时，先手取 n%(m+1) 个，留给后手 (m+1) 的倍数，后手处于必败态</div>
+    </div>
+
+    <h3>先手必胜策略</h3>
+    <p>若 n % (m+1) != 0，先手取 <code>n % (m+1)</code> 个石子，使剩余石子数为 (m+1) 的倍数。之后无论后手取多少个（设为 x），先手都取 (m+1-x) 个，保持石子数始终为 (m+1) 的倍数。</p>
+  </div>
+
+  <!-- ===== 威佐夫博弈 ===== -->
+  <div class="section" id="wythoff">
+    <h2>威佐夫博弈 (Wythoff Game)</h2>
+
+    <h3>规则</h3>
+    <p>两堆石子 (a, b)，两名玩家轮流操作，每次可以：</p>
+    <ul>
+      <li>从某一堆中取任意多个石子</li>
+      <li>或从两堆中同时取相同数量的石子</li>
+    </ul>
+    <p>取走最后一个石子的人获胜。</p>
+
+    <h3>结论</h3>
+    <p>设 a <= b，<strong>先手必败当且仅当</strong>：</p>
+    <p><code>a = floor(k * phi), b = floor(k * phi) + k = a + k</code></p>
+    <p>其中 <code>phi = (1 + sqrt(5)) / 2</code> 是黄金比例，k = 0, 1, 2, ...</p>
+
+    <div class="diagram">
+      <pre>
+  威佐夫博弈的必败态 (Beatty 序列):
+
+  k=0: (0, 0)
+  k=1: (1, 2)     1 = floor(1*1.618), 2 = 1+1
+  k=2: (3, 5)     3 = floor(2*1.618), 5 = 3+2
+  k=3: (4, 7)     4 = floor(3*1.618), 7 = 4+3
+  k=4: (6, 10)    6 = floor(4*1.618), 10 = 6+4
+  k=5: (8, 13)    8 = floor(5*1.618), 13 = 8+5
+
+  判定: 设 k = b - a, 若 a == floor(k * phi) 则必败
+      </pre>
+    </div>
+
+    <h3>判定公式</h3>
+    <p>给定两堆 (a, b)，设 a <= b，令 k = b - a：</p>
+    <p><code>a == floor(k * (1+sqrt(5))/2)  =>  必败态 (P-position)</code></p>
+    <p><code>a != floor(k * (1+sqrt(5))/2)  =>  必胜态 (N-position)</code></p>
+
+    <div class="box box-warn">
+      <div class="box-title">精度注意</div>
+      <p>由于涉及浮点运算，注意精度问题。可以使用高精度 sqrt(5) 或通过整数运算验证。竞赛中常用 <code>a == (int)(k * (sqrt(5)+1) / 2)</code> 来判定。</p>
+    </div>
+  </div>
+
+  <!-- ===== Anti-Nim 与 Anti-SG ===== -->
+  <div class="section" id="anti">
+    <h2>Anti-Nim 与 Anti-SG</h2>
+
+    <h3>Anti-Nim (Misere Nim)</h3>
+    <p>规则与 Nim 相同，但<strong>取走最后一个石子的人输</strong>（反常玩法）。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>情况</th><th>先手必胜条件</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>所有堆都只有 1 个石子</td><td>异或和 == 0（即偶数堆）</td></tr>
+          <tr><td>存在超过 1 个石子的堆</td><td>异或和 != 0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Anti-SG (SJ 定理)</h3>
+    <p>Anti-SG 游戏的胜负判定（SJ 定理）：设 SG' = SG(game_1) ^ SG(game_2) ^ ... ^ SG(game_n)。</p>
+    <ul>
+      <li>若所有子游戏的 SG 值都 &lt;= 1：SG' == 0 时先手必胜</li>
+      <li>否则：SG' != 0 时先手必胜</li>
+    </ul>
+
+    <div class="box box-hard">
+      <div class="box-title">博弈论判定总结</div>
+      <ul>
+        <li><strong>正常玩法 (Normal)</strong>：SG 异或 != 0 则先手必胜</li>
+        <li><strong>反常玩法 (Misere)</strong>：需要特殊判断，通常分类讨论</li>
+        <li>Anti-Nim 是 Misere 的特殊情况，有简洁的判定公式</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===== C++ 完整模板 ===== -->
+  <div class="section" id="template">
+    <h2>C++ 完整模板</h2>
+
+    <h3>SG 函数计算（记忆化搜索）</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="cm">// SG 函数通用模板（记忆化搜索）</span>
+<span class="cm">// get_moves(x): 返回状态 x 的所有后继状态</span>
+<span class="ty">map</span>&lt;<span class="ty">int</span>, <span class="ty">int</span>&gt; sg;
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; (*get_moves)(<span class="ty">int</span>);
+
+<span class="ty">int</span> <span class="fn">sg_func</span>(<span class="ty">int</span> x) {
+    <span class="kw">if</span> (sg.<span class="fn">count</span>(x)) <span class="kw">return</span> sg[x];
+    <span class="ty">set</span>&lt;<span class="ty">int</span>&gt; s;
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; moves = <span class="fn">get_moves</span>(x);
+    <span class="kw">for</span> (<span class="ty">int</span> y : moves) s.<span class="fn">insert</span>(<span class="fn">sg_func</span>(y));
+    <span class="cm">// mex: 不在集合中的最小非负整数</span>
+    <span class="ty">int</span> res = <span class="num">0</span>;
+    <span class="kw">while</span> (s.<span class="fn">count</span>(res)) res++;
+    <span class="kw">return</span> sg[x] = res;
+}</code></pre>
+
+    <h3>Nim 游戏判断</h3>
+    <pre><code><span class="cm">// 判断 n 堆石子的 Nim 游戏先手是否必胜</span>
+<span class="ty">bool</span> <span class="fn">nim_win</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; piles) {
+    <span class="ty">int</span> xorsum = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> x : piles) xorsum ^= x;
+    <span class="kw">return</span> xorsum != <span class="num">0</span>;
+}
+
+<span class="cm">// 求先手的最优操作（取哪堆、取多少）</span>
+<span class="ty">pair</span>&lt;<span class="ty">int</span>, <span class="ty">int</span>&gt; <span class="fn">nim_move</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; piles) {
+    <span class="ty">int</span> xorsum = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> x : piles) xorsum ^= x;
+    <span class="kw">if</span> (xorsum == <span class="num">0</span>) <span class="kw">return</span> {-<span class="num">1</span>, -<span class="num">1</span>}; <span class="cm">// 必败</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i < piles.<span class="fn">size</span>(); i++) {
+        <span class="ty">int</span> target = piles[i] ^ xorsum;
+        <span class="kw">if</span> (target < piles[i])
+            <span class="kw">return</span> {i, piles[i] - target}; <span class="cm">// 从第 i 堆取 piles[i]-target 个</span>
+    }
+    <span class="kw">return</span> {-<span class="num">1</span>, -<span class="num">1</span>};
+}</code></pre>
+
+    <h3>巴什博弈</h3>
+    <pre><code><span class="cm">// n 个石子，每次取 1~m 个，先手是否必胜</span>
+<span class="ty">bool</span> <span class="fn">bash_win</span>(<span class="ty">int</span> n, <span class="ty">int</span> m) {
+    <span class="kw">return</span> n % (m + <span class="num">1</span>) != <span class="num">0</span>;
+}
+
+<span class="cm">// 先手第一步取多少个</span>
+<span class="ty">int</span> <span class="fn">bash_first_move</span>(<span class="ty">int</span> n, <span class="ty">int</span> m) {
+    <span class="kw">return</span> n % (m + <span class="num">1</span>); <span class="cm">// 若为0则必败，无解</span>
+}</code></pre>
+
+    <h3>威佐夫博弈</h3>
+    <pre><code><span class="cm">// 判断 (a, b) 是否为必败态，设 a <= b</span>
+<span class="ty">bool</span> <span class="fn">wythoff_lose</span>(<span class="ty">int</span> a, <span class="ty">int</span> b) {
+    <span class="kw">if</span> (a > b) <span class="fn">swap</span>(a, b);
+    <span class="ty">int</span> k = b - a;
+    <span class="ty">double</span> phi = (<span class="num">1.0</span> + <span class="fn">sqrt</span>(<span class="num">5.0</span>)) / <span class="num">2.0</span>;
+    <span class="kw">return</span> a == (<span class="ty">int</span>)(k * phi);
+}</code></pre>
+
+    <h3>Anti-Nim</h3>
+    <pre><code><span class="cm">// Anti-Nim: 取最后一颗石子的人输</span>
+<span class="ty">bool</span> <span class="fn">anti_nim_win</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; piles) {
+    <span class="ty">int</span> xorsum = <span class="num">0</span>;
+    <span class="ty">bool</span> all_one = <span class="kw">true</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> x : piles) {
+        xorsum ^= x;
+        <span class="kw">if</span> (x > <span class="num">1</span>) all_one = <span class="kw">false</span>;
+    }
+    <span class="kw">if</span> (all_one) <span class="kw">return</span> xorsum == <span class="num">0</span>;  <span class="cm">// 偶数堆则先手胜</span>
+    <span class="kw">return</span> xorsum != <span class="num">0</span>;              <span class="cm">// 与正常 Nim 相反</span>
+}</code></pre>
+  </div>
+
+  <!-- ===== 经典问题 ===== -->
+  <div class="section" id="problems">
+    <h2>经典问题</h2>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P2197 - Nim 游戏</div>
+      <p>经典 Nim 游戏，判断先手是否必胜。</p>
+      <p><strong>思路</strong>：直接异或所有堆，非零先手胜。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P2252 - 取石子游戏</div>
+      <p>威佐夫博弈模板题，判断给定两堆石子的胜负。</p>
+      <p><strong>思路</strong>：用黄金比例公式判定。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P1247 - 取火柴游戏</div>
+      <p>Nim 游戏变形，求先手的最优操作。</p>
+      <p><strong>思路</strong>：异或后找到可操作的堆，将该堆调整为异或后等于 0 的值。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P1290 - 欧几里得游戏</div>
+      <p>给定两个正整数，每次用较大数减去较小数的正整数倍，变为 0 者胜。</p>
+      <p><strong>思路</strong>：递归分析，当 a/b >= 2 时先手必胜，否则递归判断。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">POJ 1704 - Georgia and Bob</div>
+      <p>N 个棋子在一条线上，每次将一个棋子向左移动至少一格，不能越过其他棋子。无法移动者输。</p>
+      <p><strong>思路</strong>：将相邻棋子配对，转化为 Nim 游戏，每对的距离为一堆石子。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">HDU 1847 - Good Luck in CET-4 Everybody!</div>
+      <p>一堆 n 张牌，每次取 2^k 张（k>=0），取走最后一张者胜。</p>
+      <p><strong>思路</strong>：SG 函数打表找规律，SG(n) = n % 3 == 0 ? 0 : (非零)。先手必胜当 n % 3 != 0。</p>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">博弈论解题思路</div>
+      <ul>
+        <li>先判断是否为经典博弈模型（Nim、巴什、威佐夫等）</li>
+        <li>若不是，尝试打 SG 表找规律</li>
+        <li>注意区分正常玩法和反常玩法</li>
+        <li>复合游戏用 SG 定理（异或合并）</li>
+        <li>SG 值可能有周期性，利用周期加速计算</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

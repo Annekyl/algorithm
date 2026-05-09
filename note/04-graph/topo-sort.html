@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>拓扑排序 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt; <a href="../index.html#04">图论</a> &gt; 拓扑排序
+  </div>
+
+  <div class="page-header">
+    <h1>拓扑排序</h1>
+    <p class="subtitle">Topological Sort &mdash; DAG 上的线性序与应用</p>
+    <div class="tags">
+      <span class="tag tag-graph">图论</span>
+      <span class="tag tag-mid">中等</span>
+      <span class="tag tag-base">基础算法</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 拓扑排序概述</a></li>
+      <li><a href="#sec2">2. Kahn 算法 (BFS-based)</a></li>
+      <li><a href="#sec3">3. DFS 实现拓扑排序</a></li>
+      <li><a href="#sec4">4. 判环 — 利用拓扑排序检测环</a></li>
+      <li><a href="#sec5">5. DAG 最长路 / 最短路 (DP on DAG)</a></li>
+      <li><a href="#sec6">6. 应用场景</a></li>
+      <li><a href="#sec7">7. 完整 C++ 模板</a></li>
+      <li><a href="#sec8">8. 复杂度分析</a></li>
+      <li><a href="#sec9">9. 经典题目</a></li>
+    </ul>
+  </div>
+
+  <!-- ==================== 1. 概述 ==================== -->
+  <div class="section" id="sec1">
+    <h2>1. 拓扑排序概述</h2>
+    <p>拓扑排序 (Topological Sort) 是对有向无环图 (DAG, Directed Acyclic Graph) 的所有顶点进行线性排序，使得对于每条有向边 <code>(u, v)</code>，顶点 <code>u</code> 在排序中都出现在 <code>v</code> 之前。</p>
+
+    <div class="box box-info">
+      <div class="box-title">核心性质</div>
+      <ul>
+        <li>拓扑排序 <strong>仅适用于 DAG</strong>。若图中存在有向环，则不存在拓扑序。</li>
+        <li>一个 DAG 的拓扑排序结果<strong>不一定唯一</strong>，取决于选择顶点的顺序。</li>
+        <li>拓扑排序可以用来<strong>判断图中是否有环</strong>。</li>
+      </ul>
+    </div>
+
+    <h3>直观理解</h3>
+    <p>可以把拓扑排序想象成"课程安排"问题：某些课程有先修要求（有向边），我们需要找到一种合法的上课顺序，使得每门课的先修课都排在它前面。</p>
+
+    <div class="diagram">
+      <pre>
+  DAG 示例:                 拓扑序之一:    拓扑序之二:
+
+    5 → 2                    5 4 2 3 1 0   4 5 0 2 3 1
+    5 → 0
+    4 → 0                    验证:          验证:
+    4 → 1                    5→2 ✓ 5→0 ✓   4→0 ✓ 4→1 ✓
+    2 → 3                    4→0 ✓ 4→1 ✓   5→0 ✓ 5→2 ✓
+    3 → 1                    2→3 ✓ 3→1 ✓   2→3 ✓ 3→1 ✓
+      </pre>
+    </div>
+
+    <h3>拓扑排序存在的充要条件</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>条件</th><th>说明</th></tr>
+        <tr><td>图是有向图</td><td>无向图没有拓扑排序的概念（可视为双向边形成环）</td></tr>
+        <tr><td>图中无环</td><td>有向环中每个点都互相可达，无法确定先后顺序</td></tr>
+        <tr><td>等价于 DAG</td><td>有向 + 无环 = DAG，拓扑排序等价于 DAG 的线性扩展</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== 2. Kahn 算法 ==================== -->
+  <div class="section" id="sec2">
+    <h2>2. Kahn 算法 (BFS-based)</h2>
+    <p>Kahn 算法基于贪心思想：每次选择一个入度为 0 的顶点加入拓扑序列，然后删去该顶点及其出边（即将其邻居的入度减 1），重复此过程。</p>
+
+    <h3>算法步骤</h3>
+    <div class="steps">
+      <div class="step">计算所有顶点的入度 <code>indeg[v]</code>。</div>
+      <div class="step">将所有入度为 0 的顶点加入队列 <code>q</code>。</div>
+      <div class="step">当队列非空时，取出队首顶点 <code>u</code>，加入拓扑序列。</div>
+      <div class="step">遍历 <code>u</code> 的所有邻居 <code>v</code>，令 <code>indeg[v]--</code>。若 <code>indeg[v] == 0</code> 则将 <code>v</code> 入队。</div>
+      <div class="step">重复步骤 3-4 直到队列为空。</div>
+      <div class="step">若拓扑序列长度等于顶点数，则排序成功；否则图中存在环。</div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+  Kahn 算法过程演示 (入度标注在括号中):
+
+  初始:        5(0) → 2(1)    5入队
+               5(0) → 0(2)    4(0) 入队
+               4(0) → 0       队列: [5, 4]
+               4(0) → 1
+               2(1) → 3(1)
+               3(1) → 1
+
+  取出5:       序列=[5]       2.indeg: 1→0, 0.indeg: 2→1
+                              队列: [4, 2]
+
+  取出4:       序列=[5,4]     0.indeg: 1→0, 1.indeg: 2→1
+                              队列: [2, 0]
+
+  取出2:       序列=[5,4,2]   3.indeg: 1→0
+                              队列: [0, 3]
+
+  取出0:       序列=[5,4,2,0] 无出边
+                              队列: [3]
+
+  取出3:       序列=[5,4,2,0,3] 1.indeg: 1→0
+                                队列: [1]
+
+  取出1:       序列=[5,4,2,0,3,1]  完成! |序列|=6=|V|
+      </pre>
+    </div>
+
+    <h3>Kahn 算法模板</h3>
+    <pre><code><span class="cm">// Kahn 算法 — BFS 拓扑排序</span>
+<span class="cm">// 返回拓扑序列; 若存在环则返回空 vector</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">topo_sort_kahn</span>(<span class="ty">int</span> n, <span class="ty">const</span> <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt;&amp; adj) {
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">indeg</span>(n, <span class="num">0</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> u = <span class="num">0</span>; u &lt; n; u++)
+        <span class="kw">for</span> (<span class="ty">int</span> v : adj[u])
+            indeg[v]++;
+
+    <span class="ty">queue</span>&lt;<span class="ty">int</span>&gt; q;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        <span class="kw">if</span> (indeg[i] == <span class="num">0</span>) q.<span class="fn">push</span>(i);
+
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; topo;
+    <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+        <span class="ty">int</span> u = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+        topo.<span class="fn">push_back</span>(u);
+        <span class="kw">for</span> (<span class="ty">int</span> v : adj[u]) {
+            <span class="kw">if</span> (--indeg[v] == <span class="num">0</span>)
+                q.<span class="fn">push</span>(v);
+        }
+    }
+    <span class="kw">return</span> topo.<span class="fn">size</span>() == n ? topo : <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;();
+}</code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">字典序最小拓扑序</div>
+      <p>将 Kahn 算法中的 <code>queue</code> 换成 <code>priority_queue</code>（小根堆），即可在多个入度为 0 的顶点中优先选择编号最小的，从而得到<strong>字典序最小</strong>的拓扑排序。</p>
+    </div>
+  </div>
+
+  <!-- ==================== 3. DFS 实现 ==================== -->
+  <div class="section" id="sec3">
+    <h2>3. DFS 实现拓扑排序</h2>
+    <p>DFS 拓扑排序的核心思想：对图进行 DFS，当某个顶点的<strong>所有后代都访问完毕</strong>后（即 DFS 回溯时），将该顶点加入序列。最终将序列反转即为拓扑序。</p>
+
+    <h3>原理说明</h3>
+    <p>DFS 的后序遍历保证：若存在边 <code>u → v</code>，则 <code>v</code> 比 <code>u</code> 先完成（先回溯），因此在后序中 <code>v</code> 排在 <code>u</code> 前面。反转后 <code>u</code> 排在 <code>v</code> 前面，满足拓扑序要求。</p>
+
+    <div class="diagram">
+      <pre>
+  DFS 拓扑排序过程:
+
+  图:  5→2→3→1
+       5→0
+       4→0
+       4→1
+
+  DFS(5): → DFS(2): → DFS(3): → DFS(1): 完成
+                3完成, 2完成
+          → DFS(0): 完成
+    5完成
+
+  DFS(4): → DFS(0): 已访问
+          → DFS(1): 已访问
+    4完成
+
+  后序: [1, 3, 2, 0, 5, 4]
+  反转: [4, 5, 0, 2, 3, 1]  ← 拓扑序
+      </pre>
+    </div>
+
+    <h3>DFS 拓扑排序模板</h3>
+    <pre><code><span class="cm">// DFS 拓扑排序</span>
+<span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; adj;
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; topo;
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; vis;  <span class="cm">// 0=未访问, 1=在栈中, 2=已完成</span>
+
+<span class="ty">bool</span> <span class="fn">dfs_topo</span>(<span class="ty">int</span> u) {
+    vis[u] = <span class="num">1</span>;  <span class="cm">// 标记为"在递归栈中"</span>
+    <span class="kw">for</span> (<span class="ty">int</span> v : adj[u]) {
+        <span class="kw">if</span> (vis[v] == <span class="num">1</span>) <span class="kw">return</span> <span class="kw">false</span>;  <span class="cm">// 存在环</span>
+        <span class="kw">if</span> (vis[v] == <span class="num">0</span> &amp;&amp; !<span class="fn">dfs_topo</span>(v)) <span class="kw">return</span> <span class="kw">false</span>;
+    }
+    vis[u] = <span class="num">2</span>;  <span class="cm">// 标记为"已完成"</span>
+    topo.<span class="fn">push_back</span>(u);
+    <span class="kw">return</span> <span class="kw">true</span>;
+}
+
+<span class="ty">bool</span> <span class="fn">topo_sort_dfs</span>(<span class="ty">int</span> n) {
+    vis.<span class="fn">assign</span>(n, <span class="num">0</span>);
+    topo.<span class="fn">clear</span>();
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        <span class="kw">if</span> (vis[i] == <span class="num">0</span> &amp;&amp; !<span class="fn">dfs_topo</span>(i))
+            <span class="kw">return</span> <span class="kw">false</span>;  <span class="cm">// 存在环</span>
+    <span class="fn">reverse</span>(topo.<span class="fn">begin</span>(), topo.<span class="fn">end</span>());
+    <span class="kw">return</span> <span class="kw">true</span>;
+}</code></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">注意</div>
+      <p>DFS 版本的拓扑排序<strong>无法轻易控制字典序</strong>。若需要字典序最小的拓扑排序，应使用 Kahn 算法配合优先队列。</p>
+    </div>
+
+    <h3>Kahn vs DFS 对比</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>特性</th><th>Kahn (BFS)</th><th>DFS</th></tr>
+        <tr><td>时间复杂度</td><td>O(V + E)</td><td>O(V + E)</td></tr>
+        <tr><td>判环</td><td>拓扑序列长度 &lt; V</td><td>遇到"在栈中"的节点</td></tr>
+        <tr><td>字典序最小</td><td>用优先队列即可</td><td>不易实现</td></tr>
+        <tr><td>层次关系</td><td>天然按层处理</td><td>不保证</td></tr>
+        <tr><td>代码复杂度</td><td>较简单</td><td>需三色标记</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== 4. 判环 ==================== -->
+  <div class="section" id="sec4">
+    <h2>4. 判环 — 利用拓扑排序检测环</h2>
+    <p>拓扑排序是检测有向图中是否存在环的最直观方法之一。</p>
+
+    <h3>Kahn 算法判环</h3>
+    <p>若 Kahn 算法结束后，拓扑序列中的顶点数 <strong>小于</strong>图的总顶点数，则说明剩余顶点的入度始终不为 0，即图中存在环。</p>
+
+    <h3>DFS 判环</h3>
+    <p>在 DFS 过程中，用三色标记法：</p>
+    <ul>
+      <li><strong>白色 (0)</strong>：未访问</li>
+      <li><strong>灰色 (1)</strong>：正在递归栈中（正在访问其后代）</li>
+      <li><strong>黑色 (2)</strong>：已完成</li>
+    </ul>
+    <p>若 DFS 遇到一个灰色顶点，说明存在<strong>后向边</strong>，即图中有环。</p>
+
+    <div class="diagram">
+      <pre>
+  环检测示例:
+
+  有环: 0→1→2→0     DFS(0): → DFS(1): → DFS(2): → 0(灰色!) → 环!
+                  Kahn: 序列长度 0 &lt; 3 → 有环
+
+  无环: 0→1→2→3     DFS: 全部变为黑色, 无灰色冲突
+                  Kahn: 序列长度 4 = 4 → 无环
+      </pre>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">与 DFS 判环的区别</div>
+      <p>拓扑排序判环适用于需要同时获取拓扑序的场景。若仅需判环，也可以直接使用 DFS 三色标记法，不需要最后反转序列。</p>
+    </div>
+  </div>
+
+  <!-- ==================== 5. DAG 最长路/最短路 ==================== -->
+  <div class="section" id="sec5">
+    <h2>5. DAG 最长路 / 最短路 (DP on DAG)</h2>
+    <p>在 DAG 上，利用拓扑排序的顺序进行动态规划，可以在 <code>O(V + E)</code> 时间内求出最短路和最长路，比 Dijkstra 更高效（无需堆）。</p>
+
+    <h3>核心思想</h3>
+    <p>拓扑排序保证：当处理顶点 <code>u</code> 时，所有能到达 <code>u</code> 的顶点都已经被处理完毕，因此可以直接进行状态转移。</p>
+
+    <h3>DAG 最长路</h3>
+    <pre><code><span class="cm">// DAG 最长路 — 按拓扑序 DP</span>
+<span class="cm">// dist[i] 表示从源点 s 到 i 的最长距离</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">dag_longest_path</span>(<span class="ty">int</span> n, <span class="ty">int</span> s,
+    <span class="ty">const</span> <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt;&gt;&amp; adj) {
+
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; topo = <span class="fn">topo_sort_kahn</span>(n, <span class="cm">/*邻接表(无权)*/</span>);
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; dist(n, <span class="num">-1e9</span>);
+    dist[s] = <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> u : topo) {
+        <span class="kw">if</span> (dist[u] == <span class="num">-1e9</span>) <span class="kw">continue</span>;  <span class="cm">// 不可达</span>
+        <span class="kw">for</span> (<span class="kw">auto</span>&amp; [v, w] : adj[u]) {
+            dist[v] = <span class="fn">max</span>(dist[v], dist[u] + w);
+        }
+    }
+    <span class="kw">return</span> dist;
+}</code></pre>
+
+    <h3>DAG 最短路</h3>
+    <pre><code><span class="cm">// DAG 最短路 — 按拓扑序 DP</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">dag_shortest_path</span>(<span class="ty">int</span> n, <span class="ty">int</span> s,
+    <span class="ty">const</span> <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt;&gt;&amp; adj) {
+
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; topo = <span class="fn">topo_sort_kahn</span>(n, <span class="cm">/*邻接表(无权)*/</span>);
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; dist(n, <span class="num">1e9</span>);
+    dist[s] = <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> u : topo) {
+        <span class="kw">if</span> (dist[u] == <span class="num">1e9</span>) <span class="kw">continue</span>;
+        <span class="kw">for</span> (<span class="kw">auto</span>&amp; [v, w] : adj[u]) {
+            dist[v] = <span class="fn">min</span>(dist[v], dist[u] + w);
+        }
+    }
+    <span class="kw">return</span> dist;
+}</code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">为什么不用 Dijkstra?</div>
+      <p>DAG 上拓扑排序 DP 的时间复杂度为 <code>O(V + E)</code>，优于 Dijkstra 的 <code>O(E log V)</code>。且可以同时处理最长路（Dijkstra 不支持负权/最长路）。但此方法<strong>仅适用于 DAG</strong>。</p>
+    </div>
+  </div>
+
+  <!-- ==================== 6. 应用场景 ==================== -->
+  <div class="section" id="sec6">
+    <h2>6. 应用场景</h2>
+
+    <h3>6.1 任务调度</h3>
+    <p>给定一组任务及其依赖关系，拓扑排序给出一种合法的执行顺序。例如：编译系统中源文件的编译顺序、构建系统的任务编排。</p>
+
+    <h3>6.2 课程安排</h3>
+    <p>某些课程有先修要求。拓扑排序可以判断是否能完成所有课程（无环），并给出一种可行的选课顺序。</p>
+
+    <h3>6.3 关键路径 (Critical Path)</h3>
+    <p>在项目管理中，利用拓扑排序求 DAG 最长路，可以确定项目的<strong>最短完成时间</strong>和<strong>关键活动</strong>（关键路径上的边）。</p>
+
+    <pre><code><span class="cm">// 关键路径: 拓扑排序 + DAG 最长路</span>
+<span class="cm">// 1. 正向拓扑序求最早开始时间 es[]</span>
+<span class="cm">// 2. 逆向拓扑序求最晚开始时间 ls[]</span>
+<span class="cm">// 3. 若 es[u] == ls[u], 则 u 在关键路径上</span></code></pre>
+
+    <h3>6.4 其他应用</h3>
+    <ul>
+      <li><strong>表达式求值</strong>：编译器中的依赖分析</li>
+      <li><strong>Spreadsheet 计算</strong>：单元格公式之间的依赖关系</li>
+      <li><strong>死锁检测</strong>：资源分配图中的环检测</li>
+      <li><strong>符号链接解析</strong>：文件系统中的循环引用检测</li>
+    </ul>
+  </div>
+
+  <!-- ==================== 7. 完整模板 ==================== -->
+  <div class="section" id="sec7">
+    <h2>7. 完整 C++ 模板</h2>
+
+    <h3>7.1 链式前向星 + Kahn</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">100010</span>, M = <span class="num">200010</span>;
+
+<span class="kw">struct</span> <span class="ty">Edge</span> { <span class="ty">int</span> to, nxt; } e[M];
+<span class="ty">int</span> head[N], cnt;
+<span class="ty">int</span> indeg[N], n, m;
+
+<span class="kw">void</span> <span class="fn">add</span>(<span class="ty">int</span> u, <span class="ty">int</span> v) {
+    e[++cnt] = {v, head[u]};
+    head[u] = cnt;
+}
+
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">topo</span>() {
+    <span class="ty">queue</span>&lt;<span class="ty">int</span>&gt; q;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        <span class="kw">if</span> (!indeg[i]) q.<span class="fn">push</span>(i);
+
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; res;
+    <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+        <span class="ty">int</span> u = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+        res.<span class="fn">push_back</span>(u);
+        <span class="kw">for</span> (<span class="ty">int</span> i = head[u]; i; i = e[i].nxt) {
+            <span class="ty">int</span> v = e[i].to;
+            <span class="kw">if</span> (--indeg[v] == <span class="num">0</span>) q.<span class="fn">push</span>(v);
+        }
+    }
+    <span class="kw">return</span> res;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;n, &amp;m);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; m; i++) {
+        <span class="ty">int</span> u, v; <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;u, &amp;v);
+        <span class="fn">add</span>(u, v); indeg[v]++;
+    }
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; ans = <span class="fn">topo</span>();
+    <span class="kw">if</span> ((<span class="ty">int</span>)ans.<span class="fn">size</span>() == n)
+        <span class="kw">for</span> (<span class="ty">int</span> x : ans) <span class="fn">printf</span>(<span class="str">"%d "</span>, x);
+    <span class="kw">else</span>
+        <span class="fn">puts</span>(<span class="str">"有环"</span>);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <h3>7.2 DAG 最长路完整模板</h3>
+    <pre><code><span class="cm">// DAG 最长路 (带权边)</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">100010</span>;
+<span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; adj[N];  <span class="cm">// {to, weight}</span>
+<span class="ty">int</span> indeg[N], dist[N], n;
+
+<span class="ty">void</span> <span class="fn">dag_longest</span>(<span class="ty">int</span> s) {
+    <span class="fn">memset</span>(dist, <span class="num">-0x3f</span>, <span class="kw">sizeof</span>(dist));
+    dist[s] = <span class="num">0</span>;
+
+    <span class="ty">queue</span>&lt;<span class="ty">int</span>&gt; q;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        <span class="kw">if</span> (!indeg[i]) q.<span class="fn">push</span>(i);
+
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; topo;
+    <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+        <span class="ty">int</span> u = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+        topo.<span class="fn">push_back</span>(u);
+        <span class="kw">for</span> (<span class="kw">auto</span>&amp; [v, w] : adj[u])
+            <span class="kw">if</span> (--indeg[v] == <span class="num">0</span>) q.<span class="fn">push</span>(v);
+    }
+
+    <span class="kw">for</span> (<span class="ty">int</span> u : topo) {
+        <span class="kw">if</span> (dist[u] &lt; <span class="num">-1e9</span>) <span class="kw">continue</span>;
+        <span class="kw">for</span> (<span class="kw">auto</span>&amp; [v, w] : adj[u])
+            dist[v] = <span class="fn">max</span>(dist[v], dist[u] + w);
+    }
+}</code></pre>
+
+    <h3>7.3 字典序最小拓扑排序</h3>
+    <pre><code><span class="cm">// 字典序最小拓扑排序 (priority_queue)</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">topo_lex_min</span>(<span class="ty">int</span> n,
+    <span class="ty">const</span> <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt;&amp; adj) {
+
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">indeg</span>(n, <span class="num">0</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> u = <span class="num">0</span>; u &lt; n; u++)
+        <span class="kw">for</span> (<span class="ty">int</span> v : adj[u]) indeg[v]++;
+
+    <span class="ty">priority_queue</span>&lt;<span class="ty">int</span>, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;, <span class="ty">greater</span>&lt;<span class="ty">int</span>&gt;&gt; pq;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        <span class="kw">if</span> (!indeg[i]) pq.<span class="fn">push</span>(i);
+
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; topo;
+    <span class="kw">while</span> (!pq.<span class="fn">empty</span>()) {
+        <span class="ty">int</span> u = pq.<span class="fn">top</span>(); pq.<span class="fn">pop</span>();
+        topo.<span class="fn">push_back</span>(u);
+        <span class="kw">for</span> (<span class="ty">int</span> v : adj[u])
+            <span class="kw">if</span> (--indeg[v] == <span class="num">0</span>) pq.<span class="fn">push</span>(v);
+    }
+    <span class="kw">return</span> topo.<span class="fn">size</span>() == n ? topo : <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;();
+}</code></pre>
+  </div>
+
+  <!-- ==================== 8. 复杂度分析 ==================== -->
+  <div class="section" id="sec8">
+    <h2>8. 复杂度分析</h2>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>算法</th><th>时间复杂度</th><th>空间复杂度</th><th>备注</th></tr>
+        <tr><td>Kahn (队列)</td><td><code>O(V + E)</code></td><td><code>O(V)</code></td><td>每个顶点和边各访问一次</td></tr>
+        <tr><td>Kahn (优先队列)</td><td><code>O(V log V + E)</code></td><td><code>O(V)</code></td><td>字典序最小版本</td></tr>
+        <tr><td>DFS 拓扑排序</td><td><code>O(V + E)</code></td><td><code>O(V)</code></td><td>三色标记法</td></tr>
+        <tr><td>DAG 最短/长路</td><td><code>O(V + E)</code></td><td><code>O(V)</code></td><td>拓扑序 DP</td></tr>
+      </table>
+    </div>
+
+    <div class="complexity">
+      <span class="label">Kahn 时间:</span>
+      <span class="value">O(V + E)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">DFS 时间:</span>
+      <span class="value">O(V + E)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间:</span>
+      <span class="value">O(V)</span>
+    </div>
+  </div>
+
+  <!-- ==================== 9. 经典题目 ==================== -->
+  <div class="section" id="sec9">
+    <h2>9. 经典题目</h2>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1347" target="_blank">P1347 排序</a></div>
+      <p>给定若干大小关系，判断能否确定全序、矛盾、或信息不足。拓扑排序判环 + 检查唯一性。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1982" target="_blank">P1982 小朋友的数字</a></div>
+      <p>拓扑排序处理有依赖关系的递推，结合动态规划求最大值。</p>
+      <span class="tag tag-hard">困难</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1113" target="_blank">P1113 杂务</a></div>
+      <p>经典 DAG 最长路问题，求项目最短完成时间（关键路径）。</p>
+      <span class="tag tag-easy">简单</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P2017" target="_blank">P2017 [USACO09DEC] Dizzy Cows G</a></div>
+      <p>混合图（有向+无向边）拓扑排序，用入度确定无向边方向。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://codeforces.com/problemset/problem/510/C" target="_blank">CF 510C - Fox And Names</a></div>
+      <p>给定字典序关系，建图后拓扑排序判断是否存在合法字母序。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P10381" target="_blank">P10381 拓扑排序 (模板题)</a></div>
+      <p>标准拓扑排序模板题，练习 Kahn 算法和 DFS 实现。</p>
+      <span class="tag tag-easy">简单</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P4017" target="_blank">P4017 最大食物链计数</a></div>
+      <p>拓扑排序 + DP 统计从源到汇的所有路径数。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

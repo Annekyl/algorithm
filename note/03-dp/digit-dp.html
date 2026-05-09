@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数位DP - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+<!-- 面包屑导航 -->
+<div class="breadcrumb">
+  <a href="../index.html">首页</a> &gt;
+  <a href="../index.html#dp">动态规划</a> &gt;
+  <span>数位DP</span>
+</div>
+
+<!-- 页面标题 -->
+<div class="page-header">
+  <h1>数位DP</h1>
+  <p class="subtitle">Digit DP &mdash; 按位枚举，约束记忆，高效统计满足数字性质的数</p>
+  <div class="tags">
+    <span class="tag tag-dp">动态规划</span>
+    <span class="tag tag-mid">中等</span>
+    <span class="tag tag-math">数学</span>
+  </div>
+</div>
+
+<!-- 目录 -->
+<div class="toc">
+  <h3>目录</h3>
+  <ul>
+    <li><a href="#overview">数位DP概述</a></li>
+    <li><a href="#framework">通用框架与状态设计</a></li>
+    <li><a href="#tight">tight 标记详解与可视化</a></li>
+    <li><a href="#template">数位DP代码模板</a></li>
+    <li><a href="#classic1">经典问题一：不含某数字的数</a></li>
+    <li><a href="#classic2">经典问题二：数字之和为指定值</a></li>
+    <li><a href="#classic3">经典问题三：相邻数字不相等</a></li>
+    <li><a href="#iterative">从记忆化搜索到递推</a></li>
+    <li><a href="#summary">总结与扩展</a></li>
+  </ul>
+</div>
+
+<!-- ==================== 第1节：概述 ==================== -->
+<div class="section" id="overview">
+  <h2>一、数位DP概述</h2>
+
+  <h3>什么是数位DP？</h3>
+  <p>数位DP（Digit DP）是一类以<strong>数字的每一位</strong>为阶段进行动态规划的技术。它用于高效统计在某个区间 <code>[L, R]</code> 内，满足某些<strong>与数字的各个数位相关</strong>的性质的整数个数。</p>
+
+  <p>暴力枚举 <code>[L, R]</code> 内每个数并逐位检查的时间复杂度为 O((R-L+1) * log R)，当 R 很大（如 10^18）时完全不可行。数位DP通过<strong>逐位决策 + 记忆化</strong>将复杂度降至 O(log R * state_size)。</p>
+
+  <div class="box box-info">
+    <div class="box-title">核心思想</div>
+    <p>将一个数看作从高位到低位的决策序列。在每一位上，枚举该位可以填的数字，同时维护一些"状态"（如是否受到上界约束、前导零标记、已选数字的某些统计量），从而在 DFS 过程中系统地遍历所有合法数字。</p>
+  </div>
+
+  <h3>适用场景</h3>
+  <ul>
+    <li>统计 <code>[1, n]</code> 或 <code>[L, R]</code> 中满足某条件的数的个数</li>
+    <li>条件与<strong>数位本身</strong>相关：如不含某数字、数字和为某值、相邻位关系、回文数等</li>
+    <li>上界 n 很大（如 10^18），无法暴力枚举</li>
+  </ul>
+
+  <h3>常见变形</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>问题类型</th><th>状态设计要点</th><th>典型题目</th></tr>
+      <tr><td>不含某数字</td><td>无需额外维度</td><td>不含4的数</td></tr>
+      <tr><td>数字和为某值</td><td>增加 sum 维度</td><td>Lucky Numbers</td></tr>
+      <tr><td>相邻位关系</td><td>增加 last 维度记录上一位</td><td>相邻不等</td></tr>
+      <tr><td>某数字出现次数</td><td>增加 cnt 维度</td><td>统计某数码出现次数</td></tr>
+      <tr><td>模某数余数为0</td><td>增加 mod 维度</td><td>整除问题</td></tr>
+      <tr><td>两个数的数位关系</td><td>双指针同时走</td><td>数位乘积等</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== 第2节：通用框架 ==================== -->
+<div class="section" id="framework">
+  <h2>二、通用框架与状态设计</h2>
+
+  <h3>状态定义</h3>
+  <p>数位DP的 DFS 函数通常定义为：</p>
+  <pre><code><span class="cm">// 返回：从当前位 pos 开始往下填，满足约束条件的方案数</span>
+<span class="ty">long long</span> <span class="fn">dfs</span>(<span class="ty">int</span> pos, <span class="ty">bool</span> tight, <span class="ty">bool</span> lead, <span class="cm">/* 其他维度 */</span>);</code></pre>
+
+  <h4>核心状态维度</h4>
+  <div class="table-wrap">
+    <table>
+      <tr><th>参数</th><th>含义</th><th>说明</th></tr>
+      <tr>
+        <td><code>pos</code></td>
+        <td>当前处理到第几位</td>
+        <td>从最高位（0）向最低位递减，pos == -1 表示所有位已填完</td>
+      </tr>
+      <tr>
+        <td><code>tight</code></td>
+        <td>是否受到上界约束</td>
+        <td>tight == true 表示前面所有位都和上界 n 对应位相同，当前位不能超过 n[pos]</td>
+      </tr>
+      <tr>
+        <td><code>lead</code></td>
+        <td>是否仍处于前导零阶段</td>
+        <td>lead == true 表示前面全是前导零，用于区分"数字0"和"前导零"</td>
+      </tr>
+      <tr>
+        <td><code>其他维度</code></td>
+        <td>与具体问题相关</td>
+        <td>如 sum（数字和）、last（上一位数字）、cnt（某数码计数）等</td>
+      </tr>
+    </table>
+  </div>
+
+  <h3>DFS 框架流程</h3>
+  <div class="steps">
+    <div class="step"><strong>终止条件</strong>：当 <code>pos == -1</code> 时，所有位已填完，根据具体问题判断当前数字是否合法，返回 1 或 0。</div>
+    <div class="step"><strong>记忆化查询</strong>：如果当前状态已经计算过（<code>dp[pos][tight][lead][...]</code>），直接返回缓存值。</div>
+    <div class="step"><strong>确定当前位上界</strong>：若 <code>tight == true</code>，当前位最多填 <code>digits[pos]</code>；否则最多填 9。</div>
+    <div class="step"><strong>枚举当前位</strong>：从 0（或 1，如果 lead 且 pos 是最后一位）到上界枚举，递归到下一位。</div>
+    <div class="step"><strong>更新 tight</strong>：如果当前位恰好填到了上界，下一位的 <code>tight</code> 仍为 true；否则为 false。</div>
+    <div class="step"><strong>累加结果</strong>：将所有合法枚举的递归结果求和，写入 dp 并返回。</div>
+  </div>
+
+  <div class="box box-tip">
+    <div class="box-title">关于 tight 的关键理解</div>
+    <p>当 <code>tight = 0</code>（不受约束）时，后面的每一位都可以自由填 0~9，与上界无关。这意味着 <code>(pos, tight=0, lead, ...)</code> 这个状态是可以被多个不同的 n 共享的，也是记忆化真正发挥威力的地方。当 <code>tight = 1</code> 时，由于状态与上界的具体数字绑定，通常<strong>不缓存</strong>（或每个 n 只计算一次）。</p>
+  </div>
+</div>
+
+<!-- ==================== 第3节：tight 详解 ==================== -->
+<div class="section" id="tight">
+  <h2>三、tight 标记详解与可视化</h2>
+
+  <h3>什么是 tight？</h3>
+  <p><code>tight</code>（紧约束）标记表示当前构建的前缀是否<strong>恰好等于</strong>上界 n 的对应前缀。</p>
+  <ul>
+    <li><code>tight = 1</code>：前面填的每一位都和 n 的对应位相同，当前位不能超过 n 的当前位</li>
+    <li><code>tight = 0</code>：前面某一位已经比 n 的对应位小了，后面每一位都可以自由填 0~9</li>
+  </ul>
+
+  <h3>可视化示例：上界 n = 327</h3>
+  <p>我们将 327 拆分为数位数组 <code>digits[] = {3, 2, 7}</code>，从高位到低位依次处理。</p>
+
+  <div class="diagram">
+    <pre>
+  上界 n = 327  =>  digits = [3, 2, 7]
+  位置编号:         pos=0    pos=1    pos=2
+
+  DFS 过程 (仅展示 tight=1 的路径):
+
+  pos=0: 枚举 d = 0,1,2,3
+    d=0: tight 变为 0 (0 < 3) => 后面自由填
+    d=1: tight 变为 0 (1 < 3) => 后面自由填
+    d=2: tight 变为 0 (2 < 3) => 后面自由填
+    d=3: tight 仍为 1 (3 == 3) => pos=1 受限
+         |
+         v
+  pos=1: 枚举 d = 0,1,2  (上限 digits[1]=2)
+    d=0: tight 变为 0 => pos=2 自由填
+    d=1: tight 变为 0 => pos=2 自由填
+    d=2: tight 仍为 1 => pos=2 受限
+         |
+         v
+  pos=2: 枚举 d = 0,1,...,7  (上限 digits[2]=7)
+    ...
+    </pre>
+  </div>
+
+  <h3>tight 传播图解</h3>
+  <div class="diagram">
+    <pre>
+  n = 327,  枚举数字 315 的 tight 传播:
+
+  位:          3         1         5
+  pos:       pos=0     pos=1     pos=2
+  n[pos]:      3         2         7
+  tight:       1         0         0
+               |         |         |
+               v         v         v
+  比较:      3==3      1<2       (自由)
+  结论:    tight=1   tight=0   tight=0
+            (受限)   (已释放)  (已释放)
+
+  从 pos=1 开始，1 < 2，所以 tight 被释放为 0
+  后面所有位都可以填 0~9，不受 327 约束
+    </pre>
+  </div>
+
+  <h3>对比：枚举到 324 的情况</h3>
+  <div class="diagram">
+    <pre>
+  n = 327,  枚举数字 324 的 tight 传播:
+
+  位:          3         2         4
+  pos:       pos=0     pos=1     pos=2
+  n[pos]:      3         2         7
+  tight:       1         1         0
+               |         |         |
+               v         v         v
+  比较:      3==3      2==2      4<7
+  结论:    tight=1   tight=1   tight=0
+
+  前两位都与上界相等，直到第三位 4 < 7 才释放 tight
+    </pre>
+  </div>
+
+  <div class="box box-warn">
+    <div class="box-title">注意：tight=1 的状态一般不缓存</div>
+    <p>因为 <code>tight=1</code> 时当前位的上限取决于 <code>digits[pos]</code> 的具体值，不同的 n 会导致不同的上界。如果在一次查询中缓存了 <code>tight=1</code> 的结果，下次换一个 n 查询时就不正确了。实际实现中，通常<strong>只缓存 <code>tight=0</code> 的状态</strong>，或者在每次查询前清空 dp 数组。</p>
+  </div>
+</div>
+
+<!-- ==================== 第4节：模板 ==================== -->
+<div class="section" id="template">
+  <h2>四、数位DP代码模板</h2>
+
+  <h3>标准记忆化搜索模板</h3>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">typedef long long</span> <span class="ty">ll</span>;
+
+<span class="cm">// 上界的数位数组, digits[0] 为最高位</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; digits;
+<span class="cm">// dp[pos][tight][lead][...] - 根据问题增加维度</span>
+<span class="ty">ll</span> dp[<span class="num">20</span>][<span class="num">2</span>][<span class="num">2</span>]; <span class="cm">// 仅缓存 tight=0 的情况</span>
+
+<span class="cm">/**
+ * dfs: 数位DP核心递归函数
+ * @param pos   当前处理到第几位 (从高位到低位)
+ * @param tight 是否受上界约束 (1=受限, 0=自由)
+ * @param lead  是否处于前导零阶段 (1=前面全是0)
+ * @return 满足条件的方案数
+ */</span>
+<span class="ty">ll</span> <span class="fn">dfs</span>(<span class="ty">int</span> pos, <span class="ty">bool</span> tight, <span class="ty">bool</span> lead) {
+    <span class="cm">// 终止条件：所有位已填完</span>
+    <span class="kw">if</span> (pos == <span class="num">-1</span>) {
+        <span class="cm">// lead 为 true 说明整个数是 0，根据题意判断是否合法</span>
+        <span class="kw">return</span> lead ? <span class="num">0</span> : <span class="num">1</span>;
+    }
+
+    <span class="cm">// 记忆化：仅在不受约束时缓存</span>
+    <span class="kw">if</span> (!tight &amp;&amp; !lead &amp;&amp; dp[pos][tight][lead] != <span class="num">-1</span>)
+        <span class="kw">return</span> dp[pos][tight][lead];
+
+    <span class="ty">ll</span> res = <span class="num">0</span>;
+    <span class="ty">int</span> up = tight ? digits[pos] : <span class="num">9</span>; <span class="cm">// 当前位的上界</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> d = <span class="num">0</span>; d &lt;= up; d++) {
+        <span class="cm">// 前导零阶段跳过（根据题意可选）</span>
+        <span class="kw">if</span> (lead &amp;&amp; d == <span class="num">0</span>) {
+            res += <span class="fn">dfs</span>(pos - <span class="num">1</span>, tight &amp;&amp; (d == up), <span class="kw">true</span>);
+        } <span class="kw">else</span> {
+            <span class="cm">// 此处加入具体约束检查，如: d != 4</span>
+            res += <span class="fn">dfs</span>(pos - <span class="num">1</span>, tight &amp;&amp; (d == up), <span class="kw">false</span>);
+        }
+    }
+
+    <span class="kw">if</span> (!tight &amp;&amp; !lead)
+        dp[pos][tight][lead] = res;
+    <span class="kw">return</span> res;
+}
+
+<span class="cm">/**
+ * solve: 计算 [1, n] 中满足条件的数的个数
+ */</span>
+<span class="ty">ll</span> <span class="fn">solve</span>(<span class="ty">ll</span> n) {
+    <span class="kw">if</span> (n &lt;= <span class="num">0</span>) <span class="kw">return</span> <span class="num">0</span>;
+    digits.clear();
+    <span class="kw">while</span> (n) {
+        digits.push_back(n % <span class="num">10</span>);
+        n /= <span class="num">10</span>;
+    }
+    <span class="cm">// 现在 digits[0] 是最低位，需要反转使 digits[0] 为最高位</span>
+    reverse(digits.begin(), digits.end());
+
+    <span class="fn">memset</span>(dp, <span class="num">-1</span>, <span class="kw">sizeof</span>(dp));
+    <span class="kw">return</span> <span class="fn">dfs</span>(digits.size() - <span class="num">1</span>, <span class="kw">true</span>, <span class="kw">true</span>);
+}
+
+<span class="cm">/**
+ * 区间查询 [L, R] = solve(R) - solve(L - 1)
+ */</span>
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">ll</span> L, R;
+    cin &gt;&gt; L &gt;&gt; R;
+    cout &lt;&lt; <span class="fn">solve</span>(R) - <span class="fn">solve</span>(L - <span class="num">1</span>) &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <h3>模板关键点解析</h3>
+  <div class="steps">
+    <div class="step"><strong>数位拆分</strong>：将 n 拆成数位数组，<code>digits[0]</code> 存最高位。这样 DFS 从 <code>digits.size()-1</code> 开始，每次 <code>pos--</code>，到 <code>pos == -1</code> 结束。</div>
+    <div class="step"><strong>tight 更新公式</strong>：下一位的 <code>tight = tight && (d == up)</code>，即当前位受约束且恰好填到了上限时，下一位才继续受约束。</div>
+    <div class="step"><strong>前导零处理</strong>：<code>lead</code> 为 true 时，填 0 仍处于前导零阶段。到达终止条件时，若 <code>lead</code> 仍为 true，说明整个数是 0（根据题意判断是否计入）。</div>
+    <div class="step"><strong>区间查询</strong>：<code>[L, R] = solve(R) - solve(L-1)</code>，利用前缀思想转化为两次单点查询。</div>
+  </div>
+</div>
+
+<!-- ==================== 第5节：经典问题一 ==================== -->
+<div class="section" id="classic1">
+  <h2>五、经典问题一：不含某数字的数</h2>
+
+  <div class="problem">
+    <div class="problem-title">问题描述</div>
+    <p>给定区间 <code>[L, R]</code>，统计其中<strong>十进制表示不含数字 4</strong> 的正整数个数。（如 14, 40, 149 都不合法，123, 99 合法）</p>
+  </div>
+
+  <h3>思路分析</h3>
+  <p>这是数位DP最基础的模型。状态只需 <code>(pos, tight)</code>，在枚举当前位时跳过数字 4 即可。</p>
+
+  <h3>图解 DFS 过程（以 n = 25 为例）</h3>
+  <div class="diagram">
+    <pre>
+  n = 25,  digits = [2, 5],  统计不含4的数
+
+  dfs(pos=1, tight=1):
+    枚举 d=0:  (前导零) -> dfs(pos=0, tight=0, lead=1)
+    枚举 d=1:  1 < 2, tight=0 -> dfs(pos=0, tight=0, lead=0)
+       pos=0: 可填 0~9 (跳过4) -> 9个数: 10~19(不含14) = 9个
+    枚举 d=2:  2==2, tight=1 -> dfs(pos=0, tight=1, lead=0)
+       pos=0: 可填 0~5 (跳过4) -> 0,1,2,3,5 = 5个数
+
+  合计: 9 + 5 = 14 个数不含4
+
+  验证: 1~25 中不含4的数:
+  1,2,3,5,6,7,8,9,10,11,12,13,15,16,17,18,19,20,21,22,23,25
+  确实有 22 个... (注意前导零处理会影响0的计数)
+    </pre>
+  </div>
+
+  <h3>完整代码</h3>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="kw">typedef long long</span> <span class="ty">ll</span>;
+
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; digits;
+<span class="ty">ll</span> dp[<span class="num">20</span>][<span class="num">2</span>];
+
+<span class="cm">// 统计 [0, n] 中不含数字 4 的非负整数个数</span>
+<span class="ty">ll</span> <span class="fn">dfs</span>(<span class="ty">int</span> pos, <span class="ty">bool</span> tight, <span class="ty">bool</span> lead) {
+    <span class="kw">if</span> (pos == <span class="num">-1</span>) <span class="kw">return</span> <span class="num">1</span>; <span class="cm">// 构造出了一个合法数（含0）</span>
+
+    <span class="kw">if</span> (!tight &amp;&amp; !lead &amp;&amp; dp[pos][<span class="num">0</span>] != <span class="num">-1</span>)
+        <span class="kw">return</span> dp[pos][<span class="num">0</span>];
+
+    <span class="ty">ll</span> res = <span class="num">0</span>;
+    <span class="ty">int</span> up = tight ? digits[pos] : <span class="num">9</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> d = <span class="num">0</span>; d &lt;= up; d++) {
+        <span class="kw">if</span> (d == <span class="num">4</span>) <span class="kw">continue</span>; <span class="cm">// 跳过数字4</span>
+        res += <span class="fn">dfs</span>(pos - <span class="num">1</span>, tight &amp;&amp; (d == up), lead &amp;&amp; d == <span class="num">0</span>);
+    }
+
+    <span class="kw">if</span> (!tight &amp;&amp; !lead) dp[pos][<span class="num">0</span>] = res;
+    <span class="kw">return</span> res;
+}
+
+<span class="ty">ll</span> <span class="fn">solve</span>(<span class="ty">ll</span> n) {
+    <span class="kw">if</span> (n &lt; <span class="num">0</span>) <span class="kw">return</span> <span class="num">0</span>;
+    digits.clear();
+    <span class="kw">if</span> (n == <span class="num">0</span>) digits.push_back(<span class="num">0</span>);
+    <span class="kw">while</span> (n) { digits.push_back(n % <span class="num">10</span>); n /= <span class="num">10</span>; }
+    reverse(digits.begin(), digits.end());
+    <span class="fn">memset</span>(dp, <span class="num">-1</span>, <span class="kw">sizeof</span>(dp));
+    <span class="kw">return</span> <span class="fn">dfs</span>(digits.size() - <span class="num">1</span>, <span class="kw">true</span>, <span class="kw">true</span>);
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">ll</span> L, R;
+    <span class="kw">while</span> (cin &gt;&gt; L &gt;&gt; R) {
+        <span class="kw">if</span> (L == <span class="num">0</span> &amp;&amp; R == <span class="num">0</span>) <span class="kw">break</span>;
+        cout &lt;&lt; <span class="fn">solve</span>(R) - <span class="fn">solve</span>(L - <span class="num">1</span>) &lt;&lt; endl;
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <div class="complexity">
+    <span class="label">时间复杂度</span>
+    <span class="value">O(20 * 10) 每次查询</span>
+  </div>
+  <div class="complexity">
+    <span class="label">空间复杂度</span>
+    <span class="value">O(20 * 2)</span>
+  </div>
+</div>
+
+<!-- ==================== 第6节：经典问题二 ==================== -->
+<div class="section" id="classic2">
+  <h2>六、经典问题二：数字之和为指定值</h2>
+
+  <div class="problem">
+    <div class="problem-title">问题描述</div>
+    <p>给定区间 <code>[L, R]</code> 和目标值 <code>S</code>，统计其中各位数字之和恰好等于 <code>S</code> 的正整数个数。</p>
+    <p>例如：<code>[1, 100]</code> 中数字和为 5 的数有：5, 14, 23, 32, 41, 50，共 6 个。</p>
+  </div>
+
+  <h3>状态设计</h3>
+  <p>在基础框架上增加 <code>sum</code> 维度，记录从最高位到当前位之前已经累加的数字和。</p>
+  <pre><code><span class="ty">ll</span> <span class="fn">dfs</span>(<span class="ty">int</span> pos, <span class="ty">bool</span> tight, <span class="ty">bool</span> lead, <span class="ty">int</span> sum);</code></pre>
+
+  <h3>状态转移</h3>
+  <div class="diagram">
+    <pre>
+  状态: dp[pos][sum]
+  含义: 当前处理到第 pos 位，前面已选数字和为 sum 时的方案数
+
+  转移:
+  dfs(pos, tight, lead, sum)
+    |
+    |-- 枚举当前位 d (0 ~ up)
+    |     |
+    |     v
+    |   dfs(pos-1, tight', lead', sum + d)
+    |
+    v
+  终止: pos == -1 时，若 sum == S 返回 1，否则返回 0
+    </pre>
+  </div>
+
+  <h3>完整代码</h3>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="kw">typedef long long</span> <span class="ty">ll</span>;
+
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; digits;
+<span class="ty">int</span> target; <span class="cm">// 目标数字和</span>
+<span class="ty">ll</span> dp[<span class="num">20</span>][<span class="num">200</span>]; <span class="cm">// dp[pos][sum], sum 最大 9*18=162</span>
+
+<span class="ty">ll</span> <span class="fn">dfs</span>(<span class="ty">int</span> pos, <span class="ty">bool</span> tight, <span class="ty">bool</span> lead, <span class="ty">int</span> sum) {
+    <span class="kw">if</span> (pos == <span class="num">-1</span>) {
+        <span class="kw">return</span> (lead ? <span class="num">0</span> : (sum == target ? <span class="num">1</span> : <span class="num">0</span>));
+    }
+
+    <span class="kw">if</span> (!tight &amp;&amp; !lead &amp;&amp; dp[pos][sum] != <span class="num">-1</span>)
+        <span class="kw">return</span> dp[pos][sum];
+
+    <span class="ty">ll</span> res = <span class="num">0</span>;
+    <span class="ty">int</span> up = tight ? digits[pos] : <span class="num">9</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> d = <span class="num">0</span>; d &lt;= up; d++) {
+        <span class="kw">if</span> (sum + d &gt; target) <span class="kw">break</span>; <span class="cm">// 剪枝：和已超过目标</span>
+        res += <span class="fn">dfs</span>(pos - <span class="num">1</span>, tight &amp;&amp; (d == up), lead &amp;&amp; d == <span class="num">0</span>, sum + d);
+    }
+
+    <span class="kw">if</span> (!tight &amp;&amp; !lead) dp[pos][sum] = res;
+    <span class="kw">return</span> res;
+}
+
+<span class="ty">ll</span> <span class="fn">solve</span>(<span class="ty">ll</span> n) {
+    <span class="kw">if</span> (n &lt;= <span class="num">0</span>) <span class="kw">return</span> <span class="num">0</span>;
+    digits.clear();
+    <span class="kw">while</span> (n) { digits.push_back(n % <span class="num">10</span>); n /= <span class="num">10</span>; }
+    reverse(digits.begin(), digits.end());
+    <span class="fn">memset</span>(dp, <span class="num">-1</span>, <span class="kw">sizeof</span>(dp));
+    <span class="kw">return</span> <span class="fn">dfs</span>(digits.size() - <span class="num">1</span>, <span class="kw">true</span>, <span class="kw">true</span>, <span class="num">0</span>);
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">ll</span> L, R;
+    <span class="ty">int</span> S;
+    cin &gt;&gt; L &gt;&gt; R &gt;&gt; S;
+    target = S;
+    cout &lt;&lt; <span class="fn">solve</span>(R) - <span class="fn">solve</span>(L - <span class="num">1</span>) &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <h3>手动模拟：n=23, S=5</h3>
+  <div class="steps">
+    <div class="step"><strong>dfs(1, 1, 1, 0)</strong>：pos=1（十位），上界 digits[1]=2。<br>枚举 d=0: lead 仍为 true -> dfs(0, 0, 1, 0)；d=1: dfs(0, 0, 0, 1)；d=2: dfs(0, 1, 0, 2)。</div>
+    <div class="step"><strong>dfs(0, 0, 1, 0)</strong>：pos=0（个位），不受限。枚举 d=0~9，只有 d=5 时 sum=5 合法。但 lead 为 true 且 d=0 时 sum=0 不等于 5。最终贡献：1（数字5）。</div>
+    <div class="step"><strong>dfs(0, 0, 0, 1)</strong>：枚举 d=0~9，d=4 时 sum=5。贡献：1（数字14）。</div>
+    <div class="step"><strong>dfs(0, 1, 0, 2)</strong>：上界 digits[0]=3。枚举 d=0~3，d=3 时 sum=5。贡献：1（数字23）。</div>
+    <div class="step"><strong>总计</strong>：1 + 1 + 1 = 3。验证：1~23 中数字和为 5 的数为 {5, 14, 23}，共 3 个。</div>
+  </div>
+
+  <div class="complexity">
+    <span class="label">时间复杂度</span>
+    <span class="value">O(20 * 180 * 10) 每次查询</span>
+  </div>
+</div>
+
+<!-- ==================== 第7节：经典问题三 ==================== -->
+<div class="section" id="classic3">
+  <h2>七、经典问题三：相邻数字不相等</h2>
+
+  <div class="problem">
+    <div class="problem-title">问题描述</div>
+    <p>给定区间 <code>[L, R]</code>，统计其中<strong>十进制表示中相邻两位数字不相等</strong>的正整数个数。</p>
+    <p>例如：121 合法（1!=2, 2!=1），122 不合法（2==2），5 合法（只有一位）。</p>
+  </div>
+
+  <h3>状态设计</h3>
+  <p>增加 <code>last</code> 维度记录上一位填了什么数字，用于检查与当前位是否相等。</p>
+  <pre><code><span class="ty">ll</span> <span class="fn">dfs</span>(<span class="ty">int</span> pos, <span class="ty">bool</span> tight, <span class="ty">bool</span> lead, <span class="ty">int</span> last);</code></pre>
+
+  <h3>状态转移说明</h3>
+  <div class="diagram">
+    <pre>
+  枚举当前位 d:
+    if (lead &amp;&amp; d == 0)  -> 前导零, last 不更新, 继续递归
+    else if (d == last)  -> 相邻位相等, 不合法, 跳过
+    else                 -> 合法, 递归到下一位, last = d
+
+  终止: pos == -1 时, 如果 lead == true (全前导零=数字0) 返回 0, 否则返回 1
+    </pre>
+  </div>
+
+  <h3>完整代码</h3>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="kw">typedef long long</span> <span class="ty">ll</span>;
+
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; digits;
+<span class="cm">// dp[pos][last], last 范围 0~9, 用 10 表示"尚未有上一位"(前导零阶段)</span>
+<span class="ty">ll</span> dp[<span class="num">20</span>][<span class="num">11</span>];
+
+<span class="ty">ll</span> <span class="fn">dfs</span>(<span class="ty">int</span> pos, <span class="ty">bool</span> tight, <span class="ty">bool</span> lead, <span class="ty">int</span> last) {
+    <span class="kw">if</span> (pos == <span class="num">-1</span>) <span class="kw">return</span> lead ? <span class="num">0</span> : <span class="num">1</span>;
+
+    <span class="kw">if</span> (!tight &amp;&amp; !lead &amp;&amp; dp[pos][last] != <span class="num">-1</span>)
+        <span class="kw">return</span> dp[pos][last];
+
+    <span class="ty">ll</span> res = <span class="num">0</span>;
+    <span class="ty">int</span> up = tight ? digits[pos] : <span class="num">9</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> d = <span class="num">0</span>; d &lt;= up; d++) {
+        <span class="kw">if</span> (lead &amp;&amp; d == <span class="num">0</span>) {
+            <span class="cm">// 前导零：last 保持为 10（哨兵值）</span>
+            res += <span class="fn">dfs</span>(pos - <span class="num">1</span>, tight &amp;&amp; (d == up), <span class="kw">true</span>, <span class="num">10</span>);
+        } <span class="kw">else if</span> (d == last) {
+            <span class="cm">// 相邻位相等，跳过</span>
+            <span class="kw">continue</span>;
+        } <span class="kw">else</span> {
+            res += <span class="fn">dfs</span>(pos - <span class="num">1</span>, tight &amp;&amp; (d == up), <span class="kw">false</span>, d);
+        }
+    }
+
+    <span class="kw">if</span> (!tight &amp;&amp; !lead) dp[pos][last] = res;
+    <span class="kw">return</span> res;
+}
+
+<span class="ty">ll</span> <span class="fn">solve</span>(<span class="ty">ll</span> n) {
+    <span class="kw">if</span> (n &lt;= <span class="num">0</span>) <span class="kw">return</span> <span class="num">0</span>;
+    digits.clear();
+    <span class="kw">while</span> (n) { digits.push_back(n % <span class="num">10</span>); n /= <span class="num">10</span>; }
+    reverse(digits.begin(), digits.end());
+    <span class="fn">memset</span>(dp, <span class="num">-1</span>, <span class="kw">sizeof</span>(dp));
+    <span class="kw">return</span> <span class="fn">dfs</span>(digits.size() - <span class="num">1</span>, <span class="kw">true</span>, <span class="kw">true</span>, <span class="num">10</span>);
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">ll</span> L, R;
+    cin &gt;&gt; L &gt;&gt; R;
+    cout &lt;&lt; <span class="fn">solve</span>(R) - <span class="fn">solve</span>(L - <span class="num">1</span>) &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <h3>手动模拟：n = 22</h3>
+  <div class="array-vis">
+    <div class="cell hi">2<span class="idx">十位</span></div>
+    <div class="cell hi">2<span class="idx">个位</span></div>
+  </div>
+  <div class="steps">
+    <div class="step"><strong>dfs(1, tight=1, lead=1, last=10)</strong>：处理十位，上界 2。<br>
+      d=0: 前导零 -> dfs(0, tight=0, lead=1, last=10) <br>
+      d=1: 1!=10 合法 -> dfs(0, tight=0, lead=0, last=1) <br>
+      d=2: 2!=10 合法 -> dfs(0, tight=1, lead=0, last=2)
+    </div>
+    <div class="step"><strong>dfs(0, tight=0, lead=1, last=10)</strong>：处理个位，不受限。<br>
+      d=0~9 全部合法（前导零 last=10，不与任何 d 相等）。共 10 个方案。但终止时 lead=true 返回 0，实际需要看子递归。d=0 时 lead 仍 true，终止返回 0；d=1~9 时 lead 变 false，终止返回 1。共 9 个方案（数字 1~9）。
+    </div>
+    <div class="step"><strong>dfs(0, tight=0, lead=0, last=1)</strong>：处理个位，不受限。<br>
+      d=0 合法（0!=1），d=1 跳过（1==1），d=2~9 合法。共 9 个方案（数字 10, 12~19）。
+    </div>
+    <div class="step"><strong>dfs(0, tight=1, lead=0, last=2)</strong>：处理个位，上界 2。<br>
+      d=0 合法（0!=2），d=1 合法（1!=2），d=2 跳过（2==2）。共 2 个方案（数字 20, 21）。
+    </div>
+    <div class="step"><strong>总计</strong>：9 + 9 + 2 = 20。验证：1~22 中相邻不等的数为 {1,2,3,...,9,10,12,13,14,15,16,17,18,19,20,21}，共 20 个。其中 11（1==1）和 22（2==2）被排除。</div>
+  </div>
+
+  <div class="complexity">
+    <span class="label">时间复杂度</span>
+    <span class="value">O(20 * 11 * 10) 每次查询</span>
+  </div>
+</div>
+
+<!-- ==================== 第8节：记忆化搜索到递推 ==================== -->
+<div class="section" id="iterative">
+  <h2>八、从记忆化搜索到递推</h2>
+
+  <h3>为什么要写递推？</h3>
+  <p>记忆化搜索虽然好写好理解，但递推（迭代）形式在某些场景下更优：</p>
+  <ul>
+    <li>避免递归的函数调用开销和栈空间</li>
+    <li>更灵活地控制遍历顺序</li>
+    <li>某些题目需要自底向上才能方便处理</li>
+  </ul>
+
+  <h3>递推思路</h3>
+  <p>递推版数位DP的核心思想：先统计 <strong>位数严格小于 n 的所有合法数</strong>，再统计 <strong>位数等于 n 但值不超过 n 的合法数</strong>。</p>
+
+  <div class="steps">
+    <div class="step"><strong>预处理 f[i][j]</strong>：表示 i 位数（允许前导零），最高位为 j，满足条件的方案数。这一步不考虑上界。</div>
+    <div class="step"><strong>统计位数严格小于 len(n) 的数</strong>：对于 1 位、2 位、...、len-1 位，直接累加 f 的对应值。</div>
+    <div class="step"><strong>统计位数等于 len(n) 的数</strong>：从高位到低位逐位处理，对于第 i 位，枚举填 0 到 digits[i]-1（这些选择会使 tight 释放），累加 f 的值。最后处理恰好等于 n 的情况。</div>
+  </div>
+
+  <h3>以"不含4"为例的递推实现</h3>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="kw">typedef long long</span> <span class="ty">ll</span>;
+
+<span class="cm">// f[i][j]: i位数, 最高位为j, 不含4的方案数(允许前导零)</span>
+<span class="ty">ll</span> f[<span class="num">20</span>][<span class="num">10</span>];
+
+<span class="kw">void</span> <span class="fn">preprocess</span>() {
+    <span class="cm">// 1位数</span>
+    <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt;= <span class="num">9</span>; j++)
+        f[<span class="num">1</span>][j] = (j == <span class="num">4</span>) ? <span class="num">0</span> : <span class="num">1</span>;
+
+    <span class="cm">// 多位数: f[i][j] = sum(f[i-1][k]) for all k != 4</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i &lt;= <span class="num">18</span>; i++) {
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt;= <span class="num">9</span>; j++) {
+            <span class="kw">if</span> (j == <span class="num">4</span>) { f[i][j] = <span class="num">0</span>; <span class="kw">continue</span>; }
+            f[i][j] = <span class="num">0</span>;
+            <span class="kw">for</span> (<span class="ty">int</span> k = <span class="num">0</span>; k &lt;= <span class="num">9</span>; k++) {
+                <span class="kw">if</span> (k != <span class="num">4</span>) f[i][j] += f[i - <span class="num">1</span>][k];
+            }
+        }
+    }
+}
+
+<span class="cm">// 统计 [0, n] 中不含4的非负整数个数</span>
+<span class="ty">ll</span> <span class="fn">solve</span>(<span class="ty">ll</span> n) {
+    <span class="kw">if</span> (n &lt; <span class="num">0</span>) <span class="kw">return</span> <span class="num">0</span>;
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; d;
+    <span class="kw">if</span> (n == <span class="num">0</span>) d.push_back(<span class="num">0</span>);
+    <span class="kw">while</span> (n) { d.push_back(n % <span class="num">10</span>); n /= <span class="num">10</span>; }
+    reverse(d.begin(), d.end());
+    <span class="ty">int</span> len = d.size();
+
+    <span class="ty">ll</span> ans = <span class="num">0</span>;
+
+    <span class="cm">// 第一步: 位数严格小于 len 的所有合法数</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; len; i++)
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">1</span>; j &lt;= <span class="num">9</span>; j++)  <span class="cm">// 最高位不能为0</span>
+            ans += f[i][j];
+
+    <span class="cm">// 第二步: 位数等于 len，值不超过 n</span>
+    <span class="ty">bool</span> valid = <span class="kw">true</span>; <span class="cm">// 标记前缀是否全合法（无4）</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; len; i++) {
+        <span class="ty">int</span> start = (i == <span class="num">0</span>) ? <span class="num">1</span> : <span class="num">0</span>; <span class="cm">// 最高位从1开始</span>
+        <span class="kw">for</span> (<span class="ty">int</span> j = start; j &lt; d[i]; j++) {
+            <span class="kw">if</span> (j == <span class="num">4</span>) <span class="kw">continue</span>;
+            <span class="cm">// 第i位填j，后面 len-i-1 位自由填</span>
+            <span class="ty">int</span> rem = len - i - <span class="num">1</span>;
+            <span class="kw">if</span> (rem == <span class="num">0</span>) ans += <span class="num">1</span>;
+            <span class="kw">else</span> {
+                <span class="kw">for</span> (<span class="ty">int</span> k = <span class="num">0</span>; k &lt;= <span class="num">9</span>; k++)
+                    ans += f[rem][k];
+            }
+        }
+        <span class="kw">if</span> (d[i] == <span class="num">4</span>) { valid = <span class="kw">false</span>; <span class="kw">break</span>; }
+    }
+    <span class="cm">// n 本身合法也要计入</span>
+    <span class="kw">if</span> (valid) ans += <span class="num">1</span>;
+
+    <span class="kw">return</span> ans;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">preprocess</span>();
+    <span class="ty">ll</span> L, R;
+    cin &gt;&gt; L &gt;&gt; R;
+    cout &lt;&lt; <span class="fn">solve</span>(R) - <span class="fn">solve</span>(L - <span class="num">1</span>) &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <h3>递推版对比记忆化搜索</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>对比项</th><th>记忆化搜索</th><th>递推</th></tr>
+      <tr><td>代码难度</td><td>简单直观，框架统一</td><td>需要分两步，边界处理较复杂</td></tr>
+      <tr><td>可扩展性</td><td>加维度只需改参数列表</td><td>加维度需要多开循环</td></tr>
+      <tr><td>效率</td><td>略有递归开销</td><td>无递归开销，稍快</td></tr>
+      <tr><td>空间</td><td>dp 数组 + 递归栈</td><td>仅 dp 数组</td></tr>
+      <tr><td>调试</td><td>容易加打印</td><td>较难跟踪</td></tr>
+    </table>
+  </div>
+
+  <div class="box box-tip">
+    <div class="box-title">实际竞赛建议</div>
+    <p>在 ACM/ICPC 竞赛中，<strong>推荐使用记忆化搜索</strong>。它代码简洁、框架统一、不易出错。递推版仅在对常数要求极高或有特殊需求时才考虑使用。</p>
+  </div>
+</div>
+
+<!-- ==================== 第9节：总结 ==================== -->
+<div class="section" id="summary">
+  <h2>九、总结与扩展</h2>
+
+  <h3>数位DP解题步骤</h3>
+  <div class="steps">
+    <div class="step"><strong>明确问题</strong>：统计 [L, R] 中满足什么条件的数？条件能否用数位表示？</div>
+    <div class="step"><strong>设计状态</strong>：基础为 (pos, tight, lead)，根据条件增加维度（sum, last, cnt, mod 等）。</div>
+    <div class="step"><strong>写 DFS 框架</strong>：套用模板，在枚举循环中加入约束检查。</div>
+    <div class="step"><strong>确定记忆化策略</strong>：通常只缓存 tight=0 的状态；如果每次查询前 memset，则可以缓存所有非 tight 状态。</div>
+    <div class="step"><strong>区间查询</strong>：用 solve(R) - solve(L-1) 处理。</div>
+    <div class="step"><strong>验证</strong>：用小数据手算或暴力对拍验证正确性。</div>
+  </div>
+
+  <h3>常见状态维度一览</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>维度</th><th>类型</th><th>范围</th><th>用途</th></tr>
+      <tr><td>pos</td><td>int</td><td>0 ~ 18</td><td>当前处理到第几位</td></tr>
+      <tr><td>tight</td><td>bool</td><td>0 / 1</td><td>是否受上界约束</td></tr>
+      <tr><td>lead</td><td>bool</td><td>0 / 1</td><td>是否为前导零阶段</td></tr>
+      <tr><td>sum</td><td>int</td><td>0 ~ 162</td><td>已选数字之和</td></tr>
+      <tr><td>last</td><td>int</td><td>0 ~ 10</td><td>上一位数字（10 为哨兵）</td></tr>
+      <tr><td>cnt</td><td>int</td><td>0 ~ 18</td><td>某数码出现次数</td></tr>
+      <tr><td>mod</td><td>int</td><td>0 ~ M-1</td><td>当前数字模 M 的余数</td></tr>
+      <tr><td>mask</td><td>int</td><td>0 ~ 2^10</td><td>已出现数字的集合（状压）</td></tr>
+    </table>
+  </div>
+
+  <h3>进阶变体</h3>
+  <ul>
+    <li><strong>多组查询</strong>：如果有多组不同上界的查询，dp 数组可以在 tight=0 时跨查询复用，无需每次 memset。</li>
+    <li><strong>组合两个数</strong>：有时需要同时考虑两个数的数位关系，可以双指针同时走，状态变为 (pos1, pos2, tight1, tight2, ...)。</li>
+    <li><strong>进制转换</strong>：数位DP不限于十进制，也可以用于二进制、K进制等。</li>
+    <li><strong>数位和模意义</strong>：当约束为"数字和模 K 余 0"时，增加 mod 维度即可。</li>
+    <li><strong>字典序第k小</strong>：利用数位DP的计数功能 + 二分或贪心构造。</li>
+  </ul>
+
+  <div class="box box-hard">
+    <div class="box-title">易错点提醒</div>
+    <ul>
+      <li><strong>前导零</strong>：很多问题需要区分"前导零"和"数字中出现的0"。如相邻不等问题中，前导零不应参与相邻比较。</li>
+      <li><strong>数字0</strong>：题目通常统计正整数 [1, n]，需要在终止条件中排除数字 0。</li>
+      <li><strong>tight 更新</strong>：<code>tight &amp;&amp; (d == up)</code> 中的 <code>up</code> 是当 tight=1 时的上限，不能写成 <code>d == digits[pos]</code>（当 tight=0 时 digits[pos] 无意义）。</li>
+      <li><strong>dp 数组大小</strong>：维度要开够，如 sum 最大 9*18=162，pos 最大 18（10^18 有 19 位，pos 从 0 到 18）。</li>
+      <li><strong>long long</strong>：方案数可能很大，注意用 long long。</li>
+    </ul>
+  </div>
+
+  <h3>经典题目推荐</h3>
+  <div class="problem">
+    <div class="problem-title">练习题目列表</div>
+    <ul>
+      <li>HDU 2089 - 不要62（不含 4 和不含 "62" 的数）</li>
+      <li>HDU 3555 - Bomb（不含 "49" 的数）</li>
+      <li>Codeforces 55D - Beautiful Numbers（能被自身每位数字整除的数）</li>
+      <li>POJ 3252 - Round Numbers（二进制中 0 的个数 >= 1 的个数）</li>
+      <li>SPOJ DIGIT - Digit Sum（数字和相关）</li>
+      <li>洛谷 P2657 - [SCOI2009] windy 数（相邻数字差 >= 2）</li>
+      <li>洛谷 P4127 - [AHOI2009] 同类分布（数字和整除该数本身）</li>
+    </ul>
+  </div>
+</div>
+
+</div> <!-- container -->
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

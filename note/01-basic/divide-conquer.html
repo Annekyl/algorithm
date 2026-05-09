@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>分治 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+  <a href="../index.html">首页</a> &gt;
+  <a href="../index.html#01-basic">基础篇</a> &gt;
+  分治
+</div>
+
+<!-- Page Header -->
+<div class="page-header">
+  <h1>分治 Divide and Conquer</h1>
+  <p class="subtitle">分而治之 -- 将大问题递归拆分为独立子问题，逐一击破后合并答案</p>
+  <div class="tags">
+    <span class="tag tag-base">基础算法</span>
+    <span class="tag tag-mid">递归</span>
+    <span class="tag tag-mid">排序</span>
+    <span class="tag tag-hard">综合应用</span>
+  </div>
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <h3>目录</h3>
+  <ul>
+    <li><a href="#sec-intro">1. 分治思想概述</a></li>
+    <li><a href="#sec-merge">2. 归并排序 Merge Sort</a></li>
+    <li><a href="#sec-inversion">3. 逆序对计数</a></li>
+    <li><a href="#sec-quick">4. 快速排序 Quick Sort</a></li>
+    <li><a href="#sec-kth">5. 第 k 大/小元素 QuickSelect</a></li>
+    <li><a href="#sec-app">6. 分治经典应用</a></li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- Section 1: 分治思想概述 -->
+<!-- ============================================================ -->
+<div class="section" id="sec-intro">
+<h2>1. 分治思想概述</h2>
+
+<h3>1.1 核心范式：Divide - Conquer - Combine</h3>
+<p>分治法 (Divide and Conquer) 是一种将原问题递归地分解为若干<strong>规模更小</strong>、<strong>相互独立</strong>的子问题，分别求解后再合并结果的算法设计范式。</p>
+
+<div class="diagram">
+<pre>
+                    ┌─────────────────┐
+                    │  原问题 (规模 n)  │
+                    └────────┬────────┘
+                             │ Divide
+                 ┌───────────┴───────────┐
+                 ▼                       ▼
+        ┌──────────────┐        ┌──────────────┐
+        │ 子问题1(n/2)  │        │ 子问题2(n/2)  │
+        └──────┬───────┘        └──────┬───────┘
+               │ Conquer               │ Conquer
+               ▼                       ▼
+          解1 (子答案)            解2 (子答案)
+               │                       │
+               └───────────┬───────────┘
+                           │ Combine
+                           ▼
+                    ┌─────────────┐
+                    │ 原问题的解   │
+                    └─────────────┘
+</pre>
+</div>
+
+<h3>1.2 分治三要素</h3>
+<div class="steps">
+  <div class="step"><strong>分解 (Divide)</strong>：将原问题拆分为若干规模更小的子问题。子问题应与原问题结构相同，通常是将区间一分为二。</div>
+  <div class="step"><strong>解决 (Conquer)</strong>：递归求解各子问题。当子问题规模足够小时（递归出口），直接求解。</div>
+  <div class="step"><strong>合并 (Combine)</strong>：将子问题的解合并为原问题的解。合并的效率往往决定整个算法的复杂度。</div>
+</div>
+
+<h3>1.3 适用条件</h3>
+<ul>
+  <li><strong>原问题可以分解</strong>为若干规模更小的同类子问题</li>
+  <li>子问题之间<strong>相互独立</strong>，不存在重叠子问题（否则用动态规划更优）</li>
+  <li>存在<strong>递归终止条件</strong>（base case）</li>
+  <li>子问题的合并操作具有<strong>高效性</strong></li>
+</ul>
+
+<h3>1.4 复杂度分析方法：主定理 (Master Theorem)</h3>
+<p>对于递推关系 <code>T(n) = a * T(n/b) + O(n^d)</code>，其中 a 为子问题个数，b 为子问题规模缩减倍数，d 为合并的多项式阶数：</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>条件</th><th>时间复杂度</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>d &lt; log_b(a)</td><td>O(n^(log_b(a)))</td></tr>
+    <tr><td>d = log_b(a)</td><td>O(n^d * log n)</td></tr>
+    <tr><td>d &gt; log_b(a)</td><td>O(n^d)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="box box-tip">
+  <div class="box-title">提示</div>
+  归并排序满足 T(n) = 2T(n/2) + O(n)，即 a=2, b=2, d=1，d = log_2(2) = 1，因此复杂度为 O(n log n)。
+</div>
+
+<div class="problem">
+  <div class="problem-title">经典入门题：二分查找</div>
+  <p>给定有序数组和目标值，每次将搜索范围缩小一半。这是最简单的分治思想应用——每次只需求解一个子问题，另一个直接丢弃。</p>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Section 2: 归并排序 -->
+<!-- ============================================================ -->
+<div class="section" id="sec-merge">
+<h2>2. 归并排序 Merge Sort</h2>
+
+<h3>2.1 算法思想</h3>
+<p>归并排序是分治思想的经典体现。核心思路：<strong>先递归排序左右两半，再将两个有序子数组合并为一个有序数组</strong>。</p>
+
+<h3>2.2 分治过程可视化</h3>
+<p>以数组 <code>[38, 27, 43, 3, 9, 82, 10]</code> 为例：</p>
+
+<div class="diagram">
+<pre>
+ 分解阶段 (Divide):
+ ────────────────────────────────────────────────
+ [38, 27, 43, 3, 9, 82, 10]
+        /                \
+ [38, 27, 43, 3]     [9, 82, 10]
+    /        \          /      \
+ [38, 27] [43, 3]   [9, 82]  [10]   ← base case
+  /   \    /   \     /   \
+[38] [27] [43] [3] [9] [82]
+
+ 合并阶段 (Combine):
+ ────────────────────────────────────────────────
+ [38] [27] [43] [3] [9] [82]  [10]
+  \   /     \   /    \   /      |
+ [27, 38] [3, 43]  [9, 82]   [10]
+    \       /          \       /
+ [3, 27, 38, 43]    [9, 10, 82]
+         \               /
+    [3, 9, 10, 27, 38, 43, 82]
+</pre>
+</div>
+
+<h3>2.3 Merge 过程详解</h3>
+<p>合并是归并排序的关键步骤。使用双指针 i、j 分别指向两个有序子数组的起始位置，每次取较小值放入临时数组：</p>
+
+<div class="array-vis">
+  <div class="cell hi">3<span class="idx">i</span></div>
+  <div class="cell hi">27<span class="idx"></span></div>
+  <div class="cell hi">38<span class="idx"></span></div>
+  <div class="cell hi">43<span class="idx"></span></div>
+  <div class="cell active">9<span class="idx">j</span></div>
+  <div class="cell active">10<span class="idx"></span></div>
+  <div class="cell active">82<span class="idx"></span></div>
+</div>
+<p style="text-align:center; color: var(--text-dim);">比较 a[i]=3 与 a[j]=9，取 3 放入临时数组，i++</p>
+
+<div class="array-vis">
+  <div class="cell done">3</div>
+  <div class="cell hi">27<span class="idx">i</span></div>
+  <div class="cell hi">38<span class="idx"></span></div>
+  <div class="cell hi">43<span class="idx"></span></div>
+  <div class="cell active">9<span class="idx">j</span></div>
+  <div class="cell active">10<span class="idx"></span></div>
+  <div class="cell active">82<span class="idx"></span></div>
+</div>
+<p style="text-align:center; color: var(--text-dim);">比较 a[i]=27 与 a[j]=9，取 9 放入临时数组，j++</p>
+
+<div class="array-vis">
+  <div class="cell done">3</div>
+  <div class="cell done">9</div>
+  <div class="cell hi">27<span class="idx">i</span></div>
+  <div class="cell hi">38<span class="idx"></span></div>
+  <div class="cell hi">43<span class="idx"></span></div>
+  <div class="cell active">10<span class="idx">j</span></div>
+  <div class="cell active">82<span class="idx"></span></div>
+</div>
+<p style="text-align:center; color: var(--text-dim);">比较 a[i]=27 与 a[j]=10，取 10 放入临时数组，j++</p>
+
+<p>依此类推，直到某一侧全部取完，再将剩余元素整体追加。</p>
+
+<h3>2.4 C++ 代码模板</h3>
+<pre><span class="lang-label">C++</span><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> <span class="ty">std</span>;
+
+<span class="kw">const int</span> MAXN = <span class="num">100005</span>;
+<span class="kw">int</span> a[MAXN], tmp[MAXN];  <span class="cm">// 原数组与临时数组</span>
+
+<span class="cm">// 合并 [l, mid] 和 [mid+1, r] 两个有序区间</span>
+<span class="kw">void</span> <span class="fn">merge</span>(<span class="kw">int</span> l, <span class="kw">int</span> mid, <span class="kw">int</span> r) {
+    <span class="kw">int</span> i = l, j = mid + <span class="num">1</span>, k = l;
+    <span class="kw">while</span> (i &lt;= mid <span class="op">&&</span> j &lt;= r) {
+        <span class="kw">if</span> (a[i] &lt;= a[j])
+            tmp[k++] = a[i++];
+        <span class="kw">else</span>
+            tmp[k++] = a[j++];
+    }
+    <span class="kw">while</span> (i &lt;= mid) tmp[k++] = a[i++];
+    <span class="kw">while</span> (j &lt;= r)   tmp[k++] = a[j++];
+    <span class="kw">for</span> (<span class="kw">int</span> p = l; p &lt;= r; p++)
+        a[p] = tmp[p];
+}
+
+<span class="cm">// 归并排序主函数</span>
+<span class="kw">void</span> <span class="fn">mergeSort</span>(<span class="kw">int</span> l, <span class="kw">int</span> r) {
+    <span class="kw">if</span> (l &gt;= r) <span class="kw">return</span>;        <span class="cm">// 递归出口：区间长度 &lt;= 1</span>
+    <span class="kw">int</span> mid = l + (r - l) / <span class="num">2</span>;  <span class="cm">// 防止溢出的中点计算</span>
+    <span class="fn">mergeSort</span>(l, mid);          <span class="cm">// 递归排序左半</span>
+    <span class="fn">mergeSort</span>(mid + <span class="num">1</span>, r);      <span class="cm">// 递归排序右半</span>
+    <span class="fn">merge</span>(l, mid, r);           <span class="cm">// 合并两个有序区间</span>
+}
+
+<span class="kw">int</span> <span class="fn">main</span>() {
+    <span class="kw">int</span> n;
+    cin &gt;&gt; n;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++) cin &gt;&gt; a[i];
+    <span class="fn">mergeSort</span>(<span class="num">0</span>, n - <span class="num">1</span>);
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++) cout &lt;&lt; a[i] &lt;&lt; <span class="str">" "</span>;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+<h3>2.5 复杂度分析</h3>
+<div class="complexity">
+  <span class="label">时间复杂度:</span>
+  <span class="value">O(n log n) (最好/最坏/平均)</span>
+</div>
+<div class="complexity">
+  <span class="label">空间复杂度:</span>
+  <span class="value">O(n) (需要临时数组)</span>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>性质</th><th>说明</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>稳定性</td><td>稳定排序 (合并时 a[i] &lt;= a[j] 保证相等元素相对顺序不变)</td></tr>
+    <tr><td>时间一致性</td><td>最好/最坏/平均均为 O(n log n)，不受输入数据分布影响</td></tr>
+    <tr><td>额外空间</td><td>需要 O(n) 辅助空间，这是相对于快速排序的劣势</td></tr>
+    <tr><td>适用场景</td><td>需要稳定排序、链表排序、外部排序、计算逆序对</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="problem">
+  <div class="problem-title">经典例题：<a href="https://www.luogu.com.cn/problem/P1908" target="_blank">Luogu P1908 逆序对</a></div>
+  <p>给定长度为 n 的序列，求逆序对个数。归并排序的合并过程可以自然地统计逆序对数量 (见下一节)。</p>
+</div>
+
+<div class="problem">
+  <div class="problem-title">经典例题：<a href="https://www.luogu.com.cn/problem/P1177" target="_blank">Luogu P1177 【模板】排序</a></div>
+  <p>对 n 个整数排序。使用归并排序模板即可通过。</p>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Section 3: 逆序对 -->
+<!-- ============================================================ -->
+<div class="section" id="sec-inversion">
+<h2>3. 逆序对计数 Counting Inversions</h2>
+
+<h3>3.1 逆序对定义</h3>
+<p>对于序列 a，若存在下标 i &lt; j 且 a[i] &gt; a[j]，则 (i, j) 构成一个<strong>逆序对</strong>。逆序对的数量衡量了序列的"无序程度"。</p>
+
+<div class="array-vis">
+  <div class="cell hi">3<span class="idx">i=0</span></div>
+  <div class="cell">1<span class="idx">i=1</span></div>
+  <div class="cell hi">4<span class="idx">i=2</span></div>
+  <div class="cell">2<span class="idx">i=3</span></div>
+  <div class="cell">5<span class="idx">i=4</span></div>
+</div>
+<p style="text-align:center; color: var(--text-dim);">逆序对: (3,1), (4,2) 共 2 个</p>
+
+<h3>3.2 利用归并排序统计逆序对</h3>
+<p>关键观察：在 merge 过程中，当右侧元素 a[j] 小于左侧元素 a[i] 时，说明 a[j] 与左侧 [i, mid] 范围内的所有元素都构成逆序对。</p>
+
+<div class="diagram">
+<pre>
+ 左半: [3, 27, 38, 43]    右半: [9, 10, 82]
+        i=0                    j=0
+
+ Step 1: a[i]=3 &lt; a[j]=9  → 不产生新逆序对, 取 3
+ Step 2: a[i]=27 &gt; a[j]=9 → 右侧9比左侧[27,38,43]都小
+         新增逆序对: (27,9), (38,9), (43,9) → 共 mid-i+1 = 3 个
+         取 9
+ Step 3: a[i]=27 &gt; a[j]=10 → 新增逆序对: (27,10), (38,10), (43,10) → 3 个
+         取 10
+ Step 4: a[i]=27 &lt; a[j]=82 → 不产生, 取 27
+ Step 5: a[i]=38 &lt; a[j]=82 → 不产生, 取 38
+ Step 6: a[i]=43 &lt; a[j]=82 → 不产生, 取 43
+ Step 7: 剩余 82 直接追加
+
+ 本层逆序对总数 = 3 + 3 = 6
+</pre>
+</div>
+
+<h3>3.3 C++ 代码模板</h3>
+<pre><span class="lang-label">C++</span><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> <span class="ty">std</span>;
+
+<span class="kw">typedef long long</span> <span class="ty">ll</span>;
+<span class="kw">const int</span> MAXN = <span class="num">500005</span>;
+<span class="kw">int</span> a[MAXN], tmp[MAXN];
+<span class="ty">ll</span> invCnt = <span class="num">0</span>;  <span class="cm">// 逆序对总数，注意用 long long</span>
+
+<span class="kw">void</span> <span class="fn">merge</span>(<span class="kw">int</span> l, <span class="kw">int</span> mid, <span class="kw">int</span> r) {
+    <span class="kw">int</span> i = l, j = mid + <span class="num">1</span>, k = l;
+    <span class="kw">while</span> (i &lt;= mid <span class="op">&&</span> j &lt;= r) {
+        <span class="kw">if</span> (a[i] &lt;= a[j]) {
+            tmp[k++] = a[i++];
+        } <span class="kw">else</span> {
+            <span class="cm">// a[i] > a[j]: 左半 [i..mid] 的所有元素都比 a[j] 大</span>
+            invCnt += (mid - i + <span class="num">1</span>);  <span class="cm">// 核心：统计跨左右的逆序对</span>
+            tmp[k++] = a[j++];
+        }
+    }
+    <span class="kw">while</span> (i &lt;= mid) tmp[k++] = a[i++];
+    <span class="kw">while</span> (j &lt;= r)   tmp[k++] = a[j++];
+    <span class="kw">for</span> (<span class="kw">int</span> p = l; p &lt;= r; p++) a[p] = tmp[p];
+}
+
+<span class="kw">void</span> <span class="fn">mergeSort</span>(<span class="kw">int</span> l, <span class="kw">int</span> r) {
+    <span class="kw">if</span> (l &gt;= r) <span class="kw">return</span>;
+    <span class="kw">int</span> mid = l + (r - l) / <span class="num">2</span>;
+    <span class="fn">mergeSort</span>(l, mid);
+    <span class="fn">mergeSort</span>(mid + <span class="num">1</span>, r);
+    <span class="fn">merge</span>(l, mid, r);
+}
+
+<span class="kw">int</span> <span class="fn">main</span>() {
+    <span class="kw">int</span> n;
+    cin &gt;&gt; n;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++) cin &gt;&gt; a[i];
+    <span class="fn">mergeSort</span>(<span class="num">0</span>, n - <span class="num">1</span>);
+    cout &lt;&lt; invCnt &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+<h3>3.4 复杂度分析</h3>
+<div class="complexity">
+  <span class="label">时间复杂度:</span>
+  <span class="value">O(n log n)</span>
+</div>
+<div class="complexity">
+  <span class="label">空间复杂度:</span>
+  <span class="value">O(n)</span>
+</div>
+
+<div class="box box-warn">
+  <div class="box-title">注意</div>
+  逆序对数量可能达到 O(n^2) 级别（例如完全逆序的数组），因此计数变量必须使用 <code>long long</code>，否则会溢出。
+</div>
+
+<div class="box box-info">
+  <div class="box-title">另一种方法：树状数组</div>
+  <p>逆序对也可以用树状数组 (BIT) 在 O(n log n) 时间内统计。对于每个元素，查询有多少比它大的元素已经出现过。详见数据结构篇-树状数组。</p>
+</div>
+
+<div class="problem">
+  <div class="problem-title">经典例题：<a href="https://www.luogu.com.cn/problem/P1908" target="_blank">Luogu P1908 逆序对</a></div>
+  <p>给定一个长度为 n 的序列，求逆序对个数。n ≤ 5×10^5。直接使用上述模板即可。</p>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Section 4: 快速排序 -->
+<!-- ============================================================ -->
+<div class="section" id="sec-quick">
+<h2>4. 快速排序 Quick Sort</h2>
+
+<h3>4.1 算法思想</h3>
+<p>快速排序同样是分治算法，但策略与归并排序相反：<strong>归并排序是"先分后合"，快速排序是"边分边排"</strong>。选取一个<strong>基准元素 (pivot)</strong>，将数组划分为"小于等于 pivot"和"大于 pivot"两部分，再递归排序两部分。</p>
+
+<h3>4.2 Partition 过程详解</h3>
+<p>以 <code>[3, 6, 2, 7, 4, 1, 5]</code> 为例，选择最后一个元素 5 作为 pivot：</p>
+
+<div class="diagram">
+<pre>
+ 初始: [3, 6, 2, 7, 4, 1, 5]   pivot = 5
+       ↑                    ↑
+       i (小于区右界)        pivot
+
+ 维护不变量: [ &lt;= pivot | &gt; pivot | 未处理 | pivot ]
+
+ Step 1: a[0]=3 &lt;= 5  → swap(a[0], a[0]), i++
+         [3 | 6, 2, 7, 4, 1, 5]
+          ↑i
+
+ Step 2: a[1]=6 &gt; 5   → 跳过
+         [3 | 6, 2, 7, 4, 1, 5]
+          ↑i
+
+ Step 3: a[2]=2 &lt;= 5  → swap(a[2], a[1]), i++
+         [3, 2 | 6, 7, 4, 1, 5]
+             ↑i
+
+ Step 4: a[3]=7 &gt; 5   → 跳过
+ Step 5: a[4]=4 &lt;= 5  → swap(a[4], a[2]), i++
+         [3, 2, 4 | 7, 6, 1, 5]
+                ↑i
+
+ Step 6: a[5]=1 &lt;= 5  → swap(a[5], a[3]), i++
+         [3, 2, 4, 1 | 6, 7, 5]
+                   ↑i
+
+ 最终: swap(a[i], pivot位置) → [3, 2, 4, 1, 5, 7, 6]
+                                    ↑ ≤5   ↑  >5
+</pre>
+</div>
+
+<h3>4.3 C++ 代码模板</h3>
+<pre><span class="lang-label">C++</span><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> <span class="ty">std</span>;
+
+<span class="cm">// 方式一: 双指针 partition (Lomuto 分区)</span>
+<span class="kw">int</span> <span class="fn">partition</span>(<span class="kw">int</span> a[], <span class="kw">int</span> l, <span class="kw">int</span> r) {
+    <span class="kw">int</span> pivot = a[r];              <span class="cm">// 选最后一个元素为基准</span>
+    <span class="kw">int</span> i = l;                      <span class="cm">// i: &lt;= pivot 区域的右边界</span>
+    <span class="kw">for</span> (<span class="kw">int</span> j = l; j &lt; r; j++) {
+        <span class="kw">if</span> (a[j] &lt;= pivot) {
+            <span class="fn">swap</span>(a[i], a[j]);
+            i++;
+        }
+    }
+    <span class="fn">swap</span>(a[i], a[r]);               <span class="cm">// 将 pivot 放到正确位置</span>
+    <span class="kw">return</span> i;                       <span class="cm">// 返回 pivot 的最终位置</span>
+}
+
+<span class="kw">void</span> <span class="fn">quickSort</span>(<span class="kw">int</span> a[], <span class="kw">int</span> l, <span class="kw">int</span> r) {
+    <span class="kw">if</span> (l &gt;= r) <span class="kw">return</span>;
+    <span class="kw">int</span> p = <span class="fn">partition</span>(a, l, r);
+    <span class="fn">quickSort</span>(a, l, p - <span class="num">1</span>);        <span class="cm">// 递归排序左半</span>
+    <span class="fn">quickSort</span>(a, p + <span class="num">1</span>, r);        <span class="cm">// 递归排序右半</span>
+}
+
+<span class="cm">// 方式二: 双指针 Hoare 分区 (更高效，交换次数更少)</span>
+<span class="kw">void</span> <span class="fn">quickSortHoare</span>(<span class="kw">int</span> a[], <span class="kw">int</span> l, <span class="kw">int</span> r) {
+    <span class="kw">if</span> (l &gt;= r) <span class="kw">return</span>;
+    <span class="kw">int</span> pivot = a[l + (r - l) / <span class="num">2</span>]; <span class="cm">// 取中间元素为基准</span>
+    <span class="kw">int</span> i = l, j = r;
+    <span class="kw">while</span> (i &lt;= j) {
+        <span class="kw">while</span> (a[i] &lt; pivot) i++;
+        <span class="kw">while</span> (a[j] &gt; pivot) j--;
+        <span class="kw">if</span> (i &lt;= j) {
+            <span class="fn">swap</span>(a[i], a[j]);
+            i++;
+            j--;
+        }
+    }
+    <span class="kw">if</span> (l &lt; j)  <span class="fn">quickSortHoare</span>(a, l, j);
+    <span class="kw">if</span> (i &lt; r)  <span class="fn">quickSortHoare</span>(a, i, r);
+}</code></pre>
+
+<h3>4.4 随机化快速排序</h3>
+<p>最坏情况下（数组已有序），朴素快速排序退化为 O(n^2)。通过<strong>随机选取 pivot</strong> 可以在期望 O(n log n) 时间内完成排序。</p>
+
+<pre><span class="lang-label">C++</span><code><span class="cm">// 随机化 partition: 随机选择 pivot，避免最坏情况</span>
+<span class="kw">int</span> <span class="fn">randPartition</span>(<span class="kw">int</span> a[], <span class="kw">int</span> l, <span class="kw">int</span> r) {
+    <span class="cm">// 随机选一个位置与末尾交换</span>
+    <span class="kw">int</span> randIdx = l + <span class="fn">rand</span>() % (r - l + <span class="num">1</span>);
+    <span class="fn">swap</span>(a[randIdx], a[r]);
+    <span class="kw">return</span> <span class="fn">partition</span>(a, l, r);  <span class="cm">// 复用普通 partition</span>
+}</code></pre>
+
+<h3>4.5 复杂度分析</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>情况</th><th>时间复杂度</th><th>触发条件</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>最好</td><td>O(n log n)</td><td>每次 pivot 恰好将数组平分</td></tr>
+    <tr><td>平均</td><td>O(n log n)</td><td>随机化后以极高概率达到</td></tr>
+    <tr><td>最坏</td><td>O(n^2)</td><td>每次 pivot 都是极值（如已排序数组选首/尾元素）</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="complexity">
+  <span class="label">平均空间复杂度:</span>
+  <span class="value">O(log n) (递归栈深度)</span>
+</div>
+<div class="complexity">
+  <span class="label">最坏空间复杂度:</span>
+  <span class="value">O(n)</span>
+</div>
+
+<div class="box box-tip">
+  <div class="box-title">快速排序 vs 归并排序</div>
+  <ul>
+    <li>快排是<strong>原地排序</strong> (O(log n) 栈空间)，归并需要 O(n) 额外空间</li>
+    <li>快排<strong>不稳定</strong>，归并<strong>稳定</strong></li>
+    <li>快排平均常数因子更小，实际运行通常更快</li>
+    <li>C++ STL 的 <code>std::sort</code> 使用 Introsort (快排+堆排+插入排序混合)</li>
+  </ul>
+</div>
+
+<div class="problem">
+  <div class="problem-title">经典例题：<a href="https://www.luogu.com.cn/problem/P1177" target="_blank">Luogu P1177 【模板】快速排序</a></div>
+  <p>使用快速排序对 n 个整数排序。建议使用随机化版本以避免退化。</p>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Section 5: 第 k 大/小元素 -->
+<!-- ============================================================ -->
+<div class="section" id="sec-kth">
+<h2>5. 第 k 大/小元素 QuickSelect</h2>
+
+<h3>5.1 算法思想</h3>
+<p>QuickSelect 是快速排序的变体。在 partition 之后，pivot 的位置已经确定。如果 pivot 的位置恰好等于目标位置，直接返回；否则只需递归搜索其中一侧。</p>
+
+<div class="diagram">
+<pre>
+ 找第 k=3 小的元素 (0-indexed: 第 k-1=2 位)
+ 数组: [3, 6, 2, 7, 4, 1, 5]
+
+ 第一次 partition: pivot=5, p=4 (0-indexed)
+   [3, 2, 4, 1] [5] [7, 6]
+    ≤ pivot      ^    > pivot
+                 p=4
+
+ k=2 < p=4 → 只需递归左侧 [3, 2, 4, 1]
+
+ 第二次 partition: pivot=1, p=0
+   [1] [3, 2, 4]
+    ^   ≤ pivot
+    p=0
+
+ k=2 > p=0 → 只需递归右侧 [3, 2, 4]
+
+ 第三次 partition: pivot=4, p=3
+   [3, 2] [4]
+           ^
+           p=3
+
+ k=2 < p=3 → 递归左侧 [3, 2]
+
+ 第四次 partition: pivot=2, p=1
+   [2] [3]
+    ^
+    p=1
+
+ k=2 > p=1 → 递归右侧 [3], p=2 == k → 答案为 3
+</pre>
+</div>
+
+<h3>5.2 C++ 代码模板</h3>
+<pre><span class="lang-label">C++</span><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> <span class="ty">std</span>;
+
+<span class="cm">// 返回第 k 小的元素 (0-indexed)</span>
+<span class="cm">// 平均 O(n)，最坏 O(n^2)，随机化后期望 O(n)</span>
+<span class="kw">int</span> <span class="fn">quickSelect</span>(<span class="kw">int</span> a[], <span class="kw">int</span> l, <span class="kw">int</span> r, <span class="kw">int</span> k) {
+    <span class="kw">if</span> (l == r) <span class="kw">return</span> a[l];
+
+    <span class="cm">// 随机化选 pivot</span>
+    <span class="kw">int</span> randIdx = l + <span class="fn">rand</span>() % (r - l + <span class="num">1</span>);
+    <span class="fn">swap</span>(a[randIdx], a[r]);
+    <span class="kw">int</span> pivot = a[r];
+    <span class="kw">int</span> i = l;
+    <span class="kw">for</span> (<span class="kw">int</span> j = l; j &lt; r; j++) {
+        <span class="kw">if</span> (a[j] &lt;= pivot) {
+            <span class="fn">swap</span>(a[i], a[j]);
+            i++;
+        }
+    }
+    <span class="fn">swap</span>(a[i], a[r]);
+
+    <span class="kw">if</span> (i == k)       <span class="kw">return</span> a[i];         <span class="cm">// 恰好是第 k 位</span>
+    <span class="kw">else if</span> (i &gt; k)   <span class="kw">return</span> <span class="fn">quickSelect</span>(a, l, i - <span class="num">1</span>, k);  <span class="cm">// 在左侧</span>
+    <span class="kw">else</span>              <span class="kw">return</span> <span class="fn">quickSelect</span>(a, i + <span class="num">1</span>, r, k);  <span class="cm">// 在右侧</span>
+}
+
+<span class="cm">// 使用 STL: nth_element (底层为 IntroSelect，保证最坏 O(n))</span>
+<span class="kw">int</span> <span class="fn">kthElementSTL</span>(<span class="ty">vector</span>&lt;<span class="kw">int</span>&gt;&amp; a, <span class="kw">int</span> k) {
+    <span class="fn">nth_element</span>(a.<span class="fn">begin</span>(), a.<span class="fn">begin</span>() + k, a.<span class="fn">end</span>());
+    <span class="kw">return</span> a[k];
+}</code></pre>
+
+<h3>5.3 复杂度分析</h3>
+<div class="complexity">
+  <span class="label">平均时间:</span>
+  <span class="value">O(n) -- 每次只需处理一半</span>
+</div>
+<div class="complexity">
+  <span class="label">最坏时间:</span>
+  <span class="value">O(n^2) -- 随机化后几乎不会出现</span>
+</div>
+<div class="complexity">
+  <span class="label">空间复杂度:</span>
+  <span class="value">O(1) 原地 (尾递归优化)</span>
+</div>
+
+<div class="box box-info">
+  <div class="box-title">关于 STL nth_element</div>
+  <p>C++ 的 <code>std::nth_element</code> 使用 IntroSelect 算法，结合快速选择和中位数的中位数 (Median of Medians) 策略，保证最坏情况下 O(n) 时间复杂度。比赛中直接使用即可。</p>
+</div>
+
+<div class="problem">
+  <div class="problem-title">经典例题：<a href="https://www.luogu.com.cn/problem/P1471" target="_blank">Luogu P1471 方差</a> (部分分可用)</div>
+  <p>给定 n 个数，求第 k 小的数。使用 nth_element 或手写 QuickSelect。</p>
+</div>
+
+<div class="problem">
+  <div class="problem-title">经典例题：LeetCode 215 - Kth Largest Element</div>
+  <p>求数组中第 k 大的元素。用 QuickSelect 搜索第 (n-k) 小的元素即可。</p>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Section 6: 分治经典应用 -->
+<!-- ============================================================ -->
+<div class="section" id="sec-app">
+<h2>6. 分治经典应用</h2>
+
+<!-- 6.1 最近点对 -->
+<h3>6.1 最近点对 (Closest Pair of Points)</h3>
+
+<h4>问题描述</h4>
+<p>给定平面上 n 个点，求距离最近的一对点之间的距离。暴力枚举 O(n^2)，分治可优化至 O(n log n)。</p>
+
+<h4>分治策略</h4>
+<div class="steps">
+  <div class="step"><strong>按 x 坐标排序</strong>，取中位线 x = mid 将点集分为左右两半。</div>
+  <div class="step"><strong>递归求解</strong>：分别求左半和右半的最近点对距离 d_left 和 d_right，取 d = min(d_left, d_right)。</div>
+  <div class="step"><strong>合并</strong>：考虑跨越中线的点对。只需检查与中线 x 距离小于 d 的点（位于带状区域宽度 2d 内），且在 y 方向上距离小于 d 的点。</div>
+  <div class="step"><strong>关键优化</strong>：将带状区域内的点按 y 排序后，每个点只需检查其后最多 7 个点（由几何性质保证）。因此该步骤为 O(n)。</div>
+</div>
+
+<div class="diagram">
+<pre>
+         d_left    |    d_right
+                   |
+    ·    ·        |        ·
+       ·          |    ·
+    ·       ·     |       ·
+                   |
+         d         d
+
+ 跨越中线的点只需检查带状区域 [mid-d, mid+d] 内的点对:
+                   |
+         ·         |
+    ·    · ·       |  宽度 2d
+         · ·       |
+                   |
+
+ 按 y 排序后，每个点只需与下方距离 &lt; d 的点比较 (最多 7 个)
+</pre>
+</div>
+
+<h4>C++ 代码模板</h4>
+<pre><span class="lang-label">C++</span><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> <span class="ty">std</span>;
+
+<span class="kw">struct</span> <span class="ty">Point</span> {
+    <span class="kw">double</span> x, y;
+};
+
+<span class="kw">int</span> n;
+<span class="ty">Point</span> p[<span class="num">100005</span>], tmp[<span class="num">100005</span>];
+
+<span class="kw">bool</span> <span class="fn">cmpX</span>(<span class="kw">const</span> <span class="ty">Point</span>&amp; a, <span class="kw">const</span> <span class="ty">Point</span>&amp; b) {
+    <span class="kw">return</span> a.x &lt; b.x;
+}
+<span class="kw">bool</span> <span class="fn">cmpY</span>(<span class="kw">const</span> <span class="ty">Point</span>&amp; a, <span class="kw">const</span> <span class="ty">Point</span>&amp; b) {
+    <span class="kw">return</span> a.y &lt; b.y;
+}
+
+<span class="kw">double</span> <span class="fn">dist</span>(<span class="kw">const</span> <span class="ty">Point</span>&amp; a, <span class="kw">const</span> <span class="ty">Point</span>&amp; b) {
+    <span class="kw">return</span> <span class="fn">hypot</span>(a.x - b.x, a.y - b.y);
+}
+
+<span class="cm">// 求 p[l..r] 的最近点对距离，要求 p 已按 x 排序</span>
+<span class="kw">double</span> <span class="fn">closest</span>(<span class="kw">int</span> l, <span class="kw">int</span> r) {
+    <span class="kw">if</span> (l == r) <span class="kw">return</span> <span class="num">1e18</span>;
+    <span class="kw">if</span> (l + <span class="num">1</span> == r) <span class="kw">return</span> <span class="fn">dist</span>(p[l], p[r]);
+
+    <span class="kw">int</span> mid = l + (r - l) / <span class="num">2</span>;
+    <span class="kw">double</span> midX = p[mid].x;
+    <span class="kw">double</span> d = <span class="fn">min</span>(<span class="fn">closest</span>(l, mid), <span class="fn">closest</span>(mid + <span class="num">1</span>, r));
+
+    <span class="cm">// 收集带状区域内的点，按 y 排序</span>
+    <span class="kw">int</span> cnt = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> i = l; i &lt;= r; i++) {
+        <span class="kw">if</span> (<span class="fn">fabs</span>(p[i].x - midX) &lt; d)
+            tmp[cnt++] = p[i];
+    }
+    <span class="fn">sort</span>(tmp, tmp + cnt, cmpY);
+
+    <span class="cm">// 每个点只检查后面最多 7 个点</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; cnt; i++) {
+        <span class="kw">for</span> (<span class="kw">int</span> j = i + <span class="num">1</span>; j &lt; cnt <span class="op">&&</span> tmp[j].y - tmp[i].y &lt; d; j++) {
+            d = <span class="fn">min</span>(d, <span class="fn">dist</span>(tmp[i], tmp[j]));
+        }
+    }
+    <span class="kw">return</span> d;
+}
+
+<span class="kw">int</span> <span class="fn">main</span>() {
+    cin &gt;&gt; n;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        cin &gt;&gt; p[i].x &gt;&gt; p[i].y;
+    <span class="fn">sort</span>(p, p + n, cmpX);
+    <span class="fn">printf</span>(<span class="str">"%.4f\n"</span>, <span class="fn">closest</span>(<span class="num">0</span>, n - <span class="num">1</span>));
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+<div class="complexity">
+  <span class="label">时间复杂度:</span>
+  <span class="value">O(n log n)</span>
+</div>
+<div class="complexity">
+  <span class="label">空间复杂度:</span>
+  <span class="value">O(n)</span>
+</div>
+
+<div class="problem">
+  <div class="problem-title">经典例题：<a href="https://www.luogu.com.cn/problem/P1429" target="_blank">Luogu P1429 平面最近点对</a></div>
+  <p>给定平面上 n 个点，输出最近点对的距离。使用上述分治模板。</p>
+</div>
+
+<!-- 6.2 最大子数组和 -->
+<h3>6.2 最大子数组和 (Maximum Subarray)</h3>
+
+<h4>问题描述</h4>
+<p>给定一个整数数组，找到一个具有最大和的连续子数组，返回其最大和。</p>
+
+<h4>方法一：Kadane 算法 (O(n))</h4>
+<p>虽然这个问题可以用分治解决，但更高效的解法是 Kadane 算法——它本质上是动态规划的思想：</p>
+
+<pre><span class="lang-label">C++</span><code><span class="cm">// Kadane 算法: O(n) 时间, O(1) 空间</span>
+<span class="kw">int</span> <span class="fn">maxSubarrayKadane</span>(<span class="kw">int</span> a[], <span class="kw">int</span> n) {
+    <span class="kw">int</span> maxSum = a[<span class="num">0</span>];
+    <span class="kw">int</span> curSum = a[<span class="num">0</span>];
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt; n; i++) {
+        curSum = <span class="fn">max</span>(a[i], curSum + a[i]);  <span class="cm">// 继续扩展 vs 重新开始</span>
+        maxSum = <span class="fn">max</span>(maxSum, curSum);
+    }
+    <span class="kw">return</span> maxSum;
+}</code></pre>
+
+<h4>方法二：分治解法 (O(n log n))</h4>
+<p>分治解法虽然不如 Kadane 高效，但展示了分治思想的典型应用：</p>
+
+<div class="steps">
+  <div class="step"><strong>分</strong>：将数组一分为二，中点为 mid。</div>
+  <div class="step"><strong>治</strong>：递归求解左半最大子数组和 leftMax 与右半最大子数组和 rightMax。</div>
+  <div class="step"><strong>合</strong>：最大子数组可能完全在左半、完全在右半，或<strong>跨越中线</strong>。跨越中线的最大和 = 左侧最大后缀和 + 右侧最大前缀和。</div>
+</div>
+
+<div class="diagram">
+<pre>
+ 数组: [-2, 1, -3, 4, -1, 2, 1, -5, 4]
+                                mid
+
+ Case 1: 最大子数组完全在左半
+         [-2, 1, -3, 4, -1] | [2, 1, -5, 4]
+
+ Case 2: 最大子数组完全在右半
+         [-2, 1, -3, 4, -1] | [2, 1, -5, 4]
+
+ Case 3: 最大子数组跨越中线
+         [-2, 1, -3, 4, -1] | [2, 1, -5, 4]
+                       ──────┤├──────
+                        -1+2+1 = 2
+
+ 需要计算:
+ - 左侧最大后缀和: max(从 mid 向左扩展的最大和)
+ - 右侧最大前缀和: max(从 mid+1 向右扩展的最大和)
+ - 跨中线最大和 = 左最大后缀 + 右最大前缀
+
+ 答案 = max(左递归, 右递归, 跨中线) = max(4, 4, 6) = 6
+ 子数组 [4, -1, 2, 1]
+</pre>
+</div>
+
+<pre><span class="lang-label">C++</span><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> <span class="ty">std</span>;
+
+<span class="cm">// 分治求最大子数组和</span>
+<span class="kw">int</span> <span class="fn">maxSubarrayDC</span>(<span class="kw">int</span> a[], <span class="kw">int</span> l, <span class="kw">int</span> r) {
+    <span class="kw">if</span> (l == r) <span class="kw">return</span> a[l];
+
+    <span class="kw">int</span> mid = l + (r - l) / <span class="num">2</span>;
+
+    <span class="cm">// Case 1 & 2: 递归求左右两半</span>
+    <span class="kw">int</span> leftMax = <span class="fn">maxSubarrayDC</span>(a, l, mid);
+    <span class="kw">int</span> rightMax = <span class="fn">maxSubarrayDC</span>(a, mid + <span class="num">1</span>, r);
+
+    <span class="cm">// Case 3: 跨越中线的最大子数组</span>
+    <span class="cm">// 左侧最大后缀和</span>
+    <span class="kw">int</span> leftSuffix = a[mid];
+    <span class="kw">int</span> sum = a[mid];
+    <span class="kw">for</span> (<span class="kw">int</span> i = mid - <span class="num">1</span>; i &gt;= l; i--) {
+        sum += a[i];
+        leftSuffix = <span class="fn">max</span>(leftSuffix, sum);
+    }
+    <span class="cm">// 右侧最大前缀和</span>
+    <span class="kw">int</span> rightPrefix = a[mid + <span class="num">1</span>];
+    sum = a[mid + <span class="num">1</span>];
+    <span class="kw">for</span> (<span class="kw">int</span> i = mid + <span class="num">2</span>; i &lt;= r; i++) {
+        sum += a[i];
+        rightPrefix = <span class="fn">max</span>(rightPrefix, sum);
+    }
+    <span class="kw">int</span> crossMax = leftSuffix + rightPrefix;
+
+    <span class="kw">return</span> <span class="fn">max</span>({leftMax, rightMax, crossMax});
+}</code></pre>
+
+<h4>复杂度对比</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>方法</th><th>时间复杂度</th><th>空间复杂度</th><th>特点</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>暴力枚举</td><td>O(n^2)</td><td>O(1)</td><td>枚举所有子数组</td></tr>
+    <tr><td>分治</td><td>O(n log n)</td><td>O(log n)</td><td>经典分治模板，面试常考</td></tr>
+    <tr><td>Kadane</td><td>O(n)</td><td>O(1)</td><td>最优解，实际比赛首选</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="problem">
+  <div class="problem-title">经典例题：<a href="https://www.luogu.com.cn/problem/P1115" target="_blank">Luogu P1115 最大子段和</a></div>
+  <p>给定 n 个整数的序列，求最大连续子段和。推荐使用 Kadane 算法，但分治解法同样可以 AC。</p>
+</div>
+
+<!-- 6.3 归并排序求逆序对总结 -->
+<h3>6.3 分治方法总结与扩展</h3>
+
+<div class="box box-tip">
+  <div class="box-title">分治思维导图</div>
+  <ul>
+    <li><strong>排序类</strong>：归并排序、快速排序</li>
+    <li><strong>选择类</strong>：QuickSelect (第 k 大/小)</li>
+    <li><strong>统计类</strong>：逆序对计数、满足条件的数对</li>
+    <li><strong>几何类</strong>：最近点对、凸包 (分治版)</li>
+    <li><strong>数组类</strong>：最大子数组和、Karatsuba 大数乘法</li>
+    <li><strong>线段树</strong>：本质也是分治——递归处理左右子区间</li>
+  </ul>
+</div>
+
+<div class="box box-warn">
+  <div class="box-title">分治 vs 动态规划</div>
+  <p>分治与动态规划都涉及"将问题分解为子问题"，但有本质区别：</p>
+  <ul>
+    <li>分治：子问题<strong>相互独立</strong>，无重叠。如归并排序的左右两半互不影响。</li>
+    <li>DP：子问题<strong>存在重叠</strong>，同一子问题会被多次计算。如斐波那契数列的 f(n-1) 和 f(n-2) 都需要 f(n-3)。</li>
+    <li>若子问题有重叠却用分治，会导致指数级复杂度；反之用 DP 则过于复杂。</li>
+  </ul>
+</div>
+
+<div class="problem">
+  <div class="problem-title">综合练习题</div>
+  <ul>
+    <li><a href="https://www.luogu.com.cn/problem/P1908" target="_blank">Luogu P1908 逆序对</a> -- 归并排序统计逆序对</li>
+    <li><a href="https://www.luogu.com.cn/problem/P1429" target="_blank">Luogu P1429 平面最近点对</a> -- 分治求最近点对</li>
+    <li><a href="https://www.luogu.com.cn/problem/P1115" target="_blank">Luogu P1115 最大子段和</a> -- 分治 / Kadane</li>
+    <li><a href="https://www.luogu.com.cn/problem/P1228" target="_blank">Luogu P1228 地毯填补问题</a> -- 递归分治经典题</li>
+    <li><a href="https://codeforces.com/contest/1455/problem/E" target="_blank">CF 1455E Four Points</a> -- 分治思维构造</li>
+  </ul>
+</div>
+</div>
+
+</div><!-- end container -->
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

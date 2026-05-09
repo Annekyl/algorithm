@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ST表 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+<!-- 面包屑导航 -->
+<div class="breadcrumb">
+  <a href="../index.html">首页</a> &gt; <a href="../index.html">06 数据结构</a> &gt; ST表
+</div>
+
+<!-- 页面标题 -->
+<div class="page-header">
+  <h1>ST表</h1>
+  <p class="subtitle">Sparse Table &mdash; O(n log n) 预处理, O(1) 区间最值查询</p>
+  <div class="tags">
+    <span class="tag tag-base">数据结构</span>
+    <span class="tag tag-mid">ST表</span>
+    <span class="tag tag-base">倍增</span>
+    <span class="tag tag-mid">RMQ</span>
+    <span class="tag tag-easy">幂等运算</span>
+  </div>
+</div>
+
+<!-- 目录 -->
+<div class="toc">
+  <h3>目录</h3>
+  <ul>
+    <li><a href="#sec1">一、ST表概述</a></li>
+    <li><a href="#sec2">二、预处理</a></li>
+    <li><a href="#sec3">三、O(1) 查询</a></li>
+    <li><a href="#sec4">四、局限性分析</a></li>
+    <li><a href="#sec5">五、完整 C++ 模板</a></li>
+    <li><a href="#sec6">六、综合例题与练习</a></li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第一节：ST表概述 -->
+<!-- ============================================================ -->
+<div class="section" id="sec1">
+  <h2>一、ST表概述</h2>
+
+  <h3>1.1 什么是ST表</h3>
+  <p>ST表（Sparse Table，稀疏表）是一种用于高效处理<strong>静态区间最值查询</strong>（RMQ, Range Minimum/Maximum Query）的数据结构。它基于<strong>倍增</strong>思想，可以在 <code>O(n log n)</code> 时间内预处理，之后每次查询仅需 <code>O(1)</code> 时间。</p>
+
+  <h3>1.2 适用场景</h3>
+  <ul>
+    <li>数组<strong>不会被修改</strong>（静态数据）</li>
+    <li>需要多次进行<strong>区间最值查询</strong>（最大值、最小值）</li>
+    <li>也可以用于<strong>GCD</strong>等其他幂等运算</li>
+  </ul>
+
+  <h3>1.3 核心思想</h3>
+  <p>ST表的核心是预处理所有以每个位置为起点、长度为 <code>2^j</code> 的区间的最值。查询时，将任意区间拆分成两个<strong>可能重叠</strong>的长度为 <code>2^k</code> 的区间，利用幂等性合并结果。</p>
+
+  <div class="diagram">
+    <pre>
+  ST表核心思想：
+
+  预处理：f[i][j] = min(a[i], a[i+1], ..., a[i + 2^j - 1])
+                  = 以 i 为起点，长度为 2^j 的区间的最小值
+
+  查询 [l, r]：
+  令 k = floor(log2(r - l + 1))
+  则 [l, r] 可以被两个长度为 2^k 的区间覆盖：
+
+  l                                    r
+  |------------------------------------|
+  |------------|                       |
+  |  f[l][k]   |                       |
+  |------------|                       |
+              |------------|
+              |  f[r-2^k+1][k] |
+              |------------|
+
+  两个区间有重叠，但对于 min/max 这不影响结果（幂等性）</pre>
+  </div>
+
+  <h3>1.4 复杂度对比</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>方法</th><th>预处理</th><th>单次查询</th><th>总时间</th><th>空间</th></tr>
+      <tr><td>朴素遍历</td><td>O(1)</td><td>O(n)</td><td>O(nq)</td><td>O(1)</td></tr>
+      <tr><td><strong>ST表</strong></td><td><strong>O(n log n)</strong></td><td><strong>O(1)</strong></td><td><strong>O(n log n + q)</strong></td><td><strong>O(n log n)</strong></td></tr>
+      <tr><td>线段树</td><td>O(n)</td><td>O(log n)</td><td>O(n + q log n)</td><td>O(n)</td></tr>
+      <tr><td>树状数组</td><td>O(n)</td><td>O(log n)</td><td>O(n + q log n)</td><td>O(n)</td></tr>
+    </table>
+  </div>
+
+  <div class="box box-info">
+    <div class="box-title">ST表 vs 线段树</div>
+    <p>当数据是<strong>静态的</strong>（不需要修改），且查询的是<strong>区间最值</strong>或<strong>区间GCD</strong>时，ST表优于线段树：查询 O(1) 比 O(log n) 快，且代码更简洁。但如果需要支持修改操作，就必须使用线段树或树状数组。</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第二节：预处理 -->
+<!-- ============================================================ -->
+<div class="section" id="sec2">
+  <h2>二、预处理</h2>
+
+  <h3>2.1 状态定义</h3>
+  <p>定义 <code>f[i][j]</code> 表示从位置 <code>i</code> 开始，长度为 <code>2^j</code> 的区间的最小值：</p>
+  <p style="text-align:center; font-size:1.1em; color:var(--accent); margin:16px 0;">
+    f[i][j] = min(a[i], a[i+1], ..., a[i + 2<sup>j</sup> - 1])
+  </p>
+  <p>其中 <code>1 &le; i &le; n</code>，<code>0 &le; j &le; log2(n)</code>。</p>
+
+  <h3>2.2 递推公式</h3>
+  <p>将长度为 <code>2^j</code> 的区间从中间分成两半，每半长度为 <code>2^(j-1)</code>：</p>
+  <p style="text-align:center; font-size:1.05em; color:var(--accent3); margin:16px 0;">
+    f[i][j] = min(f[i][j-1], f[i + 2<sup>j-1</sup>][j-1])
+  </p>
+
+  <div class="diagram">
+    <pre>
+  递推关系图解：
+
+  f[i][j] 覆盖 [i, i + 2^j - 1]
+
+  i                    i+2^(j-1)              i+2^j-1
+  |--------------------|----------------------|
+  |    f[i][j-1]       |    f[i+2^(j-1)][j-1] |
+  |--------------------|----------------------|
+
+  f[i][j] = min(f[i][j-1], f[i + 2^(j-1)][j-1])
+
+  示例：f[1][2] = min(a[1],a[2],a[3],a[4])
+       = min( min(a[1],a[2]), min(a[3],a[4]) )
+       = min( f[1][1], f[3][1] )</pre>
+  </div>
+
+  <h3>2.3 初始化</h3>
+  <p>边界条件：<code>f[i][0] = a[i]</code>，即长度为 1 的区间最小值就是元素本身。</p>
+
+  <h3>2.4 预处理代码</h3>
+  <pre><code><span class="kw">const</span> <span class="ty">int</span> MAXN <span class="op">=</span> <span class="num">100005</span>;
+<span class="kw">const</span> <span class="ty">int</span> LOG <span class="op">=</span> <span class="num">20</span>;  <span class="cm">// log2(MAXN) 向上取整</span>
+
+<span class="ty">int</span> f[MAXN][LOG];   <span class="cm">// ST表</span>
+<span class="ty">int</span> a[MAXN];        <span class="cm">// 原数组</span>
+<span class="ty">int</span> n;
+
+<span class="ty">void</span> <span class="fn">build</span>() {
+    <span class="cm">// 边界：长度为 1 的区间</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>)
+        f[i][<span class="num">0</span>] <span class="op">=</span> a[i];
+
+    <span class="cm">// 递推：按区间长度从小到大</span>
+    <span class="kw">for</span> (<span class="ty">int</span> j <span class="op">=</span> <span class="num">1</span>; (<span class="num">1</span> <span class="op">&lt;&lt;</span> j) <span class="op">&lt;=</span> n; j<span class="op">++</span>)
+        <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">+</span> (<span class="num">1</span> <span class="op">&lt;&lt;</span> j) <span class="op">-</span> <span class="num">1</span> <span class="op">&lt;=</span> n; i<span class="op">++</span>)
+            f[i][j] <span class="op">=</span> <span class="fn">min</span>(f[i][j<span class="op">-</span><span class="num">1</span>], f[i <span class="op">+</span> (<span class="num">1</span> <span class="op">&lt;&lt;</span> (j<span class="op">-</span><span class="num">1</span>))][j<span class="op">-</span><span class="num">1</span>]);
+}</code></pre>
+
+  <h3>2.5 预处理过程图解</h3>
+  <div class="diagram">
+    <pre>
+  数组 a = [3, 1, 4, 1, 5, 9, 2, 6]，n=8
+
+  j=0 (长度1):  f[i][0] = a[i]
+  i:    1  2  3  4  5  6  7  8
+  f[]:  3  1  4  1  5  9  2  6
+
+  j=1 (长度2):  f[i][1] = min(f[i][0], f[i+1][0])
+  i:    1  2  3  4  5  6  7
+  f[]:  1  1  1  1  5  2  2
+
+  j=2 (长度4):  f[i][2] = min(f[i][1], f[i+2][1])
+  i:    1  2  3  4  5
+  f[]:  1  1  1  1  2
+
+  j=3 (长度8):  f[i][3] = min(f[i][2], f[i+4][2])
+  i:    1
+  f[]:  1</pre>
+  </div>
+
+  <div class="complexity"><span class="label">预处理时间</span> <span class="value">O(n log n)</span></div>
+  <div class="complexity"><span class="label">空间复杂度</span> <span class="value">O(n log n)</span></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第三节：O(1) 查询 -->
+<!-- ============================================================ -->
+<div class="section" id="sec3">
+  <h2>三、O(1) 查询</h2>
+
+  <h3>3.1 查询原理</h3>
+  <p>对于查询区间 [l, r] 的最小值，令 <code>k = floor(log2(r - l + 1))</code>，即区间长度对应的最大的 2 的幂次。</p>
+  <p>然后将 [l, r] 拆分成两个长度为 <code>2^k</code> 的区间：</p>
+  <ul>
+    <li>第一个区间：<code>[l, l + 2^k - 1]</code>，对应 <code>f[l][k]</code></li>
+    <li>第二个区间：<code>[r - 2^k + 1, r]</code>，对应 <code>f[r - 2^k + 1][k]</code></li>
+  </ul>
+  <p style="text-align:center; font-size:1.05em; color:var(--accent3); margin:16px 0;">
+    query(l, r) = min(f[l][k], f[r - 2<sup>k</sup> + 1][k])
+  </p>
+
+  <h3>3.2 为什么两个区间够用</h3>
+  <div class="diagram">
+    <pre>
+  查询 [l, r]，令 k = floor(log2(r - l + 1))
+
+  情况1：区间长度恰好是 2^k
+  l                           r
+  |---------------------------|
+  |         f[l][k]           |    (两个区间重合)
+  |---------------------------|
+
+  情况2：区间长度大于 2^k
+  l                           r
+  |---------------------------|
+  |------------|              |
+  |  f[l][k]   |              |
+  |------------|              |
+             |------------|
+             | f[r-2^k+1][k] |
+             |------------|
+
+  两个区间有重叠，但完全覆盖了 [l, r]
+  由于 min 是幂等运算，重叠不影响结果</pre>
+  </div>
+
+  <h3>3.3 log2 的预处理</h3>
+  <p>为了 O(1) 计算 <code>floor(log2(x))</code>，可以预先打表：</p>
+  <pre><code><span class="ty">int</span> lg[MAXN];  <span class="cm">// lg[i] = floor(log2(i))</span>
+
+<span class="cm">// 预处理 log2</span>
+lg[<span class="num">1</span>] <span class="op">=</span> <span class="num">0</span>;
+<span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">2</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>)
+    lg[i] <span class="op">=</span> lg[i <span class="op">/</span> <span class="num">2</span>] <span class="op">+</span> <span class="num">1</span>;</code></pre>
+
+  <h3>3.4 查询代码</h3>
+  <pre><code><span class="cm">// 查询 [l, r] 的最小值，O(1)</span>
+<span class="ty">int</span> <span class="fn">query</span>(<span class="ty">int</span> l, <span class="ty">int</span> r) {
+    <span class="ty">int</span> k <span class="op">=</span> lg[r <span class="op">-</span> l <span class="op">+</span> <span class="num">1</span>];
+    <span class="kw">return</span> <span class="fn">min</span>(f[l][k], f[r <span class="op">-</span> (<span class="num">1</span> <span class="op">&lt;&lt;</span> k) <span class="op">+</span> <span class="num">1</span>][k]);
+}</code></pre>
+
+  <h3>3.5 查询过程图解</h3>
+  <div class="diagram">
+    <pre>
+  示例：查询 [2, 7] 的最小值
+
+  a = [3, 1, 4, 1, 5, 9, 2, 6]
+       1  2  3  4  5  6  7  8
+
+  区间长度 = 7 - 2 + 1 = 6
+  k = floor(log2(6)) = 2  (2^2 = 4)
+
+  两个覆盖区间：
+  [2, 5] -> f[2][2] = min(1,4,1,5) = 1
+  [4, 7] -> f[4][2] = min(1,5,9,2) = 1
+
+  ans = min(f[2][2], f[4][2]) = min(1, 1) = 1
+
+  验证：a[2..7] = [1,4,1,5,9,2]，最小值确实是 1</pre>
+  </div>
+
+  <div class="box box-tip">
+    <div class="box-title">查询最大值</div>
+    <p>查询最大值只需将 <code>min</code> 换成 <code>max</code>，其余完全相同。可以同时维护 <code>fmin[i][j]</code> 和 <code>fmax[i][j]</code> 以支持两种查询。</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第四节：局限性分析 -->
+<!-- ============================================================ -->
+<div class="section" id="sec4">
+  <h2>四、局限性分析</h2>
+
+  <h3>4.1 只适用于幂等运算</h3>
+  <p>ST表要求合并操作满足<strong>幂等性</strong>（idempotent），即 <code>f(x, x) = x</code>。这是因为查询时两个区间可能重叠，同一个元素可能被计算两次。</p>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th>运算</th><th>是否幂等</th><th>是否适用ST表</th></tr>
+      <tr><td>min(a, b)</td><td>min(x, x) = x</td><td><span class="tag tag-easy">适用</span></td></tr>
+      <tr><td>max(a, b)</td><td>max(x, x) = x</td><td><span class="tag tag-easy">适用</span></td></tr>
+      <tr><td>gcd(a, b)</td><td>gcd(x, x) = x</td><td><span class="tag tag-easy">适用</span></td></tr>
+      <tr><td>bitwise OR</td><td>x | x = x</td><td><span class="tag tag-easy">适用</span></td></tr>
+      <tr><td>bitwise AND</td><td>x &amp; x = x</td><td><span class="tag tag-easy">适用</span></td></tr>
+      <tr><td>a + b</td><td>x + x = 2x &ne; x</td><td><span class="tag tag-hard">不适用</span></td></tr>
+      <tr><td>a * b</td><td>x * x = x&sup2; &ne; x</td><td><span class="tag tag-hard">不适用</span></td></tr>
+    </table>
+  </div>
+
+  <h3>4.2 不支持修改操作</h3>
+  <p>ST表是<strong>静态</strong>数据结构，预处理完成后不能高效地修改原数组。如果需要支持修改，应使用线段树或树状数组。</p>
+
+  <h3>4.3 空间复杂度较高</h3>
+  <p>ST表需要 <code>O(n log n)</code> 的空间。当 n = 10^6 时，大约需要 10^6 * 20 = 2 * 10^7 个整数，约 80MB，可能接近内存限制。</p>
+
+  <div class="box box-warn">
+    <div class="box-title">常见误区</div>
+    <p>不要用 ST表求区间和！区间和不是幂等运算，重叠部分会被重复计算。求区间和请使用前缀和（静态）或树状数组/线段树（动态）。</p>
+  </div>
+
+  <h3>4.4 ST表的适用总结</h3>
+  <div class="steps">
+    <div class="step">
+      <strong>数据静态</strong>（不需要修改），且查询的是<strong>区间最值</strong>或<strong>区间GCD</strong> -- 优先使用ST表
+    </div>
+    <div class="step">
+      <strong>需要支持修改操作</strong> -- 使用线段树或树状数组
+    </div>
+    <div class="step">
+      <strong>需要区间求和</strong> -- 使用前缀和（静态）或线段树/树状数组（动态）
+    </div>
+    <div class="step">
+      <strong>空间紧张</strong> -- 考虑线段树（O(n) 空间）或使用四叉树等变体
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第五节：完整 C++ 模板 -->
+<!-- ============================================================ -->
+<div class="section" id="sec5">
+  <h2>五、完整 C++ 模板</h2>
+
+  <h3>5.1 区间最小值 ST表</h3>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;algorithm&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> MAXN <span class="op">=</span> <span class="num">100005</span>;
+<span class="kw">const</span> <span class="ty">int</span> LOG <span class="op">=</span> <span class="num">20</span>;
+
+<span class="ty">int</span> f[MAXN][LOG];   <span class="cm">// 最小值 ST表</span>
+<span class="ty">int</span> lg[MAXN];       <span class="cm">// log2 预处理</span>
+<span class="ty">int</span> a[MAXN];
+<span class="ty">int</span> n;
+
+<span class="ty">void</span> <span class="fn">build</span>() {
+    <span class="cm">// 预处理 log2</span>
+    lg[<span class="num">1</span>] <span class="op">=</span> <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">2</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>)
+        lg[i] <span class="op">=</span> lg[i <span class="op">/</span> <span class="num">2</span>] <span class="op">+</span> <span class="num">1</span>;
+
+    <span class="cm">// 初始化 f[i][0]</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>)
+        f[i][<span class="num">0</span>] <span class="op">=</span> a[i];
+
+    <span class="cm">// 递推</span>
+    <span class="kw">for</span> (<span class="ty">int</span> j <span class="op">=</span> <span class="num">1</span>; j <span class="op">&lt;=</span> lg[n]; j<span class="op">++</span>)
+        <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">+</span> (<span class="num">1</span> <span class="op">&lt;&lt;</span> j) <span class="op">-</span> <span class="num">1</span> <span class="op">&lt;=</span> n; i<span class="op">++</span>)
+            f[i][j] <span class="op">=</span> <span class="fn">min</span>(f[i][j<span class="op">-</span><span class="num">1</span>], f[i <span class="op">+</span> (<span class="num">1</span> <span class="op">&lt;&lt;</span> (j<span class="op">-</span><span class="num">1</span>))][j<span class="op">-</span><span class="num">1</span>]);
+}
+
+<span class="cm">// O(1) 查询 [l, r] 的最小值</span>
+<span class="ty">int</span> <span class="fn">query</span>(<span class="ty">int</span> l, <span class="ty">int</span> r) {
+    <span class="ty">int</span> k <span class="op">=</span> lg[r <span class="op">-</span> l <span class="op">+</span> <span class="num">1</span>];
+    <span class="kw">return</span> <span class="fn">min</span>(f[l][k], f[r <span class="op">-</span> (<span class="num">1</span> <span class="op">&lt;&lt;</span> k) <span class="op">+</span> <span class="num">1</span>][k]);
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    ios::<span class="fn">sync_with_stdio</span>(<span class="kw">false</span>);
+    cin.<span class="fn">tie</span>(<span class="kw">nullptr</span>);
+
+    <span class="ty">int</span> q;
+    cin <span class="op">&gt;&gt;</span> n <span class="op">&gt;&gt;</span> q;
+
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>)
+        cin <span class="op">&gt;&gt;</span> a[i];
+
+    <span class="fn">build</span>();
+
+    <span class="kw">while</span> (q<span class="op">--</span>) {
+        <span class="ty">int</span> l, r;
+        cin <span class="op">&gt;&gt;</span> l <span class="op">&gt;&gt;</span> r;
+        cout <span class="op">&lt;&lt;</span> <span class="fn">query</span>(l, r) <span class="op">&lt;&lt;</span> endl;
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <h3>5.2 同时支持区间最小值和最大值</h3>
+  <pre><code><span class="ty">int</span> fmin[MAXN][LOG], fmax[MAXN][LOG];
+
+<span class="ty">void</span> <span class="fn">build</span>() {
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>)
+        fmin[i][<span class="num">0</span>] <span class="op">=</span> fmax[i][<span class="num">0</span>] <span class="op">=</span> a[i];
+
+    <span class="kw">for</span> (<span class="ty">int</span> j <span class="op">=</span> <span class="num">1</span>; (<span class="num">1</span> <span class="op">&lt;&lt;</span> j) <span class="op">&lt;=</span> n; j<span class="op">++</span>) {
+        <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">+</span> (<span class="num">1</span> <span class="op">&lt;&lt;</span> j) <span class="op">-</span> <span class="num">1</span> <span class="op">&lt;=</span> n; i<span class="op">++</span>) {
+            fmin[i][j] <span class="op">=</span> <span class="fn">min</span>(fmin[i][j<span class="op">-</span><span class="num">1</span>], fmin[i <span class="op">+</span> (<span class="num">1</span> <span class="op">&lt;&lt;</span> (j<span class="op">-</span><span class="num">1</span>))][j<span class="op">-</span><span class="num">1</span>]);
+            fmax[i][j] <span class="op">=</span> <span class="fn">max</span>(fmax[i][j<span class="op">-</span><span class="num">1</span>], fmax[i <span class="op">+</span> (<span class="num">1</span> <span class="op">&lt;&lt;</span> (j<span class="op">-</span><span class="num">1</span>))][j<span class="op">-</span><span class="num">1</span>]);
+        }
+    }
+}
+
+<span class="ty">int</span> <span class="fn">query_min</span>(<span class="ty">int</span> l, <span class="ty">int</span> r) {
+    <span class="ty">int</span> k <span class="op">=</span> lg[r <span class="op">-</span> l <span class="op">+</span> <span class="num">1</span>];
+    <span class="kw">return</span> <span class="fn">min</span>(fmin[l][k], fmin[r <span class="op">-</span> (<span class="num">1</span> <span class="op">&lt;&lt;</span> k) <span class="op">+</span> <span class="num">1</span>][k]);
+}
+
+<span class="ty">int</span> <span class="fn">query_max</span>(<span class="ty">int</span> l, <span class="ty">int</span> r) {
+    <span class="ty">int</span> k <span class="op">=</span> lg[r <span class="op">-</span> l <span class="op">+</span> <span class="num">1</span>];
+    <span class="kw">return</span> <span class="fn">max</span>(fmax[l][k], fmax[r <span class="op">-</span> (<span class="num">1</span> <span class="op">&lt;&lt;</span> k) <span class="op">+</span> <span class="num">1</span>][k]);
+}</code></pre>
+
+  <h3>5.3 区间 GCD 查询</h3>
+  <pre><code><span class="ty">int</span> fgcd[MAXN][LOG];
+
+<span class="ty">void</span> <span class="fn">build_gcd</span>() {
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">&lt;=</span> n; i<span class="op">++</span>)
+        fgcd[i][<span class="num">0</span>] <span class="op">=</span> a[i];
+
+    <span class="kw">for</span> (<span class="ty">int</span> j <span class="op">=</span> <span class="num">1</span>; (<span class="num">1</span> <span class="op">&lt;&lt;</span> j) <span class="op">&lt;=</span> n; j<span class="op">++</span>)
+        <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">1</span>; i <span class="op">+</span> (<span class="num">1</span> <span class="op">&lt;&lt;</span> j) <span class="op">-</span> <span class="num">1</span> <span class="op">&lt;=</span> n; i<span class="op">++</span>)
+            fgcd[i][j] <span class="op">=</span> <span class="fn">__gcd</span>(fgcd[i][j<span class="op">-</span><span class="num">1</span>], fgcd[i <span class="op">+</span> (<span class="num">1</span> <span class="op">&lt;&lt;</span> (j<span class="op">-</span><span class="num">1</span>))][j<span class="op">-</span><span class="num">1</span>]);
+}
+
+<span class="ty">int</span> <span class="fn">query_gcd</span>(<span class="ty">int</span> l, <span class="ty">int</span> r) {
+    <span class="ty">int</span> k <span class="op">=</span> lg[r <span class="op">-</span> l <span class="op">+</span> <span class="num">1</span>];
+    <span class="kw">return</span> <span class="fn">__gcd</span>(fgcd[l][k], fgcd[r <span class="op">-</span> (<span class="num">1</span> <span class="op">&lt;&lt;</span> k) <span class="op">+</span> <span class="num">1</span>][k]);
+}</code></pre>
+
+  <div class="box box-info">
+    <div class="box-title">代码优化技巧</div>
+    <p>1. 使用 <code>ios::sync_with_stdio(false); cin.tie(nullptr);</code> 加速 IO<br>
+    2. 预处理 <code>lg[]</code> 数组避免每次查询计算 log2<br>
+    3. 循环条件写成 <code>i + (1 &lt;&lt; j) - 1 &lt;= n</code> 而非 <code>i &lt;= n - (1 &lt;&lt; j) + 1</code>，避免溢出</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第六节：综合例题与练习 -->
+<!-- ============================================================ -->
+<div class="section" id="sec6">
+  <h2>六、综合例题与练习</h2>
+
+  <h3>6.1 模板题</h3>
+  <div class="problem">
+    <div class="problem-title">洛谷 P3865 【模板】ST表</div>
+    <p>静态区间最大值查询。直接使用ST表模板，注意使用快读或关闭同步。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">AcWing 1273. 天才的记忆</div>
+    <p>区间最大值查询，ST表模板题。</p>
+  </div>
+
+  <h3>6.2 综合应用</h3>
+  <div class="problem">
+    <div class="problem-title">洛谷 P2880 [USACO07JAN] Balanced Lineup G</div>
+    <p>给定 n 头牛的高度，q 次查询，每次求区间 [a, b] 中最高牛和最矮牛的高度差。维护最大值和最小值两个 ST表。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">洛谷 P1816 忠诚</div>
+    <p>区间最小值查询，ST表模板应用。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">洛谷 P1198 [JSOI2008] 最大数</div>
+    <p>在线维护序列，支持在末尾添加元素和查询末尾 L 个元素的最大值。可以用ST表的动态版本或线段树。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">洛谷 P3865 ST表 + 快读</div>
+    <p>数据量大时需要使用快读，IO 优化是本题的关键。</p>
+  </div>
+
+  <h3>6.3 ST表在其他问题中的应用</h3>
+  <div class="problem">
+    <div class="problem-title">Codeforces 1547F Array Stabilization (GCD version)</div>
+    <p>利用 ST表 进行区间 GCD 查询，配合二分答案解决问题。</p>
+  </div>
+
+  <div class="problem">
+    <div class="problem-title">Codeforces 1156B Ugly Pairs</div>
+    <p>虽然不直接使用ST表，但其中的区间查询思想与ST表类似。</p>
+  </div>
+
+  <h3>6.4 推荐练习清单</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>题目</th><th>知识点</th><th>难度</th></tr>
+      <tr><td>洛谷 P3865 ST表</td><td>区间最大值查询</td><td><span class="tag tag-easy">简单</span></td></tr>
+      <tr><td>AcWing 1273 天才的记忆</td><td>区间最大值查询</td><td><span class="tag tag-easy">简单</span></td></tr>
+      <tr><td>洛谷 P2880 Balanced Lineup</td><td>区间最大值 + 最小值</td><td><span class="tag tag-easy">简单</span></td></tr>
+      <tr><td>洛谷 P1816 忠诚</td><td>区间最小值查询</td><td><span class="tag tag-easy">简单</span></td></tr>
+      <tr><td>洛谷 P5012 求m区间最小值</td><td>ST表 + 滑动窗口</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>洛谷 P1198 最大数</td><td>动态维护 + ST表</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>CF 1547F Array Stabilization (GCD)</td><td>ST表 + 二分</td><td><span class="tag tag-mid">中等</span></td></tr>
+      <tr><td>洛谷 P3865 ST表 (加强版)</td><td>大数据量 + 快读</td><td><span class="tag tag-mid">中等</span></td></tr>
+    </table>
+  </div>
+
+  <div class="box box-tip">
+    <div class="box-title">总结</div>
+    <p>ST表是处理静态区间最值查询的最佳选择，核心要点：</p>
+    <ul>
+      <li><strong>倍增思想</strong>：将区间拆分成 2 的幂次长度的子区间</li>
+      <li><strong>幂等性</strong>：只有 min、max、gcd、OR、AND 等幂等运算适用</li>
+      <li><strong>O(n log n) 预处理，O(1) 查询</strong>：在静态场景下优于线段树</li>
+      <li>不支持修改操作，需要修改时使用线段树或树状数组</li>
+      <li>预处理 <code>lg[]</code> 数组可以加速查询</li>
+      <li>注意空间复杂度 <code>O(n log n)</code>，n 很大时需评估内存限制</li>
+    </ul>
+  </div>
+</div>
+
+</div> <!-- end container -->
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

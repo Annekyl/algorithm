@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>迭代加深与IDA* - ACM 算法笔记</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="container">
+
+  <!-- 面包屑导航 -->
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#search">搜索</a> &gt;
+    迭代加深与IDA*
+  </div>
+
+  <!-- 页面标题 -->
+  <div class="page-header">
+    <h1>迭代加深与IDA*</h1>
+    <div class="subtitle">Iterative Deepening &amp; IDA* — 结合 DFS 空间优势与 BFS 最优性的搜索策略</div>
+    <div class="tags">
+      <span class="tag tag-base">搜索基础</span>
+      <span class="tag tag-dp">启发式搜索</span>
+      <span class="tag tag-hard">IDA*</span>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#ids">迭代加深搜索 (IDS)</a></li>
+      <li><a href="#idastar">IDA* 算法</a></li>
+      <li><a href="#compare">与 BFS / DFS 对比</a></li>
+      <li><a href="#puzzle15">经典问题 — 15-Puzzle</a></li>
+      <li><a href="#queen8">经典问题 — 八皇后 IDA* 求解</a></li>
+      <li><a href="#template">完整 C++ 模板</a></li>
+      <li><a href="#complexity">复杂度分析</a></li>
+      <li><a href="#problems">经典例题汇总</a></li>
+    </ul>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 1. 迭代加深搜索 (IDS) -->
+  <!-- ============================================================ -->
+  <div class="section" id="ids">
+    <h2>1. 迭代加深搜索 (IDS)</h2>
+
+    <p>迭代加深搜索（Iterative Deepening Search，简称 IDS）是一种结合了 DFS 的空间效率和 BFS 的最优性的搜索策略。其核心思想是：不断增大搜索深度上限，从 1 开始逐步递增，每次在该深度限制下执行 DFS。</p>
+
+    <h3>1.1 基本思想</h3>
+    <p>想象你在迷宫中寻找出口。普通 DFS 会一头扎进某条死胡同到底再回来；BFS 则逐层搜索但需要大量内存。IDS 的做法是：先只搜 1 步能到达的所有位置，没找到就搜 2 步，再找不到搜 3 步......如此反复。</p>
+
+    <div class="diagram">
+      <pre>
+  深度限制 = 1          深度限制 = 2          深度限制 = 3
+      A                     A                     A
+      |                   / | \                 / | \
+      B                  B  C  D              B  C  D
+                                               /|\  |
+                                              E F G H
+  只搜索深度 1       搜索深度 1~2         搜索深度 1~3
+      </pre>
+    </div>
+
+    <h3>1.2 算法框架</h3>
+    <pre><code><span class="cm">// 迭代加深搜索通用框架</span>
+<span class="ty">bool</span> found;
+<span class="ty">int</span> maxDepth;
+
+<span class="ty">void</span> <span class="fn">dfs</span>(<span class="ty">int</span> u, <span class="ty">int</span> depth) {
+    <span class="kw">if</span> (found) <span class="kw">return</span>;           <span class="cm">// 已找到答案，提前退出</span>
+    <span class="kw">if</span> (depth > maxDepth) <span class="kw">return</span>; <span class="cm">// 超过当前深度限制</span>
+    <span class="kw">if</span> (<span class="fn">isGoal</span>(u)) {
+        found = <span class="kw">true</span>;
+        <span class="kw">return</span>;
+    }
+    <span class="kw">for</span> (<span class="kw">auto</span>&amp; v : <span class="fn">neighbors</span>(u)) {
+        <span class="fn">dfs</span>(v, depth + <span class="num">1</span>);
+    }
+}
+
+<span class="ty">void</span> <span class="fn">iterativeDeepening</span>(<span class="ty">int</span> start) {
+    <span class="kw">for</span> (maxDepth = <span class="num">0</span>; ; maxDepth++) {
+        found = <span class="kw">false</span>;
+        <span class="fn">dfs</span>(start, <span class="num">0</span>);
+        <span class="kw">if</span> (found) <span class="kw">break</span>;  <span class="cm">// 找到答案</span>
+    }
+}</code></pre>
+
+    <h3>1.3 为什么对树搜索是最优的？</h3>
+    <p>表面上看，IDS 反复搜索同一节点似乎很浪费。但关键观察是：在分支因子为 <code>b</code> 的树中，绝大多数节点集中在最底层。具体来说，最底层节点占总节点数的 <code>(b-1)/b</code>。</p>
+
+    <div class="box box-tip">
+      <div class="box-title">关键结论</div>
+      <p>对于分支因子为 b、目标在深度 d 的搜索树，IDS 扩展的节点总数约为 BFS 的 <strong>b/(b-1)</strong> 倍。当 b=10 时，IDS 仅比 BFS 多搜索约 11% 的节点，却节省了指数级的内存。</p>
+    </div>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(b^d)</span>
+      <span class="label">与 BFS 同阶</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(d)</span>
+      <span class="label">仅需存储当前路径</span>
+    </div>
+
+    <h3>1.4 IDS 的优势总结</h3>
+    <ul>
+      <li><strong>空间效率：</strong>与 DFS 相同，仅 O(d) 的栈空间</li>
+      <li><strong>最优性：</strong>与 BFS 相同，保证找到最短路径</li>
+      <li><strong>完备性：</strong>在有限分支的树中一定能找到解</li>
+      <li><strong>无需预估状态数：</strong>不像 DFS 需要设定最大深度</li>
+    </ul>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 2. IDA* 算法 -->
+  <!-- ============================================================ -->
+  <div class="section" id="idastar">
+    <h2>2. IDA* 算法</h2>
+
+    <p>IDA*（Iterative Deepening A*）是 IDS 与启发式函数的结合。它用一个估价函数 <code>f(n) = g(n) + h(n)</code> 来替代简单的深度限制，其中 <code>g(n)</code> 是从起点到当前状态的实际代价，<code>h(n)</code> 是从当前状态到目标的启发式估计。</p>
+
+    <h3>2.1 核心思想</h3>
+    <p>IDA* 将每一层的深度限制替换为 <code>f 值的阈值</code>。在每次迭代中，只探索 <code>f(n) &le; threshold</code> 的节点。如果当前迭代没有找到解，就将阈值更新为下一次迭代中所有被剪枝节点的最小 f 值，然后重新搜索。</p>
+
+    <div class="diagram">
+      <pre>
+  IDA* 搜索过程：
+
+  第 1 轮: threshold = h(start) = 4
+  ┌──────────────────────────┐
+  │  f(start)=4              │
+  │  ├── f=5 (剪枝)          │
+  │  └── f=6 (剪枝)          │
+  │  未找到解 → 新阈值 = 5   │
+  └──────────────────────────┘
+
+  第 2 轮: threshold = 5
+  ┌──────────────────────────┐
+  │  f(start)=4              │
+  │  ├── f=5 → 深入...       │
+  │  │   └── f=6 (剪枝)     │
+  │  └── f=6 (剪枝)          │
+  │  未找到解 → 新阈值 = 6   │
+  └──────────────────────────┘
+
+  第 3 轮: threshold = 6
+  ┌──────────────────────────┐
+  │  f(start)=4              │
+  │  ├── f=5 → f=6 → 找到!  │
+  │  返回最优解              │
+  └──────────────────────────┘
+      </pre>
+    </div>
+
+    <h3>2.2 算法框架</h3>
+    <pre><code><span class="cm">// IDA* 通用框架</span>
+<span class="ty">int</span> threshold;      <span class="cm">// 当前 f 值阈值</span>
+<span class="ty">int</span> minNextThreshold; <span class="cm">// 下一轮的最小阈值</span>
+<span class="ty">bool</span> found;
+
+<span class="cm">// h(state): 启发式函数，估计从 state 到目标的最小代价</span>
+<span class="cm">// 要求 h 是可采纳的（admissible），即不高估真实代价</span>
+
+<span class="ty">void</span> <span class="fn">dfs_idastar</span>(State state, <span class="ty">int</span> g) {
+    <span class="kw">if</span> (found) <span class="kw">return</span>;
+    <span class="ty">int</span> f = g + <span class="fn">h</span>(state);
+    <span class="kw">if</span> (f > threshold) {
+        minNextThreshold = <span class="fn">min</span>(minNextThreshold, f);
+        <span class="kw">return</span>;
+    }
+    <span class="kw">if</span> (<span class="fn">isGoal</span>(state)) {
+        found = <span class="kw">true</span>;
+        <span class="kw">return</span>;
+    }
+    <span class="kw">for</span> (<span class="kw">auto</span>&amp; next : <span class="fn">neighbors</span>(state)) {
+        <span class="fn">dfs_idastar</span>(next, g + <span class="fn">cost</span>(state, next));
+    }
+}
+
+<span class="ty">void</span> <span class="fn">ida_star</span>(State start) {
+    threshold = <span class="fn">h</span>(start);
+    <span class="kw">while</span> (!found) {
+        minNextThreshold = INT_MAX;
+        <span class="fn">dfs_idastar</span>(start, <span class="num">0</span>);
+        <span class="kw">if</span> (found) <span class="kw">break</span>;
+        <span class="kw">if</span> (minNextThreshold == INT_MAX) <span class="kw">break</span>; <span class="cm">// 无解</span>
+        threshold = minNextThreshold;
+    }
+}</code></pre>
+
+    <h3>2.3 可采纳启发函数 (Admissible Heuristic)</h3>
+    <p>IDA* 保证最优性的前提是启发函数 <code>h(n)</code> 是<strong>可采纳的</strong>，即对于任意节点 n，<code>h(n)</code> 不超过从 n 到目标的实际最短距离。</p>
+
+    <div class="box box-info">
+      <div class="box-title">可采纳性的含义</div>
+      <p>如果 h(n) 总是低估或恰好等于真实代价，那么 IDA* 一定不会错过最优解。反之，如果 h(n) 有时高估，可能会剪掉包含最优解的分支。</p>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">与 A* 的区别</div>
+      <p>A* 使用优先队列维护所有待扩展节点，需要 O(b^d) 的空间。IDA* 通过迭代加深避免了这一开销，空间仅 O(d)，代价是可能重复扩展部分节点。当状态空间很大（如 15-puzzle）时，IDA* 往往更实用。</p>
+    </div>
+
+    <h3>2.4 什么时候用 IDA*？</h3>
+    <ul>
+      <li>状态空间太大，A* 的优先队列会爆内存</li>
+      <li>存在好的可采纳启发函数</li>
+      <li>搜索树的分支因子不太大</li>
+      <li>需要保证找到最优解</li>
+    </ul>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 3. 与 BFS / DFS 对比 -->
+  <!-- ============================================================ -->
+  <div class="section" id="compare">
+    <h2>3. 与 BFS / DFS 对比</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>特性</th>
+            <th>DFS</th>
+            <th>BFS</th>
+            <th>IDS</th>
+            <th>IDA*</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>搜索顺序</td>
+            <td>深度优先</td>
+            <td>广度优先</td>
+            <td>深度优先 (多轮)</td>
+            <td>启发式深度优先 (多轮)</td>
+          </tr>
+          <tr>
+            <td>时间复杂度</td>
+            <td>O(b^m)</td>
+            <td>O(b^d)</td>
+            <td>O(b^d)</td>
+            <td>O(b^d) 通常更少</td>
+          </tr>
+          <tr>
+            <td>空间复杂度</td>
+            <td>O(b*m)</td>
+            <td>O(b^d)</td>
+            <td><strong>O(d)</strong></td>
+            <td><strong>O(d)</strong></td>
+          </tr>
+          <tr>
+            <td>最优性</td>
+            <td>不保证</td>
+            <td>保证</td>
+            <td>保证</td>
+            <td>保证 (h 可采纳)</td>
+          </tr>
+          <tr>
+            <td>完备性</td>
+            <td>不保证 (可能陷入深分支)</td>
+            <td>保证</td>
+            <td>保证</td>
+            <td>保证</td>
+          </tr>
+          <tr>
+            <td>是否需要启发函数</td>
+            <td>否</td>
+            <td>否</td>
+            <td>否</td>
+            <td><strong>是</strong></td>
+          </tr>
+          <tr>
+            <td>适合场景</td>
+            <td>任意图遍历、回溯</td>
+            <td>无权图最短路</td>
+            <td>树上最短路、博弈搜索</td>
+            <td>大规模状态空间最优解</td>
+          </tr>
+          <tr>
+            <td>典型应用</td>
+            <td>连通性、拓扑排序</td>
+            <td>迷宫最短路、层序遍历</td>
+            <td>博弈树、拼图</td>
+            <td>15-puzzle、八数码</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">选择建议</div>
+      <p><strong>状态空间小：</strong>直接 BFS。 <strong>空间紧张但需要最优解：</strong>用 IDS。 <strong>空间紧张 + 有好的启发函数：</strong>用 IDA*。 <strong>不要求最优解、只需可行解：</strong>DFS + 剪枝即可。</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 4. 经典问题 — 15-Puzzle -->
+  <!-- ============================================================ -->
+  <div class="section" id="puzzle15">
+    <h2>4. 经典问题 — 15-Puzzle</h2>
+
+    <p>15-Puzzle（数字华容道）是 IDA* 最经典的应用场景。在一个 4&times;4 的棋盘上有 15 个数字方块和 1 个空格，每次只能将与空格相邻的方块滑入空格，目标是将初始排列变为有序排列。</p>
+
+    <h3>4.1 问题分析</h3>
+    <p>15-puzzle 的状态空间约为 16! / 2 &asymp; 10^13，BFS 完全不可行。但使用 IDA* + Manhattan 距离启发函数，可以在合理时间内求解。</p>
+
+    <h3>4.2 Manhattan 距离启发函数</h3>
+    <p>对于棋盘上每个数字方块，计算它当前位置到目标位置的 Manhattan 距离（横向距离 + 纵向距离），所有方块的距离之和就是一个可采纳的启发值。</p>
+
+    <div class="diagram">
+      <pre>
+  当前状态:            目标状态:
+  ┌──┬──┬──┬──┐       ┌──┬──┬──┬──┐
+  │ 1│ 2│ 3│ 4│       │ 1│ 2│ 3│ 4│
+  ├──┼──┼──┼──┤       ├──┼──┼──┼──┤
+  │ 5│ 6│  │ 8│       │ 5│ 6│ 7│ 8│
+  ├──┼──┼──┼──┤       ├──┼──┼──┼──┤
+  │ 9│10│ 7│11│       │ 9│10│11│12│
+  ├──┼──┼──┼──┤       ├──┼──┼──┼──┤
+  │13│14│15│12│       │13│14│15│  │
+  └──┴──┴──┴──┘       └──┴──┴──┴──┘
+
+  7: (2,1)→(1,2) 距离 = |2-1|+|1-2| = 2
+  8: (1,3)→(1,3) 距离 = 0
+  11: (2,3)→(2,2) 距离 = 1
+  12: (3,3)→(2,3) 距离 = 2
+  h = 2+0+1+2 = 5  (其余方块距离为 0)
+      </pre>
+    </div>
+
+    <h3>4.3 IDA* 求解代码</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;cstdio&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;cstdlib&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;algorithm&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">4</span>;
+<span class="ty">int</span> board[N][N];
+<span class="ty">int</span> threshold, minNext;
+<span class="ty">bool</span> solved;
+
+<span class="cm">// 方向: 上右下左</span>
+<span class="kw">const int</span> dx[] = {<span class="num">-1</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">0</span>};
+<span class="kw">const int</span> dy[] = {<span class="num">0</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">-1</span>};
+<span class="kw">const char</span> dir[] = {<span class="str">'U'</span>, <span class="str">'R'</span>, <span class="str">'D'</span>, <span class="str">'L'</span>};
+
+<span class="cm">// Manhattan 距离启发函数</span>
+<span class="ty">int</span> <span class="fn">heuristic</span>() {
+    <span class="ty">int</span> h = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; N; i++)
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; N; j++)
+            <span class="kw">if</span> (board[i][j] != <span class="num">0</span>) {
+                <span class="ty">int</span> val = board[i][j] - <span class="num">1</span>;
+                h += <span class="fn">abs</span>(i - val / N) + <span class="fn">abs</span>(j - val % N);
+            }
+    <span class="kw">return</span> h;
+}
+
+<span class="cm">// IDA* DFS</span>
+<span class="ty">void</span> <span class="fn">dfs</span>(<span class="ty">int</span> x, <span class="ty">int</span> y, <span class="ty">int</span> g, <span class="ty">int</span> lastDir) {
+    <span class="kw">if</span> (solved) <span class="kw">return</span>;
+    <span class="ty">int</span> h = <span class="fn">heuristic</span>();
+    <span class="ty">int</span> f = g + h;
+    <span class="kw">if</span> (f > threshold) {
+        minNext = <span class="fn">min</span>(minNext, f);
+        <span class="kw">return</span>;
+    }
+    <span class="kw">if</span> (h == <span class="num">0</span>) { solved = <span class="kw">true</span>; <span class="kw">return</span>; }
+
+    <span class="kw">for</span> (<span class="ty">int</span> d = <span class="num">0</span>; d &lt; <span class="num">4</span>; d++) {
+        <span class="cm">// 避免立即反向移动</span>
+        <span class="kw">if</span> (d == (lastDir ^ <span class="num">2</span>)) <span class="kw">continue</span>;
+        <span class="ty">int</span> nx = x + dx[d], ny = y + dy[d];
+        <span class="kw">if</span> (nx &lt; <span class="num">0</span> || nx >= N || ny &lt; <span class="num">0</span> || ny >= N) <span class="kw">continue</span>;
+
+        <span class="fn">swap</span>(board[x][y], board[nx][ny]);
+        <span class="fn">dfs</span>(nx, ny, g + <span class="num">1</span>, d);
+        <span class="fn">swap</span>(board[x][y], board[nx][ny]);
+        <span class="kw">if</span> (solved) <span class="kw">return</span>;
+    }
+}
+
+<span class="ty">int</span> <span class="fn">solve</span>(<span class="ty">int</span> sx, <span class="ty">int</span> sy) {
+    threshold = <span class="fn">heuristic</span>();
+    <span class="kw">while</span> (!solved) {
+        minNext = INT_MAX;
+        <span class="fn">dfs</span>(sx, sy, <span class="num">0</span>, <span class="num">-1</span>);
+        <span class="kw">if</span> (solved) <span class="kw">return</span> threshold;
+        <span class="kw">if</span> (minNext == INT_MAX) <span class="kw">return</span> <span class="num">-1</span>;
+        threshold = minNext;
+    }
+    <span class="kw">return</span> threshold;
+}</code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">优化技巧</div>
+      <p><strong>避免反向移动：</strong>记录上一步方向，跳过反向操作可减少约 25% 的节点扩展。 <strong>增量更新 h 值：</strong>每次移动只影响一个方块的 Manhattan 距离，不必重新计算整个棋盘。</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 5. 经典问题 — 八皇后 IDA* 求解 -->
+  <!-- ============================================================ -->
+  <div class="section" id="queen8">
+    <h2>5. 经典问题 — 八皇后 IDA* 求解</h2>
+
+    <p>八皇后问题要求在 8&times;8 棋盘上放置 8 个皇后，使得任意两个皇后不能互相攻击（不在同一行、同一列、同一对角线）。虽然这个问题通常用回溯法解决，但 IDA* 也可以应用于此。</p>
+
+    <h3>5.1 启发函数设计</h3>
+    <p>对于部分放置的棋盘，启发函数可以估计"至少还需要多少行才能放完所有皇后"。最简单的可采纳启发是：剩余未放置的皇后数（即 <code>n - 已放置行数</code>）。</p>
+
+    <h3>5.2 IDA* 实现</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;cstdio&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;cstring&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;algorithm&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">8</span>;
+<span class="ty">int</span> queens[N];       <span class="cm">// queens[i] = j 表示第 i 行皇后放在第 j 列</span>
+<span class="ty">bool</span> col[N], diag1[<span class="num">2</span>*N], diag2[<span class="num">2</span>*N];
+<span class="ty">int</span> threshold, minNext;
+<span class="ty">bool</span> found;
+
+<span class="cm">// 启发函数：已放置的皇后之间冲突对数</span>
+<span class="ty">int</span> <span class="fn">conflicts</span>() {
+    <span class="ty">int</span> cnt = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; N; i++)
+        <span class="kw">for</span> (<span class="ty">int</span> j = i + <span class="num">1</span>; j &lt; N; j++)
+            <span class="kw">if</span> (queens[i] >= <span class="num">0</span> &amp;&amp; queens[j] >= <span class="num">0</span>)
+                <span class="kw">if</span> (<span class="fn">abs</span>(i-j) == <span class="fn">abs</span>(queens[i]-queens[j]))
+                    cnt++;
+    <span class="kw">return</span> cnt;
+}
+
+<span class="ty">void</span> <span class="fn">dfs</span>(<span class="ty">int</span> row, <span class="ty">int</span> placed) {
+    <span class="kw">if</span> (found) <span class="kw">return</span>;
+    <span class="kw">if</span> (row == N) { found = <span class="kw">true</span>; <span class="kw">return</span>; }
+
+    <span class="cm">// f = 已用行数 + 剩余行数(至少每行一个) + 当前冲突数</span>
+    <span class="ty">int</span> h = (N - row) + <span class="fn">conflicts</span>();
+    <span class="kw">if</span> (placed + h > threshold) {
+        minNext = <span class="fn">min</span>(minNext, placed + h);
+        <span class="kw">return</span>;
+    }
+
+    <span class="kw">for</span> (<span class="ty">int</span> c = <span class="num">0</span>; c &lt; N; c++) {
+        <span class="kw">if</span> (col[c] || diag1[row - c + N] || diag2[row + c]) <span class="kw">continue</span>;
+        queens[row] = c;
+        col[c] = diag1[row - c + N] = diag2[row + c] = <span class="kw">true</span>;
+        <span class="fn">dfs</span>(row + <span class="num">1</span>, placed + <span class="num">1</span>);
+        col[c] = diag1[row - c + N] = diag2[row + c] = <span class="kw">false</span>;
+        queens[row] = <span class="num">-1</span>;
+        <span class="kw">if</span> (found) <span class="kw">return</span>;
+    }
+}
+
+<span class="ty">void</span> <span class="fn">solve_queens</span>() {
+    <span class="fn">memset</span>(queens, <span class="num">-1</span>, <span class="kw">sizeof</span>(queens));
+    threshold = N;  <span class="cm">// 初始阈值: 至少需要 N 行</span>
+    <span class="kw">while</span> (!found) {
+        minNext = INT_MAX;
+        <span class="fn">dfs</span>(<span class="num">0</span>, <span class="num">0</span>);
+        <span class="kw">if</span> (!found) threshold = minNext;
+    }
+}</code></pre>
+
+    <div class="box box-info">
+      <div class="box-title">说明</div>
+      <p>八皇后问题状态空间较小（仅 92 种解），用普通回溯法已经足够快。这里用 IDA* 演示主要是为了理解算法框架。在实际竞赛中，IDA* 更适合状态空间极大、启发函数有效的场景。</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 6. 完整 C++ 模板 -->
+  <!-- ============================================================ -->
+  <div class="section" id="template">
+    <h2>6. 完整 C++ 模板</h2>
+
+    <h3>6.1 IDS 模板</h3>
+    <pre><code><span class="cm">// 迭代加深搜索模板 — 适用于树上最短路、博弈搜索等</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> MAXD = <span class="num">30</span>;  <span class="cm">// 最大深度限制</span>
+
+<span class="ty">bool</span> found;
+<span class="ty">int</span> maxDepth;
+<span class="ty">int</span> path[MAXD];      <span class="cm">// 记录搜索路径</span>
+
+<span class="cm">// state: 当前状态, depth: 当前深度</span>
+<span class="ty">void</span> <span class="fn">dfs_ids</span>(State state, <span class="ty">int</span> depth) {
+    <span class="kw">if</span> (found) <span class="kw">return</span>;
+    <span class="kw">if</span> (depth > maxDepth) <span class="kw">return</span>;
+    <span class="kw">if</span> (<span class="fn">isGoal</span>(state)) {
+        found = <span class="kw">true</span>;
+        <span class="cm">// 输出/记录答案</span>
+        <span class="kw">return</span>;
+    }
+    <span class="kw">for</span> (<span class="kw">auto</span>&amp; next : <span class="fn">getNextStates</span>(state)) {
+        path[depth] = next.action;
+        <span class="fn">dfs_ids</span>(next, depth + <span class="num">1</span>);
+    }
+}
+
+<span class="ty">int</span> <span class="fn">ids_solve</span>(State start) {
+    <span class="kw">for</span> (maxDepth = <span class="num">0</span>; maxDepth &lt;= MAXD; maxDepth++) {
+        found = <span class="kw">false</span>;
+        <span class="fn">dfs_ids</span>(start, <span class="num">0</span>);
+        <span class="kw">if</span> (found) <span class="kw">return</span> maxDepth;
+    }
+    <span class="kw">return</span> <span class="num">-1</span>;  <span class="cm">// 未找到</span>
+}</code></pre>
+
+    <h3>6.2 IDA* 模板</h3>
+    <pre><code><span class="cm">// IDA* 模板 — 适用于大规模状态空间最优解搜索</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="ty">int</span> threshold, minNext;
+<span class="ty">bool</span> found;
+
+<span class="cm">// 启发函数: 必须可采纳 (不高估真实代价)</span>
+<span class="ty">int</span> <span class="fn">heuristic</span>(<span class="kw">const</span> State&amp; s);
+
+<span class="cm">// 从 state 到 next 的移动代价</span>
+<span class="ty">int</span> <span class="fn">stepCost</span>(<span class="kw">const</span> State&amp; state, <span class="kw">const</span> State&amp; next);
+
+<span class="ty">void</span> <span class="fn">dfs_idastar</span>(State state, <span class="ty">int</span> g) {
+    <span class="kw">if</span> (found) <span class="kw">return</span>;
+    <span class="ty">int</span> f = g + <span class="fn">heuristic</span>(state);
+    <span class="kw">if</span> (f > threshold) {
+        minNext = <span class="fn">min</span>(minNext, f);
+        <span class="kw">return</span>;
+    }
+    <span class="kw">if</span> (<span class="fn">isGoal</span>(state)) {
+        found = <span class="kw">true</span>;
+        <span class="kw">return</span>;
+    }
+    <span class="kw">for</span> (<span class="kw">auto</span>&amp; next : <span class="fn">getNextStates</span>(state)) {
+        <span class="fn">dfs_idastar</span>(next, g + <span class="fn">stepCost</span>(state, next));
+        <span class="kw">if</span> (found) <span class="kw">return</span>;
+    }
+}
+
+<span class="ty">int</span> <span class="fn">ida_star_solve</span>(State start) {
+    threshold = <span class="fn">heuristic</span>(start);
+    <span class="kw">while</span> (!found) {
+        minNext = INT_MAX;
+        <span class="fn">dfs_idastar</span>(start, <span class="num">0</span>);
+        <span class="kw">if</span> (found) <span class="kw">return</span> threshold;
+        <span class="kw">if</span> (minNext == INT_MAX) <span class="kw">return</span> <span class="num">-1</span>; <span class="cm">// 无解</span>
+        threshold = minNext;
+    }
+    <span class="kw">return</span> <span class="num">-1</span>;
+}</code></pre>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 7. 复杂度分析 -->
+  <!-- ============================================================ -->
+  <div class="section" id="complexity">
+    <h2>7. 复杂度分析</h2>
+
+    <h3>7.1 IDS 复杂度</h3>
+    <p>设分支因子为 <code>b</code>，目标在深度 <code>d</code>。IDS 在第 i 轮搜索深度 &le; i 的所有节点，节点数为 <code>O(b^i)</code>。</p>
+
+    <div class="complexity">
+      <span class="label">总扩展节点数</span>
+      <span class="value">b^d + b^(d-1) + ... + b = O(b^d)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(d)</span>
+      <span class="label">仅存储当前路径</span>
+    </div>
+
+    <p>最底层节点占总数的 <code>(b-1)/b</code>，所以重复搜索的代价很小。当 b=2 时，IDS 扩展的节点数恰好是 BFS 的 2 倍；当 b=10 时，仅多约 11%。</p>
+
+    <h3>7.2 IDA* 复杂度</h3>
+    <p>IDA* 的复杂度取决于启发函数的质量。设最优解代价为 C*，启发函数的平均误差为 &epsilon;。</p>
+
+    <div class="complexity">
+      <span class="label">最好情况</span>
+      <span class="value">O(d)</span>
+      <span class="label">h(n) = h*(n) 完美启发</span>
+    </div>
+    <div class="complexity">
+      <span class="label">最坏情况</span>
+      <span class="value">O(b^d)</span>
+      <span class="label">h(n) = 0 退化为 IDS</span>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">迭代轮数</div>
+      <p>IDA* 的迭代轮数等于 threshold 的不同取值个数，通常远小于解的深度 d。每一轮的节点扩展数随阈值增大而指数增长，最后一轮的扩展数占主导地位。</p>
+    </div>
+
+    <h3>7.3 IDA* vs A* 空间对比</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>算法</th>
+            <th>空间复杂度</th>
+            <th>15-Puzzle 约需内存</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>A*</td>
+            <td>O(b^d)</td>
+            <td>约数十 GB</td>
+          </tr>
+          <tr>
+            <td>IDA*</td>
+            <td>O(d)</td>
+            <td>约几 KB</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 8. 经典例题汇总 -->
+  <!-- ============================================================ -->
+  <div class="section" id="problems">
+    <h2>8. 经典例题汇总</h2>
+
+    <div class="problem">
+      <div class="problem-title">POJ 1077 - <a href="https://vjudge.net/problem/POJ-1077" target="_blank">Eight (八数码问题)</a></div>
+      <p>3&times;3 的网格中有 1~8 和一个空格，求从初始状态到目标状态的最少移动步数。</p>
+      <p><strong>思路：</strong>IDA* + Manhattan 距离启发。状态空间约 9!/2 &asymp; 18 万，IDA* 秒出。也可用 BFS + 状态压缩。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">UVa 10181 - <a href="https://vjudge.net/problem/UVA-10181" target="_blank">15-Puzzle Problem</a></div>
+      <p>经典的 15 数字华容道问题，IDA* 的标志性题目。</p>
+      <p><strong>思路：</strong>IDA* + Manhattan 距离 + 避免反向移动。注意剪枝条件的正确性。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P1379 - <a href="https://www.luogu.com.cn/problem/P1379" target="_blank">八数码难题</a></div>
+      <p>中文 OJ 上的八数码问题，求最少步数。</p>
+      <p><strong>思路：</strong>BFS + 康托展开判重，或 IDA* + Manhattan 距离。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">UVa 10085 - <a href="https://vjudge.net/problem/UVA-10085" target="_blank">The Most Distant State</a></div>
+      <p>八数码问题的变体，求离初始状态最远的状态及路径。</p>
+      <p><strong>思路：</strong>BFS 或 IDS 枚举所有可达状态，取最远者。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">SPOJ NQUEEN - <a href="https://www.spoj.com/problems/NQUEEN/" target="_blank">Yet Another N-Queen Problem</a></div>
+      <p>N 皇后问题的优化求解。</p>
+      <p><strong>思路：</strong>回溯法 + 位运算剪枝，也可用 IDA* 框架优化。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">POJ 3050 - <a href="https://vjudge.net/problem/POJ-3050" target="_blank">Hopscotch</a></div>
+      <p>5&times;5 网格中从任意位置出发走 6 步，每步收集一个数字，求所有不同 6 位数的个数。</p>
+      <p><strong>思路：</strong>IDS 暴力枚举所有 6 步路径，用 set 去重。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">LeetCode 773 - <a href="https://leetcode.cn/problems/sliding-puzzle/" target="_blank">Sliding Puzzle (滑动谜题)</a></div>
+      <p>2&times;3 的滑动谜题，求最少移动次数。</p>
+      <p><strong>思路：</strong>BFS（状态空间小），或 IDA* + Manhattan 距离。</p>
+    </div>
+  </div>
+
+</div>
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

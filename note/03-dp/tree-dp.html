@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>树形 DP - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- 面包屑导航 -->
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#dp">动态规划篇</a> &gt;
+    树形 DP
+  </div>
+
+  <!-- 页面标题 -->
+  <div class="page-header">
+    <h1>树形 DP</h1>
+    <p class="subtitle">在树结构上定义状态，通过 DFS 自底向上完成状态转移</p>
+    <div class="tags">
+      <span class="tag tag-dp">动态规划</span>
+      <span class="tag tag-graph">树</span>
+      <span class="tag tag-mid">中等 ~ 困难</span>
+      <span class="tag tag-base">DFS</span>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#overview">树形 DP 概述</a></li>
+      <li><a href="#diameter">树的直径</a></li>
+      <li><a href="#centroid">树的重心</a></li>
+      <li><a href="#mis">树上最大独立集</a></li>
+      <li><a href="#knapsack">树上背包</a></li>
+      <li><a href="#rerooting">换根 DP (Rerooting)</a></li>
+    </ul>
+  </div>
+
+  <!-- ==================== 1. 树形DP概述 ==================== -->
+  <div class="section" id="overview">
+    <h2>1. 树形 DP 概述</h2>
+
+    <p>树形 DP 是一类在<strong>树结构</strong>上进行动态规划的算法。核心思想是：以某个节点为根，将问题分解为若干子树上的子问题，利用 DFS 自底向上（从叶子到根）计算状态。</p>
+
+    <h3>1.1 状态定义的一般形式</h3>
+    <p>设 <code>dp[u][...]</code> 表示以 <code>u</code> 为根的子树中，满足某种条件的最优值。方括号内的维度取决于具体问题，例如：</p>
+    <ul>
+      <li><code>dp[u]</code> &mdash; 只与节点相关（如树的直径）</li>
+      <li><code>dp[u][0/1]</code> &mdash; 节点选或不选（如最大独立集）</li>
+      <li><code>dp[u][k]</code> &mdash; 子树中选 k 个节点（如树上背包）</li>
+    </ul>
+
+    <h3>1.2 计算流程</h3>
+    <div class="steps">
+      <div class="step">选定树根（通常为 1），建立邻接表</div>
+      <div class="step">DFS 遍历，先递归处理所有子节点</div>
+      <div class="step">回溯时，利用子节点的 dp 值更新当前节点</div>
+      <div class="step">最终答案通常在 dp[root] 或所有节点的 dp 值中取最优</div>
+    </div>
+
+    <h3>1.3 树形 DP 的计算顺序图示</h3>
+    <div class="diagram">
+      <pre>
+          1 (根)
+         / \
+        2   3
+       / \   \
+      4   5   6
+
+  DFS 访问顺序: 1 -> 2 -> 4 -> 5 -> 3 -> 6
+  DP 计算顺序: 4 -> 5 -> 2 -> 6 -> 3 -> 1  (后序遍历)
+
+  即: 先计算叶子节点, 再逐步向上合并到根
+      </pre>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">核心要点</div>
+      <p>树形 DP 的本质是<strong>后序遍历</strong>：每个节点在处理完所有子树之后才进行自身的状态转移。这保证了子问题的正确性。</p>
+    </div>
+  </div>
+
+  <!-- ==================== 2. 树的直径 ==================== -->
+  <div class="section" id="diameter">
+    <h2>2. 树的直径</h2>
+
+    <p>树的直径定义为树上<strong>任意两点之间最长路径</strong>的长度。这是一个经典的树形 DP 问题，也有两次 DFS 的解法。</p>
+
+    <h3>2.1 DP 解法</h3>
+
+    <h4>状态定义</h4>
+    <p><code>dp[u]</code> = 从节点 u 出发，向子树方向走的<strong>最长路径长度</strong>（即 u 到其子树中某个叶子的最长距离）。</p>
+
+    <h4>状态转移</h4>
+    <p>对于节点 u 的每个子节点 v（边权为 w）：</p>
+    <pre><code><span class="cm">// 转移方程</span>
+<span class="fn">dp</span>[u] = <span class="fn">max</span>(<span class="fn">dp</span>[u], <span class="fn">dp</span>[v] + w)
+
+<span class="cm">// 直径的候选值: 经过 u 的最长路径 = 最长子树路径 + 次长子树路径</span>
+diameter = <span class="fn">max</span>(diameter, best1 + best2)
+<span class="cm">// 其中 best1, best2 是 dp[v] + w 的最大和次大值</span></code></pre>
+
+    <h4>计算过程图示</h4>
+    <div class="diagram">
+      <pre>
+            1
+           / \
+         (2) (3)
+         /     \
+        2       3
+       / \       \
+     (1) (4)    (2)
+     /     \      \
+    4       5      6
+
+  dp[4] = 0          (叶子)
+  dp[5] = 0          (叶子)
+  dp[2] = max(0+1, 0+4) = 4    经过2: 1+4=5
+  dp[6] = 0          (叶子)
+  dp[3] = 0+2 = 2
+  dp[1] = max(4+2, 2+3) = 6    经过1: (4+2)+(2+3) = 11
+
+  直径 = max(5, 11) = 11   (路径: 5->2->1->3->6, 权值 4+2+3+2)
+      </pre>
+    </div>
+
+    <h4>C++ 代码模板</h4>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> N = <span class="num">1e5</span> + <span class="num">5</span>;
+<span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; g[N];  <span class="cm">// {邻接点, 边权}</span>
+<span class="ty">int</span> dp[N];      <span class="cm">// dp[u]: u 向下走的最长路径</span>
+<span class="ty">int</span> diameter;   <span class="cm">// 全局直径</span>
+
+<span class="ty">void</span> <span class="fn">dfs</span>(<span class="ty">int</span> u, <span class="ty">int</span> fa) {
+    dp[u] = <span class="num">0</span>;
+    <span class="ty">int</span> best1 = <span class="num">0</span>, best2 = <span class="num">0</span>;  <span class="cm">// 最长 & 次长</span>
+    (<span class="kw">auto</span>&amp; [v, w] : g[u]) {
+        <span class="kw">if</span> (v == fa) <span class="kw">continue</span>;
+        <span class="fn">dfs</span>(v, u);
+        <span class="ty">int</span> len = dp[v] + w;
+        dp[u] = <span class="fn">max</span>(dp[u], len);
+        <span class="cm">// 更新最长和次长</span>
+        <span class="kw">if</span> (len &gt;= best1) {
+            best2 = best1;
+            best1 = len;
+        } <span class="kw">else if</span> (len &gt; best2) {
+            best2 = len;
+        }
+    }
+    diameter = <span class="fn">max</span>(diameter, best1 + best2);
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n;
+    cin &gt;&gt; n;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; n; i++) {
+        <span class="ty">int</span> u, v, w;
+        cin &gt;&gt; u &gt;&gt; v &gt;&gt; w;
+        g[u].<span class="fn">push_back</span>({v, w});
+        g[v].<span class="fn">push_back</span>({u, w});
+    }
+    diameter = <span class="num">0</span>;
+    <span class="fn">dfs</span>(<span class="num">1</span>, <span class="num">0</span>);
+    cout &lt;&lt; diameter &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(n)</span>
+    </div>
+
+    <h3>2.2 两次 DFS 解法</h3>
+    <p>另一种经典做法：</p>
+    <ol>
+      <li>从任意节点（如 1）出发 DFS，找到距离最远的节点 x</li>
+      <li>从 x 出发 DFS，找到距离最远的节点 y</li>
+      <li>x 到 y 的距离即为直径</li>
+    </ol>
+
+    <pre><code><span class="ty">int</span> dist[N], farNode;
+<span class="ty">int</span> maxDist;
+
+<span class="ty">void</span> <span class="fn">dfsDist</span>(<span class="ty">int</span> u, <span class="ty">int</span> fa, <span class="ty">int</span> d) {
+    dist[u] = d;
+    <span class="kw">if</span> (d &gt; maxDist) {
+        maxDist = d;
+        farNode = u;
+    }
+    <span class="kw">for</span> (<span class="kw">auto</span>&amp; [v, w] : g[u]) {
+        <span class="kw">if</span> (v == fa) <span class="kw">continue</span>;
+        <span class="fn">dfsDist</span>(v, u, d + w);
+    }
+}
+
+<span class="ty">int</span> <span class="fn">getDiameter</span>() {
+    maxDist = <span class="num">-1</span>;
+    <span class="fn">dfsDist</span>(<span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span>);  <span class="cm">// 第一次: 找到离 1 最远的 farNode</span>
+    maxDist = <span class="num">-1</span>;
+    <span class="fn">dfsDist</span>(farNode, <span class="num">0</span>, <span class="num">0</span>);  <span class="cm">// 第二次: 从 farNode 出发</span>
+    <span class="kw">return</span> maxDist;
+}</code></pre>
+
+    <h3>2.3 两种方法的比较</h3>
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>方法</th>
+          <th>优点</th>
+          <th>缺点</th>
+          <th>适用场景</th>
+        </tr>
+        <tr>
+          <td>树形 DP</td>
+          <td>一次 DFS，同时可求每个节点的最远距离</td>
+          <td>代码稍长</td>
+          <td>需要子树信息、带权树</td>
+        </tr>
+        <tr>
+          <td>两次 DFS</td>
+          <td>代码简洁，直觉清晰</td>
+          <td>两次遍历，只能求直径长度</td>
+          <td>只需直径长度</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">经典问题</div>
+      <p><a href="https://www.luogu.com.cn/problem/P2195" target="_blank">Luogu P2195 - HXY造公园</a> &mdash; 树的直径 + 并查集</p>
+      <p><a href="https://www.luogu.com.cn/problem/P1099" target="_blank">Luogu P1099 - 树网的核</a> &mdash; 树的直径 + 暴力/枚举</p>
+    </div>
+  </div>
+
+  <!-- ==================== 3. 树的重心 ==================== -->
+  <div class="section" id="centroid">
+    <h2>3. 树的重心</h2>
+
+    <p>树的重心（Centroid）是树中一个特殊节点：删除该节点后，剩余各个连通块的大小的<strong>最大值最小</strong>。</p>
+
+    <h3>3.1 性质</h3>
+    <ul>
+      <li>一棵树的重心有 1 个或 2 个</li>
+      <li>若有两个重心，则它们必然相邻，且删除后各自所在连通块大小恰好为 n/2</li>
+      <li>重心到所有点的距离之和最小</li>
+      <li>两棵树合并时，新树的重心在原来两棵树重心的路径上</li>
+    </ul>
+
+    <h3>3.2 状态定义</h3>
+    <p><code>sz[u]</code> = 以 u 为根的子树大小</p>
+    <p>对于节点 u，删除它后：</p>
+    <ul>
+      <li>每个子树 v 的连通块大小为 <code>sz[v]</code></li>
+      <li>"上方"连通块大小为 <code>n - sz[u]</code></li>
+    </ul>
+    <p>重心是使 <code>max(max_subtree_size, n - sz[u])</code> 最小的节点。</p>
+
+    <h3>3.3 计算图示</h3>
+    <div class="diagram">
+      <pre>
+          1            sz: 7
+         / \
+        2   3          sz: 3, 3
+       / \   \
+      4   5   6        sz: 1, 1, 1
+          |
+          7            sz: 1
+
+  对于节点 1:
+    子树最大 = max(sz[2], sz[3]) = max(3, 3) = 3
+    上方    = n - sz[1] = 7 - 7 = 0
+    max_size = 3
+
+  对于节点 2:
+    子树最大 = max(sz[4], sz[5]) = max(1, 2) = 2
+    上方    = 7 - 3 = 4
+    max_size = 4
+
+  对于节点 5:
+    子树最大 = sz[7] = 1
+    上方    = 7 - 2 = 5
+    max_size = 5
+
+  重心 = 节点 1 或 节点 3 (max_size = 3 最小)
+      </pre>
+    </div>
+
+    <h3>3.4 C++ 代码模板</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> N = <span class="num">1e5</span> + <span class="num">5</span>;
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; g[N];
+<span class="ty">int</span> sz[N], n;
+<span class="ty">int</span> centroid, minMaxSize = INT_MAX;
+
+<span class="ty">void</span> <span class="fn">dfs</span>(<span class="ty">int</span> u, <span class="ty">int</span> fa) {
+    sz[u] = <span class="num">1</span>;
+    <span class="ty">int</span> maxSub = <span class="num">0</span>;  <span class="cm">// 最大子树大小</span>
+    <span class="kw">for</span> (<span class="ty">int</span> v : g[u]) {
+        <span class="kw">if</span> (v == fa) <span class="kw">continue</span>;
+        <span class="fn">dfs</span>(v, u);
+        sz[u] += sz[v];
+        maxSub = <span class="fn">max</span>(maxSub, sz[v]);
+    }
+    <span class="cm">// "上方"连通块</span>
+    <span class="ty">int</span> upSize = n - sz[u];
+    maxSub = <span class="fn">max</span>(maxSub, upSize);
+    <span class="cm">// 更新重心</span>
+    <span class="kw">if</span> (maxSub &lt; minMaxSize) {
+        minMaxSize = maxSub;
+        centroid = u;
+    }
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    cin &gt;&gt; n;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; n; i++) {
+        <span class="ty">int</span> u, v;
+        cin &gt;&gt; u &gt;&gt; v;
+        g[u].<span class="fn">push_back</span>(v);
+        g[v].<span class="fn">push_back</span>(u);
+    }
+    <span class="fn">dfs</span>(<span class="num">1</span>, <span class="num">0</span>);
+    cout &lt;&lt; centroid &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n)</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">经典问题</div>
+      <p><a href="https://www.luogu.com.cn/problem/P1364" target="_blank">Luogu P1364 - 医院设置</a> &mdash; 求带权重心使距离和最小</p>
+      <p><a href="https://www.luogu.com.cn/problem/P2986" target="_blank">Luogu P2986 - [USACO10MAR] Great Cow Gathering G</a> &mdash; 换根DP求距离和</p>
+    </div>
+  </div>
+
+  <!-- ==================== 4. 树上最大独立集 ==================== -->
+  <div class="section" id="mis">
+    <h2>4. 树上最大独立集</h2>
+
+    <p>给定一棵树，每个节点有权值。选出若干节点使得<strong>任意两个被选节点不相邻</strong>，且权值之和最大。这是树上"选与不选"类型的经典模型。</p>
+
+    <h3>4.1 状态定义</h3>
+    <ul>
+      <li><code>dp[u][1]</code> = 选节点 u 时，以 u 为根的子树的最大独立集权值和</li>
+      <li><code>dp[u][0]</code> = 不选节点 u 时，以 u 为根的子树的最大独立集权值和</li>
+    </ul>
+
+    <h3>4.2 状态转移</h3>
+    <pre><code><span class="cm">// 选 u: 子节点 v 不能选</span>
+dp[u][<span class="num">1</span>] = val[u] + <span class="fn">sum</span>(dp[v][<span class="num">0</span>])
+
+<span class="cm">// 不选 u: 子节点 v 可选可不选, 取较大值</span>
+dp[u][<span class="num">0</span>] = <span class="fn">sum</span>(<span class="fn">max</span>(dp[v][<span class="num">0</span>], dp[v][<span class="num">1</span>]))</code></pre>
+
+    <h3>4.3 计算图示</h3>
+    <div class="diagram">
+      <pre>
+  树结构 (节点旁数字为权值):
+
+            1(10)
+           / \
+        2(5)  3(8)
+       / \
+    4(3)  5(7)
+
+  自底向上计算:
+  dp[4][0]=0,  dp[4][1]=3
+  dp[5][0]=0,  dp[5][1]=7
+
+  dp[2][1] = 5 + dp[4][0] + dp[5][0] = 5+0+0 = 5
+  dp[2][0] = max(0,3) + max(0,7) = 3+7 = 10
+
+  dp[3][0]=0,  dp[3][1]=8
+
+  dp[1][1] = 10 + dp[2][0] + dp[3][0] = 10+10+0 = 20
+  dp[1][0] = max(dp[2][0],dp[2][1]) + max(dp[3][0],dp[3][1])
+           = max(10,5) + max(0,8) = 10+8 = 18
+
+  答案 = max(dp[1][0], dp[1][1]) = max(18, 20) = 20
+  选中节点: 1, 4, 5 (权值 10+3+7=20)
+      </pre>
+    </div>
+
+    <h3>4.4 C++ 代码模板</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> N = <span class="num">1e5</span> + <span class="num">5</span>;
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; g[N];
+<span class="ty">int</span> val[N], dp[N][<span class="num">2</span>];
+
+<span class="ty">void</span> <span class="fn">dfs</span>(<span class="ty">int</span> u, <span class="ty">int</span> fa) {
+    dp[u][<span class="num">1</span>] = val[u];
+    dp[u][<span class="num">0</span>] = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> v : g[u]) {
+        <span class="kw">if</span> (v == fa) <span class="kw">continue</span>;
+        <span class="fn">dfs</span>(v, u);
+        dp[u][<span class="num">1</span>] += dp[v][<span class="num">0</span>];
+        dp[u][<span class="num">0</span>] += <span class="fn">max</span>(dp[v][<span class="num">0</span>], dp[v][<span class="num">1</span>]);
+    }
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n;
+    cin &gt;&gt; n;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) cin &gt;&gt; val[i];
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; n; i++) {
+        <span class="ty">int</span> u, v;
+        cin &gt;&gt; u &gt;&gt; v;
+        g[u].<span class="fn">push_back</span>(v);
+        g[v].<span class="fn">push_back</span>(u);
+    }
+    <span class="fn">dfs</span>(<span class="num">1</span>, <span class="num">0</span>);
+    cout &lt;&lt; <span class="fn">max</span>(dp[<span class="num">1</span>][<span class="num">0</span>], dp[<span class="num">1</span>][<span class="num">1</span>]) &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(n)</span>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">扩展: 无权最大独立集</div>
+      <p>若每个节点权值均为 1，则问题退化为"在树上选最多的互不相邻节点"，也即经典的树上最大独立集。转移方程不变，只是权值恒为 1。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">经典问题</div>
+      <p><a href="https://www.luogu.com.cn/problem/P1352" target="_blank">Luogu P1352 - 没有上司的舞会</a> &mdash; 树上最大独立集模板题</p>
+      <p><a href="https://codeforces.com/contest/982/problem/C" target="_blank">CF 982C - Cut 'em all!</a> &mdash; 树上选与不选 + 奇偶性</p>
+    </div>
+  </div>
+
+  <!-- ==================== 5. 树上背包 ==================== -->
+  <div class="section" id="knapsack">
+    <h2>5. 树上背包 (分组背包)</h2>
+
+    <p>给定一棵 n 个节点的有根树，每个节点有体积和价值。在以 u 为根的子树中<strong>恰好选择 k 个节点</strong>（包含 u），求最大价值。这是经典的"树上分组背包"问题。</p>
+
+    <h3>5.1 状态定义</h3>
+    <p><code>dp[u][k]</code> = 在以 u 为根的子树中，选择恰好 k 个节点（必含 u）时的最大价值。</p>
+
+    <h3>5.2 转移思想</h3>
+    <p>将 u 的每个子节点 v 看作一组物品，从这组物品中选若干个（0 ~ sz[v]）。这是一个分组背包，需要<strong>逆序枚举</strong>总容量以保证 01 背包性质。</p>
+
+    <pre><code><span class="cm">// 对于 u 的子节点 v, 枚举分配给 v 子树的节点数 j</span>
+<span class="cm">// 必须倒序枚举 k, 保证 v 子树的选择只被用一次</span>
+<span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; g[u].<span class="fn">size</span>(); i++) {
+    <span class="ty">int</span> v = g[u][i];
+    <span class="fn">dfs</span>(v, u);
+    <span class="kw">for</span> (<span class="ty">int</span> k = curSize; k &gt;= <span class="num">1</span>; k--)       <span class="cm">// 倒序枚举总容量</span>
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">1</span>; j &lt;= <span class="fn">min</span>(k, sz[v]); j++) <span class="cm">// 分配 j 个给 v</span>
+            dp[u][k] = <span class="fn">max</span>(dp[u][k], dp[u][k-j] + dp[v][j]);
+}</code></pre>
+
+    <h3>5.3 计算图示</h3>
+    <div class="diagram">
+      <pre>
+  以节点 1 为根, 选恰好 2 个节点:
+
+          1 (val=5)
+         / \
+      2(3)  3(4)
+       |
+     4(2)
+
+  初始: dp[1] = [5, -inf, -inf, -inf]  (只选1个即自身)
+
+  处理子节点 2 (dp[2] = [3, -inf], sz[2]=2):
+    k 从 2 倒序到 1:
+    k=2: dp[1][2] = max(dp[1][2], dp[1][1]+dp[2][1]) = max(-inf, 5+3) = 8
+    k=1: 不变
+
+  处理子节点 3 (dp[3] = [4], sz[3]=1):
+    k=2: dp[1][2] = max(8, dp[1][1]+dp[3][1]) = max(8, 5+4) = 9
+    k=1: 不变
+
+  dp[1][2] = 9  (选节点 1 和 3)
+      </pre>
+    </div>
+
+    <h3>5.4 C++ 代码模板</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> N = <span class="num">205</span>;
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; g[N];
+<span class="ty">int</span> val[N], sz[N];
+<span class="ty">int</span> dp[N][N];  <span class="cm">// dp[u][k]: 子树 u 中选 k 个节点的最大价值</span>
+<span class="ty">int</span> n, m;
+
+<span class="ty">void</span> <span class="fn">dfs</span>(<span class="ty">int</span> u, <span class="ty">int</span> fa) {
+    sz[u] = <span class="num">1</span>;
+    <span class="cm">// 初始化: 只选自己</span>
+    dp[u][<span class="num">1</span>] = val[u];
+
+    <span class="kw">for</span> (<span class="ty">int</span> v : g[u]) {
+        <span class="kw">if</span> (v == fa) <span class="kw">continue</span>;
+        <span class="fn">dfs</span>(v, u);
+
+        <span class="cm">// 分组背包: 倒序枚举总容量</span>
+        <span class="kw">for</span> (<span class="ty">int</span> k = sz[u]; k &gt;= <span class="num">1</span>; k--) {
+            <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">1</span>; j &lt;= <span class="fn">min</span>(sz[v], m - k); j++) {
+                dp[u][k + j] = <span class="fn">max</span>(dp[u][k + j], dp[u][k] + dp[v][j]);
+            }
+        }
+        sz[u] += sz[v];
+    }
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    cin &gt;&gt; n &gt;&gt; m;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) cin &gt;&gt; val[i];
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; n; i++) {
+        <span class="ty">int</span> u, v;
+        cin &gt;&gt; u &gt;&gt; v;
+        g[u].<span class="fn">push_back</span>(v);
+        g[v].<span class="fn">push_back</span>(u);
+    }
+
+    <span class="cm">// memset dp 为极小值, dp[u][0] = 0</span>
+    <span class="fn">memset</span>(dp, <span class="num">0xcf</span>, <span class="kw">sizeof</span>(dp));
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) dp[i][<span class="num">0</span>] = <span class="num">0</span>;
+
+    <span class="fn">dfs</span>(<span class="num">1</span>, <span class="num">0</span>);
+    cout &lt;&lt; dp[<span class="num">1</span>][m] &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n * m^2) 朴素 / O(n * m) 求和优化</span>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">复杂度优化提示</div>
+      <p>朴素的树上背包复杂度为 O(n * m^2)。可以通过限制内层循环的上界（只枚举到当前已合并的子树大小之和）来优化到 O(n * m)，这相当于对每条边只贡献 O(min(sz[u], m)) 的转移量，总复杂度为 O(n * m)。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">经典问题</div>
+      <p><a href="https://www.luogu.com.cn/problem/P2014" target="_blank">Luogu P2014 - [CTSC1997] 选课</a> &mdash; 树上背包模板题，森林加超级根</p>
+      <p><a href="https://codeforces.com/contest/1092/problem/F" target="_blank">CF 1092F - Tree with Maximum Cost</a> &mdash; 树上背包变体</p>
+    </div>
+  </div>
+
+  <!-- ==================== 6. 换根DP ==================== -->
+  <div class="section" id="rerooting">
+    <h2>6. 换根 DP (Rerooting)</h2>
+
+    <p>换根 DP 是树形 DP 的高级技巧。当题目要求<strong>以每个节点为根</strong>时的最优值，如果对每个节点都做一次 DFS，复杂度为 O(n^2)。换根 DP 通过两次 DFS（一次自底向上、一次自顶向下）将复杂度降为 O(n)。</p>
+
+    <h3>6.1 什么时候使用换根 DP</h3>
+    <ul>
+      <li>需要求<strong>每个节点</strong>作为根时的答案（而非只求某一个根的答案）</li>
+      <li>问题可以拆分为"向下的贡献"和"向上的贡献"</li>
+      <li>典型场景：每个节点到其他所有节点的距离之和、每个节点的子树之外的信息</li>
+    </ul>
+
+    <h3>6.2 两次 DFS 模板</h3>
+
+    <h4>第一遍 DFS (自底向上)</h4>
+    <p>任选一个根（通常为 1），计算每个节点只考虑子树时的 dp 值。</p>
+
+    <h4>第二遍 DFS (自顶向下)</h4>
+    <p>从根出发，利用父节点的 dp 值，推算出"将根从父节点换到子节点"后的值。</p>
+
+    <pre><code><span class="cm">// down[u]: 自底向上, 只考虑 u 的子树</span>
+<span class="cm">// dp[u]:   最终答案, 考虑整棵树以 u 为根</span>
+<span class="cm">//</span>
+<span class="cm">// 第一遍: down[u] 从子节点 v 的 down[v] 转移</span>
+<span class="cm">// 第二遍: dp[v] = f(dp[u], down[v])</span>
+<span class="cm">//         即 v 的答案 = u 的答案 减去 v 对 u 的贡献, 再加上 u 对 v 的新贡献</span></code></pre>
+
+    <h3>6.3 经典例题: 树上距离之和</h3>
+    <p>给定一棵 n 个节点的树，对每个节点 u，求 u 到其他所有节点的距离之和。</p>
+
+    <h4>状态定义</h4>
+    <ul>
+      <li><code>down[u]</code> = 以 1 为根时，u 到其子树中所有节点的距离之和</li>
+      <li><code>sz[u]</code> = 以 1 为根时，u 的子树大小</li>
+      <li><code>dp[u]</code> = 以 u 为根时，u 到所有其他节点的距离之和（最终答案）</li>
+    </ul>
+
+    <h4>转移方程</h4>
+    <pre><code><span class="cm">// 第一遍 (自底向上)</span>
+down[u] = <span class="fn">sum</span>(down[v] + sz[v])  <span class="cm">// v 是 u 的子节点</span>
+sz[u] = <span class="num">1</span> + <span class="fn">sum</span>(sz[v])
+
+<span class="cm">// 第二遍 (自顶向下): 换根 u -> v</span>
+<span class="cm">// 当根从 u 换到 v 时:</span>
+<span class="cm">//   - v 子树中的节点距离各减少 1</span>
+<span class="cm">//   - 其余节点 (n - sz[v] 个) 距离各增加 1</span>
+dp[v] = dp[u] - sz[v] + (n - sz[v])
+dp[v] = dp[u] + n - <span class="num">2</span> * sz[v]</code></pre>
+
+    <h4>换根过程图示</h4>
+    <div class="diagram">
+      <pre>
+  树结构:
+        1
+       / \
+      2   3
+     /
+    4
+
+  n = 4
+
+  === 第一遍: 以 1 为根, 自底向上 ===
+  sz[4]=1, down[4]=0
+  sz[2]=2, down[2]=(down[4]+sz[4]) + 0 = 1
+  sz[3]=1, down[3]=0
+  sz[1]=4, down[1]=(down[2]+sz[2]) + (down[3]+sz[3]) = (1+2) + (0+1) = 4
+
+  dp[1] = down[1] = 4
+
+  === 第二遍: 自顶向下, 换根 ===
+  根从 1 换到 2:
+    dp[2] = dp[1] + n - 2*sz[2] = 4 + 4 - 4 = 4
+  根从 1 换到 3:
+    dp[3] = dp[1] + n - 2*sz[3] = 4 + 4 - 2 = 6
+  根从 2 换到 4:
+    dp[4] = dp[2] + n - 2*sz[4] = 4 + 4 - 2 = 6
+
+  答案: dp = [4, 4, 6, 6]
+  验证: 节点1到其余: 1+1+2=4  节点2: 1+2+1=4  节点3: 1+2+3=6  节点4: 2+1+3=6  OK!
+      </pre>
+    </div>
+
+    <h3>6.4 C++ 完整代码</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> N = <span class="num">2e5</span> + <span class="num">5</span>;
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; g[N];
+<span class="ty">long long</span> down[N];  <span class="cm">// down[u]: u 到子树中所有节点的距离和</span>
+<span class="ty">long long</span> dp[N];    <span class="cm">// dp[u]: 以 u 为根时到所有节点的距离和</span>
+<span class="ty">int</span> sz[N];
+<span class="ty">int</span> n;
+
+<span class="cm">// 第一遍 DFS: 自底向上计算 down[u] 和 sz[u]</span>
+<span class="ty">void</span> <span class="fn">dfs1</span>(<span class="ty">int</span> u, <span class="ty">int</span> fa) {
+    sz[u] = <span class="num">1</span>;
+    down[u] = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> v : g[u]) {
+        <span class="kw">if</span> (v == fa) <span class="kw">continue</span>;
+        <span class="fn">dfs1</span>(v, u);
+        sz[u] += sz[v];
+        down[u] += down[v] + sz[v];
+    }
+}
+
+<span class="cm">// 第二遍 DFS: 自顶向下, 利用父节点信息推算 dp[v]</span>
+<span class="ty">void</span> <span class="fn">dfs2</span>(<span class="ty">int</span> u, <span class="ty">int</span> fa) {
+    <span class="kw">for</span> (<span class="ty">int</span> v : g[u]) {
+        <span class="kw">if</span> (v == fa) <span class="kw">continue</span>;
+        <span class="cm">// 换根: 将根从 u 换到 v</span>
+        <span class="cm">// v 子树内: 距离减少 sz[v]</span>
+        <span class="cm">// v 子树外: 距离增加 (n - sz[v])</span>
+        dp[v] = dp[u] + n - <span class="num">2</span> * sz[v];
+        <span class="fn">dfs2</span>(v, u);
+    }
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    ios::<span class="fn">sync_with_stdio</span>(<span class="kw">false</span>);
+    cin.<span class="fn">tie</span>(<span class="kw">nullptr</span>);
+    cin &gt;&gt; n;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; n; i++) {
+        <span class="ty">int</span> u, v;
+        cin &gt;&gt; u &gt;&gt; v;
+        g[u].<span class="fn">push_back</span>(v);
+        g[v].<span class="fn">push_back</span>(u);
+    }
+    <span class="fn">dfs1</span>(<span class="num">1</span>, <span class="num">0</span>);
+    dp[<span class="num">1</span>] = down[<span class="num">1</span>];
+    <span class="fn">dfs2</span>(<span class="num">1</span>, <span class="num">0</span>);
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        cout &lt;&lt; dp[i] &lt;&lt; (i == n ? <span class="str">'\n'</span> : <span class="str">' '</span>);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(n)</span>
+    </div>
+
+    <h3>6.5 换根 DP 通用模板</h3>
+    <p>换根 DP 的核心在于"去除旧贡献、加入新贡献"。以下是通用模板框架：</p>
+
+    <pre><code><span class="cm">// 换根 DP 通用框架 (适用于需要以每个节点为根求答案的场景)</span>
+<span class="cm">//</span>
+<span class="cm">// 第一遍 dfs_down: 计算每棵子树对父节点的贡献</span>
+<span class="cm">// 第二遍 dfs_up:   计算"子树以外的部分"对当前节点的贡献</span>
+
+<span class="ty">void</span> <span class="fn">dfs_down</span>(<span class="ty">int</span> u, <span class="ty">int</span> fa) {
+    down[u] = <span class="fn">combine</span>(u 的初始值);
+    <span class="kw">for</span> (<span class="ty">int</span> v : g[u]) {
+        <span class="kw">if</span> (v == fa) <span class="kw">continue</span>;
+        <span class="fn">dfs_down</span>(v, u);
+        down[u] = <span class="fn">merge</span>(down[u], <span class="fn">contribution</span>(v, down[v]));
+    }
+}
+
+<span class="ty">void</span> <span class="fn">dfs_up</span>(<span class="ty">int</span> u, <span class="ty">int</span> fa, <span class="ty">T</span> up_contrib) {
+    <span class="cm">// dp[u] = merge(down[u], up_contrib)</span>
+    dp[u] = <span class="fn">merge</span>(down[u], up_contrib);
+
+    <span class="cm">// 计算前缀和 & 后缀和, 以便快速去除某个子节点的贡献</span>
+    <span class="ty">int</span> deg = g[u].<span class="fn">size</span>();
+    <span class="ty">vector</span>&lt;<span class="ty">T</span>&gt; pre(deg + <span class="num">2</span>), suf(deg + <span class="num">2</span>);
+    pre[<span class="num">0</span>] = <span class="fn">identity</span>();
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; deg; i++) {
+        <span class="ty">int</span> v = g[u][i];
+        pre[i + <span class="num">1</span>] = <span class="fn">merge</span>(pre[i], (v != fa ? <span class="fn">contribution</span>(v, down[v]) : <span class="fn">identity</span>()));
+    }
+    suf[deg] = <span class="fn">identity</span>();
+    <span class="kw">for</span> (<span class="ty">int</span> i = deg - <span class="num">1</span>; i &gt;= <span class="num">0</span>; i--) {
+        <span class="ty">int</span> v = g[u][i];
+        suf[i] = <span class="fn">merge</span>(suf[i + <span class="num">1</span>], (v != fa ? <span class="fn">contribution</span>(v, down[v]) : <span class="fn">identity</span>()));
+    }
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; deg; i++) {
+        <span class="ty">int</span> v = g[u][i];
+        <span class="kw">if</span> (v == fa) <span class="kw">continue</span>;
+        <span class="cm">// v 的上方贡献 = up_contrib + 所有兄弟子树的贡献</span>
+        <span class="ty">T</span> new_up = <span class="fn">merge</span>(up_contrib, <span class="fn">merge</span>(pre[i], suf[i + <span class="num">1</span>]));
+        <span class="fn">dfs_up</span>(v, u, <span class="fn">addParentContribution</span>(u, new_up));
+    }
+}</code></pre>
+
+    <div class="box box-info">
+      <div class="box-title">前缀和 / 后缀和技巧</div>
+      <p>在换根时，需要从 u 的所有子节点中"去掉"v 的贡献。如果直接在循环中减去，需要额外处理。使用<strong>前缀和 + 后缀和</strong>可以在 O(deg(u)) 的时间内计算出去掉任意一个子节点后的合并结果，避免嵌套循环。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">经典问题</div>
+      <p><a href="https://www.luogu.com.cn/problem/P2986" target="_blank">Luogu P2986 - [USACO10MAR] Great Cow Gathering G</a> &mdash; 换根DP求距离和</p>
+      <p><a href="https://codeforces.com/contest/1187/problem/E" target="_blank">CF 1187E - Tree Painting</a> &mdash; 换根DP求最大子树权值和</p>
+      <p><a href="https://www.luogu.com.cn/problem/P3478" target="_blank">Luogu P3478 - [POI2008] STA-Station</a> &mdash; 换根DP求每个节点的深度和</p>
+      <p><a href="https://codeforces.com/contest/1324/problem/F" target="_blank">CF 1324F - Maximum White Subtree</a> &mdash; 换根DP + 权值翻转</p>
+    </div>
+  </div>
+
+  <!-- ==================== 总结 ==================== -->
+  <div class="section" id="summary">
+    <h2>总结</h2>
+
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>算法</th>
+          <th>状态定义</th>
+          <th>转移方式</th>
+          <th>复杂度</th>
+        </tr>
+        <tr>
+          <td>树的直径 (DP)</td>
+          <td>dp[u]: u 向下最长路径</td>
+          <td>最长 + 次长合并</td>
+          <td>O(n)</td>
+        </tr>
+        <tr>
+          <td>树的直径 (2x DFS)</td>
+          <td>dist[u]</td>
+          <td>两次 DFS 求最远</td>
+          <td>O(n)</td>
+        </tr>
+        <tr>
+          <td>树的重心</td>
+          <td>sz[u]</td>
+          <td>子树大小取 max</td>
+          <td>O(n)</td>
+        </tr>
+        <tr>
+          <td>最大独立集</td>
+          <td>dp[u][0/1]</td>
+          <td>选与不选分类转移</td>
+          <td>O(n)</td>
+        </tr>
+        <tr>
+          <td>树上背包</td>
+          <td>dp[u][k]</td>
+          <td>分组背包 + 倒序枚举</td>
+          <td>O(nm)</td>
+        </tr>
+        <tr>
+          <td>换根 DP</td>
+          <td>down[u], dp[u]</td>
+          <td>两遍 DFS: 子树 + 补集</td>
+          <td>O(n)</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">解题技巧总结</div>
+      <ul>
+        <li><strong>选根</strong>: 通常以 1 为根即可; 如果是无根树且需要以每个节点为根, 考虑换根 DP</li>
+        <li><strong>状态设计</strong>: 先确定 dp[u] 表示什么, 再考虑如何从子节点转移</li>
+        <li><strong>初始化</strong>: 叶节点的 dp 值是递归的终止条件, 要仔细处理</li>
+        <li><strong>树上背包</strong>: 注意倒序枚举, 控制合并的循环上界来优化复杂度</li>
+        <li><strong>换根</strong>: 关键公式 <code>dp[v] = dp[u] - contribution(v) + new_contribution</code></li>
+        <li><strong>空间</strong>: 树形 DP 通常只需 O(n) 空间, 但树上背包需要 O(nm)</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>双指针 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt; 综合篇 &gt; 双指针
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>双指针</h1>
+    <p class="subtitle">Two Pointers &mdash; 用两个指针高效遍历</p>
+    <div class="tags">
+      <span class="tag tag-base">基础技巧</span>
+      <span class="tag tag-easy">入门</span>
+      <span class="tag tag-mid">进阶应用</span>
+    </div>
+  </div>
+
+  <!-- Table of Contents -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#overview">双指针概述</a></li>
+      <li><a href="#collision">对撞指针</a></li>
+      <li><a href="#sliding">滑动窗口</a></li>
+      <li><a href="#fast-slow">快慢指针</a></li>
+      <li><a href="#template">完整模板</a></li>
+      <li><a href="#problems">经典例题</a></li>
+    </ul>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 1: 双指针概述 -->
+  <!-- ============================== -->
+  <div class="section" id="overview">
+    <h2>双指针概述</h2>
+    <p><strong>双指针</strong>（Two Pointers）是一种常用的算法技巧，通过维护两个指针在数据结构上移动来解决问题。它的核心优势是能将暴力 O(n^2) 优化到 O(n)。</p>
+
+    <h3>三种基本模式</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>模式</th><th>指针方向</th><th>典型应用</th><th>核心思想</th></tr>
+        <tr><td>对撞指针</td><td>从两端向中间</td><td>有序数组两数之和、接水问题</td><td>利用有序性缩小范围</td></tr>
+        <tr><td>滑动窗口</td><td>同方向移动</td><td>最短子数组、最长无重复子串</td><td>维护一个动态区间</td></tr>
+        <tr><td>快慢指针</td><td>同方向不同速度</td><td>环检测、链表中点</td><td>速度差产生位置差</td></tr>
+      </table>
+    </div>
+
+    <h3>双指针为什么高效？</h3>
+    <div class="box box-info">
+      <div class="box-title">核心原理</div>
+      <p>双指针的高效性来源于<strong>单调性</strong>：当左指针向右移动时，右指针不需要回退，也只会向右移动。因此两个指针总共移动 O(n) 次，每次操作 O(1)，总时间复杂度为 O(n)。</p>
+    </div>
+
+    <div class="diagram">
+      <pre>
+  双指针的本质
+
+  暴力: 对于每个 i，遍历所有 j     → O(n^2)
+  双指针: i 和 j 都只前进不后退     → O(n)
+
+  时间线:
+  i:  ──────────────────────────────→
+  j:     ───────────────────────────→
+
+  i 和 j 各自最多走 n 步，总共 2n 步
+      </pre>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 2: 对撞指针 -->
+  <!-- ============================== -->
+  <div class="section" id="collision">
+    <h2>对撞指针</h2>
+    <p>对撞指针是最经典的双指针模式：两个指针分别从数组的两端出发，向中间靠拢。适用于<strong>有序数组</strong>上的搜索问题。</p>
+
+    <h3>问题 1: 两数之和 (有序数组)</h3>
+    <p>给定一个升序数组和目标值 target，找到两个数使得它们的和为 target。</p>
+
+    <div class="diagram">
+      <pre>
+  arr: [1, 3, 5, 7, 9, 11]    target = 12
+
+  初始:  L=0, R=5
+         [1, 3, 5, 7, 9, 11]
+          L                 R
+         1+11=12 == target  ✓ 找到!
+
+  若 target=10:
+         [1, 3, 5, 7, 9, 11]
+          L                 R
+         1+11=12 > 10       R--
+         [1, 3, 5, 7, 9, 11]
+          L              R
+         1+9=10 == target   ✓
+      </pre>
+    </div>
+
+    <pre><code><span class="cm">// 两数之和 (有序数组)</span>
+<span class="cm">// 返回下标对 {i, j}，使得 arr[i] + arr[j] == target</span>
+<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt; <span class="fn">twoSum</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; arr, <span class="ty">int</span> target) {
+    <span class="ty">int</span> L = <span class="num">0</span>, R = arr.<span class="fn">size</span>() - <span class="num">1</span>;
+    <span class="kw">while</span> (L &lt; R) {
+        <span class="ty">int</span> sum = arr[L] + arr[R];
+        <span class="kw">if</span> (sum == target) <span class="kw">return</span> {L, R};
+        <span class="kw">else if</span> (sum &lt; target) L++;   <span class="cm">// 和太小，左指针右移</span>
+        <span class="kw">else</span> R--;                      <span class="cm">// 和太大，右指针左移</span>
+    }
+    <span class="kw">return</span> {-<span class="num">1</span>, -<span class="num">1</span>};  <span class="cm">// 无解</span>
+}</code></pre>
+
+    <h3>问题 2: 盛最多水的容器</h3>
+    <p>给定 n 个非负整数表示垂直线的高度，找两条线使得与 x 轴构成的容器能盛最多的水。</p>
+
+    <div class="diagram">
+      <pre>
+  height: [1, 8, 6, 2, 5, 4, 8, 3, 7]
+
+     8|   *
+     7|   *                       *
+     6|   *  *
+     5|   *     *
+     4|   *        *
+     3|   *              *
+     2|   *
+     1|*
+      +-------------------------
+       0  1  2  3  4  5  6  7  8
+
+  面积 = min(h[L], h[R]) * (R - L)
+  移动较矮的一侧才能可能增大面积
+      </pre>
+    </div>
+
+    <pre><code><span class="cm">// 盛最多水的容器</span>
+<span class="ty">int</span> <span class="fn">maxArea</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; height) {
+    <span class="ty">int</span> L = <span class="num">0</span>, R = height.<span class="fn">size</span>() - <span class="num">1</span>;
+    <span class="ty">int</span> ans = <span class="num">0</span>;
+    <span class="kw">while</span> (L &lt; R) {
+        ans = <span class="fn">max</span>(ans, <span class="fn">min</span>(height[L], height[R]) * (R - L));
+        <span class="kw">if</span> (height[L] &lt; height[R]) L++;  <span class="cm">// 移动较矮的一侧</span>
+        <span class="kw">else</span> R--;
+    }
+    <span class="kw">return</span> ans;
+}</code></pre>
+
+    <h3>问题 3: 三数之和</h3>
+    <p>找出数组中所有和为 0 的三元组（不重复）。固定一个数后，转化为两数之和问题。</p>
+
+    <pre><code><span class="cm">// 三数之和</span>
+<span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; <span class="fn">threeSum</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; nums) {
+    <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; ans;
+    <span class="fn">sort</span>(nums.<span class="fn">begin</span>(), nums.<span class="fn">end</span>());
+    <span class="ty">int</span> n = nums.<span class="fn">size</span>();
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n - <span class="num">2</span>; i++) {
+        <span class="kw">if</span> (i &gt; <span class="num">0</span> &amp;&amp; nums[i] == nums[i-<span class="num">1</span>]) <span class="kw">continue</span>; <span class="cm">// 跳过重复</span>
+        <span class="ty">int</span> L = i + <span class="num">1</span>, R = n - <span class="num">1</span>;
+        <span class="kw">while</span> (L &lt; R) {
+            <span class="ty">int</span> sum = nums[i] + nums[L] + nums[R];
+            <span class="kw">if</span> (sum == <span class="num">0</span>) {
+                ans.<span class="fn">push_back</span>({nums[i], nums[L], nums[R]});
+                <span class="kw">while</span> (L &lt; R &amp;&amp; nums[L] == nums[L+<span class="num">1</span>]) L++; <span class="cm">// 跳过重复</span>
+                <span class="kw">while</span> (L &lt; R &amp;&amp; nums[R] == nums[R-<span class="num">1</span>]) R--;
+                L++; R--;
+            } <span class="kw">else if</span> (sum &lt; <span class="num">0</span>) L++;
+            <span class="kw">else</span> R--;
+        }
+    }
+    <span class="kw">return</span> ans;
+}</code></pre>
+
+    <div class="complexity">
+      <span class="label">两数之和</span>
+      <span class="value">O(n)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">三数之和</span>
+      <span class="value">O(n^2)</span>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 3: 滑动窗口 -->
+  <!-- ============================== -->
+  <div class="section" id="sliding">
+    <h2>滑动窗口</h2>
+    <p>滑动窗口维护一个<strong>动态区间 [L, R]</strong>，右指针 R 不断扩展，当区间不满足条件时移动左指针 L 缩小区间。适用于求满足某种条件的<strong>连续子数组</strong>问题。</p>
+
+    <h3>滑动窗口通用框架</h3>
+    <pre><code><span class="cm">// 滑动窗口通用框架</span>
+<span class="ty">int</span> <span class="fn">slidingWindow</span>(...) {
+    <span class="ty">int</span> L = <span class="num">0</span>;
+    <span class="cm">// 维护窗口状态 (哈希表、计数器等)</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> R = <span class="num">0</span>; R &lt; n; R++) {
+        <span class="cm">// 1. 扩展窗口: 将 arr[R] 加入窗口</span>
+        expand(arr[R]);
+
+        <span class="cm">// 2. 收缩窗口: 当窗口不满足条件时移动 L</span>
+        <span class="kw">while</span> (windowInvalid()) {
+            shrink(arr[L]);
+            L++;
+        }
+
+        <span class="cm">// 3. 更新答案</span>
+        updateAnswer();
+    }
+    <span class="kw">return</span> ans;
+}</code></pre>
+
+    <h3>问题 1: 最小覆盖子串</h3>
+    <p>给定字符串 s 和 t，求 s 中包含 t 所有字符的最短子串。</p>
+
+    <div class="diagram">
+      <pre>
+  s = "ADOBECODEBANC",  t = "ABC"
+
+  窗口滑动过程:
+  [ADOBEC]ODEBANC  → 包含 ABC, 长度 6
+  A[DOBECODEBA]NC  → 包含 ABC, 长度 10
+  ADOBECODEB[ANC]  → 包含 ABC, 长度 3 ✓ 最优
+
+  答案: "ANC"
+      </pre>
+    </div>
+
+    <pre><code><span class="cm">// 最小覆盖子串</span>
+<span class="ty">string</span> <span class="fn">minWindow</span>(<span class="ty">string</span> s, <span class="ty">string</span> t) {
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; need(<span class="num">128</span>, <span class="num">0</span>), window(<span class="num">128</span>, <span class="num">0</span>);
+    <span class="kw">for</span> (<span class="ty">char</span> c : t) need[c]++;
+
+    <span class="ty">int</span> L = <span class="num">0</span>, cnt = <span class="num">0</span>, minLen = INT_MAX, start = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> R = <span class="num">0</span>; R &lt; s.<span class="fn">size</span>(); R++) {
+        <span class="cm">// 扩展窗口</span>
+        window[s[R]]++;
+        <span class="kw">if</span> (window[s[R]] &lt;= need[s[R]]) cnt++;
+
+        <span class="cm">// 窗口已包含所有 t 的字符，尝试收缩</span>
+        <span class="kw">while</span> (cnt == t.<span class="fn">size</span>()) {
+            <span class="kw">if</span> (R - L + <span class="num">1</span> &lt; minLen) {
+                minLen = R - L + <span class="num">1</span>;
+                start = L;
+            }
+            window[s[L]]--;
+            <span class="kw">if</span> (window[s[L]] &lt; need[s[L]]) cnt--;
+            L++;
+        }
+    }
+    <span class="kw">return</span> minLen == INT_MAX ? <span class="str">""</span> : s.<span class="fn">substr</span>(start, minLen);
+}</code></pre>
+
+    <h3>问题 2: 无重复字符的最长子串</h3>
+    <p>给定字符串 s，求不含重复字符的最长子串的长度。</p>
+
+    <pre><code><span class="cm">// 无重复字符的最长子串</span>
+<span class="ty">int</span> <span class="fn">lengthOfLongestSubstring</span>(<span class="ty">string</span> s) {
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; last(<span class="num">128</span>, -<span class="num">1</span>); <span class="cm">// 字符上次出现的位置</span>
+    <span class="ty">int</span> L = <span class="num">0</span>, ans = <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> R = <span class="num">0</span>; R &lt; s.<span class="fn">size</span>(); R++) {
+        <span class="cm">// 如果 s[R] 在窗口内出现过，移动 L</span>
+        L = <span class="fn">max</span>(L, last[s[R]] + <span class="num">1</span>);
+        ans = <span class="fn">max</span>(ans, R - L + <span class="num">1</span>);
+        last[s[R]] = R;
+    }
+    <span class="kw">return</span> ans;
+}</code></pre>
+
+    <h3>问题 3: 长度最小的子数组</h3>
+    <p>给定正整数数组和目标值 s，求连续子数组使其和 >= s 的最小长度。</p>
+
+    <pre><code><span class="cm">// 长度最小的子数组</span>
+<span class="ty">int</span> <span class="fn">minSubArrayLen</span>(<span class="ty">int</span> s, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; nums) {
+    <span class="ty">int</span> L = <span class="num">0</span>, sum = <span class="num">0</span>, ans = INT_MAX;
+    <span class="kw">for</span> (<span class="ty">int</span> R = <span class="num">0</span>; R &lt; nums.<span class="fn">size</span>(); R++) {
+        sum += nums[R];
+        <span class="kw">while</span> (sum &gt;= s) {
+            ans = <span class="fn">min</span>(ans, R - L + <span class="num">1</span>);
+            sum -= nums[L++];
+        }
+    }
+    <span class="kw">return</span> ans == INT_MAX ? <span class="num">0</span> : ans;
+}</code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">滑动窗口的判断条件</div>
+      <p>滑动窗口的关键在于正确设置"窗口无效"的判断条件。常见模式：<br>
+         - 求最短：窗口满足条件时收缩（如最小覆盖子串）<br>
+         - 求最长：窗口不满足条件时收缩（如最长无重复子串）</p>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 4: 快慢指针 -->
+  <!-- ============================== -->
+  <div class="section" id="fast-slow">
+    <h2>快慢指针</h2>
+    <p>快慢指针使用两个以<strong>不同速度</strong>移动的指针。常用于链表问题和循环检测。</p>
+
+    <h3>Floyd 环检测算法</h3>
+    <p>也叫"龟兔赛跑"算法。慢指针每次走 1 步，快指针每次走 2 步。如果链表有环，两者一定会在环内相遇。</p>
+
+    <div class="diagram">
+      <pre>
+  Floyd 环检测
+
+  无环:                     有环:
+  1 → 2 → 3 → 4 → null     1 → 2 → 3 → 4
+                              ↑           ↓
+  快指针先到达 null            7 ← 6 ← 5
+  → 无环
+
+                           快慢指针在环内某点相遇
+                           → 有环
+      </pre>
+    </div>
+
+    <pre><code><span class="cm">// 检测链表是否有环 (Floyd)</span>
+<span class="ty">bool</span> <span class="fn">hasCycle</span>(<span class="ty">ListNode</span>* head) {
+    <span class="ty">ListNode</span> *slow = head, *fast = head;
+    <span class="kw">while</span> (fast &amp;&amp; fast-&gt;next) {
+        slow = slow-&gt;next;
+        fast = fast-&gt;next-&gt;next;
+        <span class="kw">if</span> (slow == fast) <span class="kw">return</span> <span class="kw">true</span>;
+    }
+    <span class="kw">return</span> <span class="kw">false</span>;
+}
+
+<span class="cm">// 找环的入口</span>
+<span class="ty">ListNode</span>* <span class="fn">detectCycle</span>(<span class="ty">ListNode</span>* head) {
+    <span class="ty">ListNode</span> *slow = head, *fast = head;
+    <span class="kw">while</span> (fast &amp;&amp; fast-&gt;next) {
+        slow = slow-&gt;next;
+        fast = fast-&gt;next-&gt;next;
+        <span class="kw">if</span> (slow == fast) {
+            <span class="cm">// 一个从 head 出发，一个从相遇点出发</span>
+            <span class="cm">// 两者以相同速度前进，再次相遇即为入口</span>
+            slow = head;
+            <span class="kw">while</span> (slow != fast) {
+                slow = slow-&gt;next;
+                fast = fast-&gt;next;
+            }
+            <span class="kw">return</span> slow;
+        }
+    }
+    <span class="kw">return</span> <span class="kw">nullptr</span>;
+}</code></pre>
+
+    <h3>找链表中点</h3>
+    <pre><code><span class="cm">// 找链表中点 (快指针到末尾时，慢指针在中点)</span>
+<span class="ty">ListNode</span>* <span class="fn">middleNode</span>(<span class="ty">ListNode</span>* head) {
+    <span class="ty">ListNode</span> *slow = head, *fast = head;
+    <span class="kw">while</span> (fast &amp;&amp; fast-&gt;next) {
+        slow = slow-&gt;next;
+        fast = fast-&gt;next-&gt;next;
+    }
+    <span class="kw">return</span> slow;  <span class="cm">// 偶数个节点时返回中间偏右</span>
+}</code></pre>
+
+    <h3>找链表倒数第 k 个节点</h3>
+    <pre><code><span class="cm">// 找倒数第 k 个节点</span>
+<span class="ty">ListNode</span>* <span class="fn">kthFromEnd</span>(<span class="ty">ListNode</span>* head, <span class="ty">int</span> k) {
+    <span class="ty">ListNode</span> *fast = head, *slow = head;
+    <span class="cm">// 快指针先走 k 步</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; k; i++)
+        fast = fast-&gt;next;
+    <span class="cm">// 同时前进，快指针到末尾时慢指针在倒数第 k 个</span>
+    <span class="kw">while</span> (fast) {
+        slow = slow-&gt;next;
+        fast = fast-&gt;next;
+    }
+    <span class="kw">return</span> slow;
+}</code></pre>
+
+    <h3>判断链表回文</h3>
+    <pre><code><span class="cm">// 判断链表是否回文</span>
+<span class="ty">bool</span> <span class="fn">isPalindrome</span>(<span class="ty">ListNode</span>* head) {
+    <span class="kw">if</span> (!head || !head-&gt;next) <span class="kw">return</span> <span class="kw">true</span>;
+
+    <span class="cm">// 1. 找中点</span>
+    <span class="ty">ListNode</span> *slow = head, *fast = head;
+    <span class="kw">while</span> (fast-&gt;next &amp;&amp; fast-&gt;next-&gt;next) {
+        slow = slow-&gt;next;
+        fast = fast-&gt;next-&gt;next;
+    }
+
+    <span class="cm">// 2. 反转后半部分</span>
+    <span class="ty">ListNode</span> *prev = <span class="kw">nullptr</span>, *cur = slow-&gt;next;
+    <span class="kw">while</span> (cur) {
+        <span class="ty">ListNode</span> *nxt = cur-&gt;next;
+        cur-&gt;next = prev;
+        prev = cur;
+        cur = nxt;
+    }
+
+    <span class="cm">// 3. 比较前半部分和反转后的后半部分</span>
+    <span class="ty">ListNode</span> *p1 = head, *p2 = prev;
+    <span class="ty">bool</span> ok = <span class="kw">true</span>;
+    <span class="kw">while</span> (p2) {
+        <span class="kw">if</span> (p1-&gt;val != p2-&gt;val) { ok = <span class="kw">false</span>; <span class="kw">break</span>; }
+        p1 = p1-&gt;next;
+        p2 = p2-&gt;next;
+    }
+    <span class="kw">return</span> ok;
+}</code></pre>
+
+    <div class="box box-info">
+      <div class="box-title">Floyd 算法的数学证明</div>
+      <p>设链表头到环入口距离为 a，环入口到相遇点距离为 b，环长为 c。相遇时慢指针走了 a+b，快指针走了 a+b+nc。因为快指针速度是慢指针的 2 倍：<br>
+         <code>2(a+b) = a+b+nc  →  a+b = nc  →  a = nc-b = (n-1)c + (c-b)</code><br>
+         从 head 走 a 步到入口，从相遇点走 c-b 步也到入口（再走 (n-1) 圈）。所以两者以相同速度从这两个位置出发，一定在入口相遇。</p>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 5: 完整模板 -->
+  <!-- ============================== -->
+  <div class="section" id="template">
+    <h2>完整模板</h2>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="cm">// ========== 对撞指针模板 ==========</span>
+<span class="cm">// 有序数组两数之和</span>
+<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt; <span class="fn">twoSum</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; a, <span class="ty">int</span> target) {
+    <span class="ty">int</span> L = <span class="num">0</span>, R = a.<span class="fn">size</span>() - <span class="num">1</span>;
+    <span class="kw">while</span> (L &lt; R) {
+        <span class="kw">if</span> (a[L] + a[R] == target) <span class="kw">return</span> {L, R};
+        <span class="kw">else if</span> (a[L] + a[R] &lt; target) L++;
+        <span class="kw">else</span> R--;
+    }
+    <span class="kw">return</span> {-<span class="num">1</span>, -<span class="num">1</span>};
+}
+
+<span class="cm">// ========== 滑动窗口模板 ==========</span>
+<span class="cm">// 求满足条件的最短子数组长度</span>
+<span class="ty">int</span> <span class="fn">shortestSubarray</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; a, <span class="ty">int</span> target) {
+    <span class="ty">int</span> L = <span class="num">0</span>, sum = <span class="num">0</span>, ans = INT_MAX;
+    <span class="kw">for</span> (<span class="ty">int</span> R = <span class="num">0</span>; R &lt; a.<span class="fn">size</span>(); R++) {
+        sum += a[R];
+        <span class="kw">while</span> (sum &gt;= target) {  <span class="cm">// 满足条件时收缩</span>
+            ans = <span class="fn">min</span>(ans, R - L + <span class="num">1</span>);
+            sum -= a[L++];
+        }
+    }
+    <span class="kw">return</span> ans == INT_MAX ? <span class="num">0</span> : ans;
+}
+
+<span class="cm">// 求满足条件的最长子数组长度</span>
+<span class="ty">int</span> <span class="fn">longestSubstring</span>(<span class="ty">string</span> s, <span class="ty">int</span> k) {
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; cnt(<span class="num">128</span>, <span class="num">0</span>);
+    <span class="ty">int</span> L = <span class="num">0</span>, ans = <span class="num">0</span>, dup = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> R = <span class="num">0</span>; R &lt; s.<span class="fn">size</span>(); R++) {
+        <span class="kw">if</span> (++cnt[s[R]] == <span class="num">2</span>) dup++;
+        <span class="kw">while</span> (dup &gt; <span class="num">0</span>) {  <span class="cm">// 不满足条件时收缩</span>
+            <span class="kw">if</span> (--cnt[s[L]] == <span class="num">1</span>) dup--;
+            L++;
+        }
+        ans = <span class="fn">max</span>(ans, R - L + <span class="num">1</span>);
+    }
+    <span class="kw">return</span> ans;
+}
+
+<span class="cm">// ========== 快慢指针 (链表环检测) ==========</span>
+<span class="kw">struct</span> <span class="ty">ListNode</span> {
+    <span class="ty">int</span> val;
+    <span class="ty">ListNode</span> *next;
+    <span class="ty">ListNode</span>(<span class="ty">int</span> x) : <span class="fn">val</span>(x), <span class="fn">next</span>(<span class="kw">nullptr</span>) {}
+};
+
+<span class="ty">bool</span> <span class="fn">hasCycle</span>(<span class="ty">ListNode</span>* head) {
+    <span class="ty">ListNode</span> *slow = head, *fast = head;
+    <span class="kw">while</span> (fast &amp;&amp; fast-&gt;next) {
+        slow = slow-&gt;next;
+        fast = fast-&gt;next-&gt;next;
+        <span class="kw">if</span> (slow == fast) <span class="kw">return</span> <span class="kw">true</span>;
+    }
+    <span class="kw">return</span> <span class="kw">false</span>;
+}
+
+<span class="ty">ListNode</span>* <span class="fn">findMiddle</span>(<span class="ty">ListNode</span>* head) {
+    <span class="ty">ListNode</span> *slow = head, *fast = head;
+    <span class="kw">while</span> (fast &amp;&amp; fast-&gt;next) {
+        slow = slow-&gt;next;
+        fast = fast-&gt;next-&gt;next;
+    }
+    <span class="kw">return</span> slow;
+}</code></pre>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 6: 经典例题 -->
+  <!-- ============================== -->
+  <div class="section" id="problems">
+    <h2>经典例题</h2>
+
+    <div class="problem">
+      <div class="problem-title">LeetCode 1 - Two Sum</div>
+      <p>哈希表 O(n) 或排序后对撞指针 O(n log n)。注意排序后下标会变。</p>
+      <span class="tag tag-easy">对撞指针</span>
+      <span class="tag tag-base">哈希</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">LeetCode 11 - Container With Most Water</div>
+      <p>经典对撞指针题。移动较矮的一侧，因为移动较高的一侧面积只会减小。</p>
+      <span class="tag tag-easy">对撞指针</span>
+      <span class="tag tag-base">贪心</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">LeetCode 15 - 3Sum</div>
+      <p>排序 + 固定一个数 + 对撞指针。注意去重处理。</p>
+      <span class="tag tag-mid">对撞指针</span>
+      <span class="tag tag-base">去重</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">LeetCode 76 - Minimum Window Substring</div>
+      <p>经典滑动窗口。用计数器维护窗口内字符的覆盖情况。</p>
+      <span class="tag tag-hard">滑动窗口</span>
+      <span class="tag tag-base">哈希</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">LeetCode 3 - Longest Substring Without Repeating Characters</div>
+      <p>滑动窗口 + 哈希表记录字符上次出现位置。</p>
+      <span class="tag tag-mid">滑动窗口</span>
+      <span class="tag tag-base">哈希</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">LeetCode 141 - Linked List Cycle</div>
+      <p>Floyd 环检测的经典应用。快慢指针相遇即有环。</p>
+      <span class="tag tag-easy">快慢指针</span>
+      <span class="tag tag-base">链表</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">LeetCode 209 - Minimum Size Subarray Sum</div>
+      <p>滑动窗口求最短子数组。右指针扩展，左指针在满足条件时收缩。</p>
+      <span class="tag tag-mid">滑动窗口</span>
+      <span class="tag tag-base">数组</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">LeetCode 234 - Palindrome Linked List</div>
+      <p>快慢指针找中点 + 反转后半部分 + 比较。O(n) 时间 O(1) 空间。</p>
+      <span class="tag tag-easy">快慢指针</span>
+      <span class="tag tag-base">链表反转</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P1102 - A-B 数对</div>
+      <p>排序后用对撞指针（或二分）找满足 A-B=C 的数对个数。</p>
+      <span class="tag tag-easy">对撞指针</span>
+      <span class="tag tag-base">排序</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P1638 - 逛画展</div>
+      <p>滑动窗口：找包含所有种类画的最短连续区间。</p>
+      <span class="tag tag-mid">滑动窗口</span>
+      <span class="tag tag-base">区间</span>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">常见错误</div>
+      <p>1. 对撞指针要求<strong>有序</strong>，别忘了先排序<br>
+         2. 滑动窗口的收缩条件要仔细，避免死循环<br>
+         3. 三数之和等题目要注意<strong>去重</strong>处理<br>
+         4. 快慢指针找链表中点时，偶数个节点的中点定义要与题目一致</p>
+    </div>
+  </div>
+
+</div>
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

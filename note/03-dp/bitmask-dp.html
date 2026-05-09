@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>状态压缩 DP - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#dp">动态规划篇</a> &gt;
+    状态压缩 DP
+  </div>
+
+  <div class="page-header">
+    <h1>状态压缩 DP</h1>
+    <p class="subtitle">Bitmask DP &mdash; 用二进制掩码表示集合状态，将组合优化问题转化为逐位转移</p>
+    <div class="tags">
+      <span class="tag tag-dp">动态规划</span>
+      <span class="tag tag-hard">困难</span>
+      <span class="tag tag-base">位运算</span>
+      <span class="tag tag-mid">图论</span>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#overview">1. 状压 DP 概述</a></li>
+      <li><a href="#bit-ops">2. 位运算常用操作速查</a></li>
+      <li><a href="#tsp">3. 旅行商问题 (TSP)</a></li>
+      <li><a href="#chess">4. 棋盘覆盖问题</a></li>
+      <li><a href="#partition">5. 集合划分问题</a></li>
+      <li><a href="#hamilton">6. 哈密顿路径计数</a></li>
+      <li><a href="#practice">7. 经典题目推荐</a></li>
+      <li><a href="#summary">8. 总结与技巧</a></li>
+    </ul>
+  </div>
+
+  <!-- ==================== 1. 概述 ==================== -->
+  <div class="section" id="overview">
+    <h2>1. 状压 DP 概述</h2>
+
+    <h3>1.1 什么是状态压缩？</h3>
+    <p>状态压缩（Bitmask DP）的核心思想是：用一个整数的<strong>二进制位</strong>来表示一个集合的状态。每一位对应一个元素，0 表示未选中，1 表示已选中。这样，一个大小为 n 的集合的所有子集可以用 0 到 2<sup>n</sup>-1 之间的整数来表示。</p>
+
+    <div class="diagram">
+      <pre>
+元素编号:   3    2    1    0
+二进制位:   1    0    1    1  =  mask = 11 (十进制)
+                ↑    ↑    ↑
+             未选  选中  选中
+
+表示集合 {0, 1, 3}，即元素 0、1、3 已被选中
+      </pre>
+    </div>
+
+    <h3>1.2 何时使用状压 DP？</h3>
+    <div class="box box-info">
+      <div class="box-title">适用条件</div>
+      <ul>
+        <li><strong>数据规模小</strong>：n &le; 20（或 n &le; 25 某些情况），因为状态总数为 2<sup>n</sup></li>
+        <li><strong>需要记录集合信息</strong>：哪些元素已被使用/访问/分配</li>
+        <li><strong>子集枚举</strong>：需要遍历一个集合的所有子集</li>
+        <li><strong>排列/组合约束</strong>：元素之间有复杂的约束关系，难以用普通 DP 维护</li>
+      </ul>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">注意事项</div>
+      <p>状压 DP 的时间复杂度通常为 O(2<sup>n</sup> &times; poly(n))，当 n = 20 时，2<sup>20</sup> &asymp; 10<sup>6</sup>，通常可以接受。n = 25 时 2<sup>25</sup> &asymp; 3.3 &times; 10<sup>7</sup>，需要优化常数。n &gt; 25 一般需要其他方法。</p>
+    </div>
+
+    <h3>1.3 状压 DP 的一般框架</h3>
+    <pre><code><span class="cm">// 状压 DP 一般框架</span>
+<span class="cm">// dp[mask] 或 dp[mask][i]：mask 表示集合状态</span>
+
+<span class="ty">int</span> <span class="fn">solve</span>() {
+    <span class="ty">int</span> dp[<span class="num">1</span> &lt;&lt; n][n];  <span class="cm">// 状态数组</span>
+    <span class="fn">memset</span>(dp, <span class="num">0x3f</span>, <span class="kw">sizeof</span>(dp));
+
+    <span class="cm">// 初始化：空集或只包含起点的状态</span>
+    dp[<span class="num">1</span> &lt;&lt; start][start] = <span class="num">0</span>;
+
+    <span class="cm">// 枚举所有状态（从小到大）</span>
+    <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">0</span>; mask &lt; (<span class="num">1</span> &lt;&lt; n); mask++) {
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+            <span class="kw">if</span> (!(mask &amp; (<span class="num">1</span> &lt;&lt; i))) <span class="kw">continue</span>;  <span class="cm">// i 不在集合中，跳过</span>
+            <span class="cm">// 枚举下一个要加入的元素 j</span>
+            <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; n; j++) {
+                <span class="kw">if</span> (mask &amp; (<span class="num">1</span> &lt;&lt; j)) <span class="kw">continue</span>;  <span class="cm">// j 已在集合中，跳过</span>
+                <span class="ty">int</span> newMask = mask | (<span class="num">1</span> &lt;&lt; j);  <span class="cm">// 将 j 加入集合</span>
+                dp[newMask][j] = <span class="fn">min</span>(dp[newMask][j],
+                    dp[mask][i] + cost[i][j]);
+            }
+        }
+    }
+
+    <span class="cm">// 求解答案（通常是全部元素都选中的状态）</span>
+    <span class="ty">int</span> fullMask = (<span class="num">1</span> &lt;&lt; n) - <span class="num">1</span>;
+    <span class="ty">int</span> ans = INF;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        ans = <span class="fn">min</span>(ans, dp[fullMask][i]);
+    <span class="kw">return</span> ans;
+}</code></pre>
+
+    <div class="complexity">
+      <span class="label">一般复杂度：</span>
+      <span class="value">O(2<sup>n</sup> &times; n<sup>2</sup>)</span>
+    </div>
+  </div>
+
+  <!-- ==================== 2. 位运算速查 ==================== -->
+  <div class="section" id="bit-ops">
+    <h2>2. 位运算常用操作速查</h2>
+
+    <p>位运算是状压 DP 的基础，以下是常用操作汇总：</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>操作</th>
+            <th>表达式</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>设置第 i 位为 1</td>
+            <td><code>mask | (1 &lt;&lt; i)</code></td>
+            <td>将元素 i 加入集合</td>
+          </tr>
+          <tr>
+            <td>清除第 i 位为 0</td>
+            <td><code>mask &amp; ~(1 &lt;&lt; i)</code></td>
+            <td>将元素 i 从集合中移除</td>
+          </tr>
+          <tr>
+            <td>翻转第 i 位</td>
+            <td><code>mask ^ (1 &lt;&lt; i)</code></td>
+            <td>toggle 元素 i 的状态</td>
+          </tr>
+          <tr>
+            <td>检查第 i 位</td>
+            <td><code>mask &amp; (1 &lt;&lt; i)</code></td>
+            <td>判断元素 i 是否在集合中（非 0 即在）</td>
+          </tr>
+          <tr>
+            <td>统计 1 的个数</td>
+            <td><code>__builtin_popcount(mask)</code></td>
+            <td>集合大小 / 已选元素数量</td>
+          </tr>
+          <tr>
+            <td>获取最低位的 1</td>
+            <td><code>mask &amp; (-mask)</code></td>
+            <td>lowbit 操作，利用补码性质</td>
+          </tr>
+          <tr>
+            <td>清除最低位的 1</td>
+            <td><code>mask &amp; (mask - 1)</code></td>
+            <td>去掉集合中最靠后的元素</td>
+          </tr>
+          <tr>
+            <td>枚举所有子集</td>
+            <td><code>for(int s = mask; s; s = (s-1) &amp; mask)</code></td>
+            <td>降序遍历 mask 的所有非空子集</td>
+          </tr>
+          <tr>
+            <td>判断是否是 2 的幂</td>
+            <td><code>(mask &amp; (mask - 1)) == 0</code></td>
+            <td>仅 1 个元素的集合或空集</td>
+          </tr>
+          <tr>
+            <td>全集（n 位）</td>
+            <td><code>(1 &lt;&lt; n) - 1</code></td>
+            <td>所有 n 个元素都在集合中</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>2.1 枚举子集详解</h3>
+    <p>枚举一个 mask 的所有子集是状压 DP 中最常见的操作之一：</p>
+
+    <pre><code><span class="cm">// 枚举 mask 的所有子集（降序，不含空集）</span>
+<span class="kw">for</span> (<span class="ty">int</span> s = mask; s; s = (s - <span class="num">1</span>) &amp; mask) {
+    <span class="cm">// s 是 mask 的一个子集</span>
+    <span class="cm">// 对 s 进行操作...</span>
+}
+
+<span class="cm">// 枚举 mask 的所有子集（含空集）</span>
+<span class="ty">int</span> s = mask;
+<span class="kw">do</span> {
+    <span class="cm">// s 是 mask 的一个子集</span>
+    s = (s - <span class="num">1</span>) &amp; mask;
+} <span class="kw">while</span> (s != mask);</code></pre>
+
+    <div class="diagram">
+      <pre>
+mask = 10110 (十进制 22)
+
+枚举子集的顺序（降序）:
+  10110  = 22  (mask 本身)
+  10100  = 20
+  10010  = 18
+  10000  = 16
+  00110  = 6
+  00100  = 4
+  00010  = 2
+
+原理: s = (s-1) &amp; mask 会跳过不是 mask 子集的状态
+      </pre>
+    </div>
+
+    <h3>2.2 遍历 mask 中的所有 1（即集合中的所有元素）</h3>
+    <pre><code><span class="cm">// 方法一: 逐位检查，O(n)</span>
+<span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+    <span class="kw">if</span> (mask &amp; (<span class="num">1</span> &lt;&lt; i)) {
+        <span class="cm">// 元素 i 在集合中</span>
+    }
+}
+
+<span class="cm">// 方法二: 不断取最低位的 1，O(popcount)</span>
+<span class="ty">int</span> tmp = mask;
+<span class="kw">while</span> (tmp) {
+    <span class="ty">int</span> low = tmp &amp; (-tmp);           <span class="cm">// 取最低位的 1</span>
+    <span class="ty">int</span> i = <span class="fn">__builtin_ctz</span>(low);         <span class="cm">// 取该位的编号</span>
+    <span class="cm">// 元素 i 在集合中</span>
+    tmp -= low;                          <span class="cm">// 清除最低位的 1</span>
+}</code></pre>
+  </div>
+
+  <!-- ==================== 3. TSP ==================== -->
+  <div class="section" id="tsp">
+    <h2>3. 旅行商问题 (TSP)</h2>
+
+    <h3>3.1 问题描述</h3>
+    <div class="problem">
+      <div class="problem-title">TSP - 旅行商问题</div>
+      <p>给定 n 个城市和城市之间的距离矩阵 dist[i][j]，一个旅行商从城市 0 出发，要访问每个城市恰好一次，最后回到城市 0。求最短的旅行路线总长度。</p>
+    </div>
+
+    <h3>3.2 状态定义</h3>
+    <div class="box box-tip">
+      <div class="box-title">状态设计</div>
+      <p><code>dp[mask][i]</code> = 从城市 0 出发，经过 mask 中标记的所有城市（这些城市的对应位为 1），当前停留在城市 i 的最短路径长度。</p>
+      <ul>
+        <li><code>mask</code>：二进制表示哪些城市已经访问过，第 k 位为 1 表示城市 k 已访问</li>
+        <li><code>i</code>：当前所在的城市编号</li>
+        <li>初始状态：<code>dp[1][0] = 0</code>，只访问了城市 0，停在城市 0</li>
+      </ul>
+    </div>
+
+    <h3>3.3 状态转移方程</h3>
+    <div class="diagram">
+      <pre>
+dp[mask | (1 &lt;&lt; j)][j] = min( dp[mask][i] + dist[i][j] )
+
+条件: (mask &amp; (1 &lt;&lt; i)) != 0   -- i 在 mask 中（当前所在城市）
+      (mask &amp; (1 &lt;&lt; j)) == 0   -- j 不在 mask 中（未访问的城市）
+      dist[i][j] 存在            -- i 到 j 有通路
+
+含义: 已访问 mask 中的城市、停在城市 i
+      + 从 i 走到 j（访问新城市 j）
+      = 已访问 mask|{j} 中的城市、停在城市 j
+      </pre>
+    </div>
+
+    <h3>3.4 图解示例</h3>
+    <p>以 4 个城市为例，距离矩阵如下：</p>
+
+    <div class="diagram">
+      <pre>
+      城市图:
+
+       0 ----10---- 1
+       |  \          |
+       15   20      35
+       |      \      |
+       3 ----25---- 2
+
+dist 矩阵:
+        0    1    2    3
+  0  [  0,  10,  20,  15 ]
+  1  [ 10,   0,  35,  25 ]
+  2  [ 20,  35,   0,  30 ]
+  3  [ 15,  25,  30,   0 ]
+      </pre>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <strong>初始</strong>：<code>dp[0001][0] = 0</code>，只访问了城市 0。
+      </div>
+      <div class="step">
+        <strong>从 mask=0001 出发</strong>，可以走向城市 1、2、3：
+        <br><code>dp[0011][1] = dp[0001][0] + dist[0][1] = 0 + 10 = 10</code>
+        <br><code>dp[0101][2] = dp[0001][0] + dist[0][2] = 0 + 20 = 20</code>
+        <br><code>dp[1001][3] = dp[0001][0] + dist[0][3] = 0 + 15 = 15</code>
+      </div>
+      <div class="step">
+        <strong>从 mask=0011 (城市 0,1) 停在城市 1</strong>，走向城市 2 或 3：
+        <br><code>dp[0111][2] = dp[0011][1] + dist[1][2] = 10 + 35 = 45</code>
+        <br><code>dp[1011][3] = dp[0011][1] + dist[1][3] = 10 + 25 = 35</code>
+      </div>
+      <div class="step">
+        <strong>从 mask=0101 (城市 0,2) 停在城市 2</strong>，走向城市 1 或 3：
+        <br><code>dp[0111][1] = dp[0101][2] + dist[2][1] = 20 + 35 = 55</code>（不如从 45 更新）
+        <br><code>dp[1101][3] = dp[0101][2] + dist[2][3] = 20 + 30 = 50</code>
+      </div>
+      <div class="step">
+        <strong>继续扩展</strong>直到 <code>mask = 1111</code>（全部城市访问完毕）。
+        <br>最终答案：<code>min(dp[1111][i] + dist[i][0])</code>，加上回到城市 0 的距离。
+      </div>
+    </div>
+
+    <h3>3.5 完整代码模板</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> INF = <span class="num">0x3f3f3f3f</span>;
+
+<span class="cm">// TSP: 从 0 出发，经过所有城市恰好一次，回到 0，求最短路径</span>
+<span class="ty">int</span> <span class="fn">tsp</span>(<span class="ty">int</span> n, <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt;&amp; dist) {
+    <span class="ty">int</span> fullMask = (<span class="num">1</span> &lt;&lt; n) - <span class="num">1</span>;
+
+    <span class="cm">// dp[mask][i]: 访问了 mask 中的城市，当前停在城市 i 的最短路径</span>
+    <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; dp(<span class="num">1</span> &lt;&lt; n, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;(n, INF));
+    dp[<span class="num">1</span>][<span class="num">0</span>] = <span class="num">0</span>;  <span class="cm">// 从城市 0 出发</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">1</span>; mask &lt;= fullMask; mask++) {
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+            <span class="kw">if</span> (!(mask &amp; (<span class="num">1</span> &lt;&lt; i))) <span class="kw">continue</span>;  <span class="cm">// i 不在 mask 中</span>
+            <span class="kw">if</span> (dp[mask][i] == INF) <span class="kw">continue</span>;
+            <span class="cm">// 枚举下一个城市 j</span>
+            <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; n; j++) {
+                <span class="kw">if</span> (mask &amp; (<span class="num">1</span> &lt;&lt; j)) <span class="kw">continue</span>;  <span class="cm">// j 已访问</span>
+                <span class="ty">int</span> newMask = mask | (<span class="num">1</span> &lt;&lt; j);
+                dp[newMask][j] = <span class="fn">min</span>(dp[newMask][j],
+                    dp[mask][i] + dist[i][j]);
+            }
+        }
+    }
+
+    <span class="cm">// 加上回到城市 0 的距离，取最小值</span>
+    <span class="ty">int</span> ans = INF;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; n; i++) {
+        ans = <span class="fn">min</span>(ans, dp[fullMask][i] + dist[i][<span class="num">0</span>]);
+    }
+    <span class="kw">return</span> ans;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n;
+    cin &gt;&gt; n;
+    <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; dist(n, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;(n));
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; n; j++)
+            cin &gt;&gt; dist[i][j];
+
+    cout &lt;&lt; <span class="fn">tsp</span>(n, dist) &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度：</span>
+      <span class="value">O(2<sup>n</sup> &times; n<sup>2</sup>)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度：</span>
+      <span class="value">O(2<sup>n</sup> &times; n)</span>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">空间优化技巧</div>
+      <p>可以将 <code>dp[newMask][j]</code> 的更新改为按 mask 递增的顺序进行，这样只需用一维数组 <code>dp[mask]</code> 记录（如果不需要回溯路径的话），将空间从 O(2<sup>n</sup> &times; n) 降到 O(2<sup>n</sup>)。但标准 TSP 通常需要第二维。</p>
+    </div>
+  </div>
+
+  <!-- ==================== 4. 棋盘覆盖 ==================== -->
+  <div class="section" id="chess">
+    <h2>4. 棋盘覆盖问题</h2>
+
+    <h3>4.1 问题描述</h3>
+    <div class="problem">
+      <div class="problem-title">棋盘放置 - POJ 2411 / AcWing 1064</div>
+      <p>给定一个 n &times; m 的棋盘（n &le; 11, m &le; 11），用 1&times;2 的骨牌覆盖整个棋盘，求方案数。部分格子可能是障碍物（不可放置）。</p>
+    </div>
+
+    <h3>4.2 状态设计</h3>
+    <p>按<strong>逐行</strong>来放置骨牌。对于每一行，用一个 m 位的二进制数来表示该行的放置状态：</p>
+    <div class="box box-info">
+      <div class="box-title">状态含义</div>
+      <ul>
+        <li>第 j 位为 1：表示第 j 列已被骨牌覆盖（属于当前行或上一行延伸下来的竖放骨牌）</li>
+        <li>第 j 位为 0：表示第 j 列未被覆盖（需要在当前行或之后放置骨牌来覆盖）</li>
+      </ul>
+    </div>
+
+    <p><code>dp[i][mask]</code> = 前 i 行全部覆盖完毕，第 i 行的轮廓状态为 mask 的方案数。</p>
+
+    <h3>4.3 转移分析</h3>
+    <p>从第 i-1 行的状态 preMask 转移到第 i 行的状态 curMask，需要满足：</p>
+    <ul>
+      <li>preMask 中为 1 但 curMask 中对应位置为 0 的格子：不需要竖放骨牌延续到下一行（该格子已被横放骨牌或已经覆盖完毕）</li>
+      <li>preMask 中为 0 的格子：当前行必须用竖放骨牌覆盖（延伸到当前行），所以 curMask 对应位必须为 1</li>
+      <li>curMask 中新增的 1（preMask 也是 1 的位置）：当前行用横放骨牌覆盖的格子</li>
+    </ul>
+
+    <h3>4.4 逐行轮廓线 DP 框架</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">typedef</span> <span class="ty">long long</span> <span class="ty">ll</span>;
+
+<span class="cm">// n 行 m 列棋盘，用 1x2 骨牌覆盖，求方案数</span>
+<span class="ty">ll</span> <span class="fn">solve</span>(<span class="ty">int</span> n, <span class="ty">int</span> m, <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt;&amp; board) {
+    <span class="ty">int</span> fullMask = (<span class="num">1</span> &lt;&lt; m) - <span class="num">1</span>;
+
+    <span class="cm">// dp[mask]: 当前行轮廓线状态为 mask 的方案数</span>
+    <span class="ty">vector</span>&lt;<span class="ty">ll</span>&gt; dp(<span class="num">1</span> &lt;&lt; m, <span class="num">0</span>);
+    dp[fullMask] = <span class="num">1</span>;  <span class="cm">// 初始：第 0 行之前，所有列都需要覆盖</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; m; j++) {
+            <span class="ty">vector</span>&lt;<span class="ty">ll</span>&gt; ndp(<span class="num">1</span> &lt;&lt; m, <span class="num">0</span>);
+            <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">0</span>; mask &lt;= fullMask; mask++) {
+                <span class="kw">if</span> (dp[mask] == <span class="num">0</span>) <span class="kw">continue</span>;
+
+                <span class="kw">if</span> (board[i][j] == <span class="num">0</span>) {
+                    <span class="cm">// 障碍格：必须已被覆盖（mask 第 j 位为 1）</span>
+                    <span class="kw">if</span> (mask &amp; (<span class="num">1</span> &lt;&lt; j)) {
+                        ndp[mask ^ (<span class="num">1</span> &lt;&lt; j)] += dp[mask];
+                    }
+                } <span class="kw">else</span> {
+                    <span class="cm">// 正常格：可以不放（等待被覆盖）或放骨牌</span>
+                    <span class="cm">// 1. 不放：当前位必须已有覆盖</span>
+                    <span class="kw">if</span> (mask &amp; (<span class="num">1</span> &lt;&lt; j)) {
+                        ndp[mask ^ (<span class="num">1</span> &lt;&lt; j)] += dp[mask];
+                    }
+                    <span class="cm">// 2. 横放：当前位和下一位都空，向右放一个骨牌</span>
+                    <span class="kw">if</span> (j + <span class="num">1</span> &lt; m &amp;&amp; board[i][j+<span class="num">1</span>]
+                        &amp;&amp; !(mask &amp; (<span class="num">1</span> &lt;&lt; j))
+                        &amp;&amp; !(mask &amp; (<span class="num">1</span> &lt;&lt; (j+<span class="num">1</span>)))) {
+                        ndp[mask | (<span class="num">1</span> &lt;&lt; (j+<span class="num">1</span>))] += dp[mask];
+                    }
+                    <span class="cm">// 3. 竖放：当前位空，向下放一个骨牌</span>
+                    <span class="kw">if</span> (!(mask &amp; (<span class="num">1</span> &lt;&lt; j))) {
+                        ndp[mask | (<span class="num">1</span> &lt;&lt; j)] += dp[mask];
+                    }
+                }
+            }
+            dp = ndp;
+        }
+    }
+
+    <span class="kw">return</span> dp[<span class="num">0</span>];  <span class="cm">// 所有格子恰好覆盖完</span>
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, m;
+    <span class="kw">while</span> (cin &gt;&gt; n &gt;&gt; m &amp;&amp; n) {
+        <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; board(n, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;(m, <span class="num">1</span>));
+        cout &lt;&lt; <span class="fn">solve</span>(n, m, board) &lt;&lt; endl;
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度：</span>
+      <span class="value">O(n &times; m &times; 2<sup>m</sup>)</span>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">技巧：轮廓线 DP</div>
+      <p>棋盘覆盖也可以用"轮廓线 DP"（插头 DP 的简化版）：逐格转移，状态表示当前格子的轮廓线上方和左侧的覆盖状态。实现时只需一个大小为 2<sup>m</sup> 的滚动数组即可，空间更优。</p>
+    </div>
+
+    <h3>4.5 另一种棋盘问题：互不攻击的棋子放置</h3>
+    <div class="problem">
+      <div class="problem-title">互不攻击的车/皇后放置</div>
+      <p>在 n &times; m 棋盘上放置尽可能多的车（rook），使得它们互不攻击。每行最多放一个车，每列最多放一个车。</p>
+    </div>
+    <p>这类问题可以用行逐行放置，用 mask 记录哪些列已被占用：</p>
+    <pre><code><span class="cm">// dp[i][mask]: 前 i 行放置完毕，列状态为 mask 的方案数</span>
+<span class="cm">// 每行枚举当前行放在哪一列，要求该列未被占用</span>
+<span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+    <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">0</span>; mask &lt; (<span class="num">1</span> &lt;&lt; m); mask++) {
+        <span class="kw">if</span> (dp[i][mask] == <span class="num">0</span>) <span class="kw">continue</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; m; j++) {
+            <span class="kw">if</span> (mask &amp; (<span class="num">1</span> &lt;&lt; j)) <span class="kw">continue</span>;  <span class="cm">// 第 j 列已被占用</span>
+            dp[i+<span class="num">1</span>][mask | (<span class="num">1</span> &lt;&lt; j)] += dp[i][mask];
+        }
+    }
+}</code></pre>
+  </div>
+
+  <!-- ==================== 5. 集合划分 ==================== -->
+  <div class="section" id="partition">
+    <h2>5. 集合划分问题</h2>
+
+    <h3>5.1 问题描述</h3>
+    <div class="problem">
+      <div class="problem-title">集合划分 - 最优分组</div>
+      <p>将 n 个元素划分成若干组，使得每组的代价之和最小（或满足某些约束条件）。例如：将 n 个人分成若干组完成任务，每组有一个预处理代价，求最小总代价。</p>
+    </div>
+
+    <h3>5.2 状态设计</h3>
+    <div class="box box-info">
+      <div class="box-title">状态定义</div>
+      <p><code>dp[mask]</code> = 将 mask 表示的集合划分成若干组的最小代价。</p>
+      <p>转移时，枚举 mask 的一个子集 sub 作为"最后一组"：</p>
+      <p><code>dp[mask] = min(dp[mask ^ sub] + cost[sub])</code></p>
+      <p>其中 <code>cost[sub]</code> 是子集 sub 单独作为一组时的代价。</p>
+    </div>
+
+    <h3>5.3 枚举子集优化</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> INF = <span class="num">0x3f3f3f3f</span>;
+
+<span class="cm">// 将集合 mask 划分为若干组，使得每组代价之和最小</span>
+<span class="ty">int</span> <span class="fn">solve</span>(<span class="ty">int</span> n, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; cost) {
+    <span class="ty">int</span> fullMask = (<span class="num">1</span> &lt;&lt; n) - <span class="num">1</span>;
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; dp(<span class="num">1</span> &lt;&lt; n, INF);
+    dp[<span class="num">0</span>] = <span class="num">0</span>;  <span class="cm">// 空集代价为 0</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">1</span>; mask &lt;= fullMask; mask++) {
+        <span class="cm">// 枚举 mask 的所有子集 sub（作为最后一组）</span>
+        <span class="kw">for</span> (<span class="ty">int</span> sub = mask; sub; sub = (sub - <span class="num">1</span>) &amp; mask) {
+            dp[mask] = <span class="fn">min</span>(dp[mask], dp[mask ^ sub] + cost[sub]);
+        }
+    }
+
+    <span class="kw">return</span> dp[fullMask];
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n;
+    cin &gt;&gt; n;
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; cost(<span class="num">1</span> &lt;&lt; n);
+    <span class="cm">// cost[sub] 表示子集 sub 单独作为一组的代价</span>
+    <span class="cm">// 可以根据具体问题预处理计算</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; (<span class="num">1</span> &lt;&lt; n); i++) {
+        cin &gt;&gt; cost[i];
+    }
+    cout &lt;&lt; <span class="fn">solve</span>(n, cost) &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度：</span>
+      <span class="value">O(3<sup>n</sup>)</span>
+    </div>
+    <div class="box box-warn">
+      <div class="box-title">复杂度分析</div>
+      <p>枚举子集的总复杂度为 3<sup>n</sup>（因为对每个 mask 枚举其所有子集，总和为 (1+2)<sup>n</sup> = 3<sup>n</sup>）。当 n &le; 16 时 3<sup>16</sup> &asymp; 4.3 &times; 10<sup>7</sup>，可以接受。</p>
+    </div>
+
+    <h3>5.4 具体实例：分组旅行</h3>
+    <div class="problem">
+      <div class="problem-title">n 个人分组旅行</div>
+      <p>n 个人（n &le; 16）分成若干组去旅行。每组的费用与组内人数有关，预先给定每种人员组合的费用 cost[mask]。求所有人出行的最小总费用。</p>
+    </div>
+    <pre><code><span class="cm">// cost[mask] 已预处理</span>
+<span class="cm">// dp[mask] = 将 mask 中的人分成若干组的最小费用</span>
+<span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">1</span>; mask &lt; (<span class="num">1</span> &lt;&lt; n); mask++) {
+    dp[mask] = cost[mask];  <span class="cm">// 不分组，全部一组</span>
+    <span class="kw">for</span> (<span class="ty">int</span> sub = (mask - <span class="num">1</span>) &amp; mask; sub; sub = (sub - <span class="num">1</span>) &amp; mask) {
+        dp[mask] = <span class="fn">min</span>(dp[mask], dp[sub] + cost[mask ^ sub]);
+    }
+}</code></pre>
+  </div>
+
+  <!-- ==================== 6. 哈密顿路径 ==================== -->
+  <div class="section" id="hamilton">
+    <h2>6. 哈密顿路径计数</h2>
+
+    <h3>6.1 问题描述</h3>
+    <div class="problem">
+      <div class="problem-title">哈密顿路径计数</div>
+      <p>给定 n 个点的有向图，求从点 0 到点 n-1 的哈密顿路径数量（经过每个点恰好一次）。</p>
+    </div>
+
+    <h3>6.2 状态与转移</h3>
+    <p>与 TSP 类似，但这里是<strong>计数</strong>而非求最优值：</p>
+    <pre><code><span class="kw">typedef</span> <span class="ty">long long</span> <span class="ty">ll</span>;
+
+<span class="ty">ll</span> <span class="fn">countHamilton</span>(<span class="ty">int</span> n, <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt;&amp; adj) {
+    <span class="ty">int</span> fullMask = (<span class="num">1</span> &lt;&lt; n) - <span class="num">1</span>;
+    <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">ll</span>&gt;&gt; dp(<span class="num">1</span> &lt;&lt; n, <span class="ty">vector</span>&lt;<span class="ty">ll</span>&gt;(n, <span class="num">0</span>));
+
+    dp[<span class="num">1</span>][<span class="num">0</span>] = <span class="num">1</span>;  <span class="cm">// 从点 0 出发</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">1</span>; mask &lt;= fullMask; mask++) {
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+            <span class="kw">if</span> (!(mask &amp; (<span class="num">1</span> &lt;&lt; i))) <span class="kw">continue</span>;
+            <span class="kw">if</span> (dp[mask][i] == <span class="num">0</span>) <span class="kw">continue</span>;
+            <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; n; j++) {
+                <span class="kw">if</span> (mask &amp; (<span class="num">1</span> &lt;&lt; j)) <span class="kw">continue</span>;
+                <span class="kw">if</span> (!adj[i][j]) <span class="kw">continue</span>;
+                dp[mask | (<span class="num">1</span> &lt;&lt; j)][j] += dp[mask][i];
+            }
+        }
+    }
+
+    <span class="kw">return</span> dp[fullMask][n - <span class="num">1</span>];
+}</code></pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度：</span>
+      <span class="value">O(2<sup>n</sup> &times; n<sup>2</sup>)</span>
+    </div>
+  </div>
+
+  <!-- ==================== 7. 经典题目 ==================== -->
+  <div class="section" id="practice">
+    <h2>7. 经典题目推荐</h2>
+
+    <div class="problem">
+      <div class="problem-title">POJ 3311 - Hie with the Pie</div>
+      <p>TSP 变体。n+1 个点（n &le; 10），从 0 出发，经过 1~n 各点恰好一次，回到 0。可以用 Floyd 预处理两点间最短路，然后状压 DP。注意可以多次经过某些点。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">AcWing 91. 最短 Hamilton 路径</div>
+      <p>标准 TSP 问题。给定 n 个点的完全图（n &le; 20），求从 0 到 n-1 经过每个点恰好一次的最短路径长度。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">POJ 2411 - Mondriaan's Dream</div>
+      <p>经典棋盘覆盖问题。n &times; m 棋盘用 1&times;2 骨牌覆盖，求方案数。轮廓线 DP 入门题。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P1896 - 互不侵犯</div>
+      <p>在 n &times; n 棋盘上放置国王，使得它们互不攻击（相邻 8 个格子不能有其他国王）。状压 DP，逐行转移。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">AcWing 1064. 小国王</div>
+      <p>在 n &times; n 棋盘上放 k 个国王，使得它们互不攻击。需要额外记录已放置数量的维度。dp[i][j][mask] 表示前 i 行放置了 j 个国王、当前行状态为 mask 的方案数。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">SPOJ SHOPPING - Shopping</div>
+      <p>TSP 变体。在地图上从起点出发，访问所有商店后回到起点，求最短距离。需要 BFS 预处理商店间的距离。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">LeetCode 691 - Stickers to Spell Word</div>
+      <p>给定若干贴纸（字符串），拼出目标字符串的最少贴纸数。将目标字符串的字符集合用 mask 表示，状压 DP。</p>
+      <span class="tag tag-hard">困难</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">Codeforces 11D - A Simple Task</div>
+      <p>给定无向图（n &le; 19），求图中简单环的数量。dp[mask][v] 表示从环的最小编号点出发，经过 mask 中的点，当前在 v 的路径数。要求 mask 中编号最小的点作为环的起点，避免重复计数。</p>
+      <span class="tag tag-hard">困难</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P2704 - 炮兵阵地</div>
+      <p>在 n &times; m 地图上放置炮兵，使得互不攻击（横纵各两格内不能有其他炮兵），求最多放置数量。状压 DP，需要记录前两行的状态。dp[i][mask][preMask] 滚动数组优化空间。</p>
+      <span class="tag tag-hard">困难</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">POJ 1185 - 炮兵阵地</div>
+      <p>同洛谷 P2704，经典三维状压 DP 题。n &times; m 矩阵（n &le; 100, m &le; 10），放置炮兵使得互不攻击。逐行转移，需要记录当前行和上一行的状态。由于 m &le; 10，合法状态数远小于 2<sup>10</sup>，可以预处理优化。</p>
+      <span class="tag tag-hard">困难</span>
+    </div>
+  </div>
+
+  <!-- ==================== 8. 总结 ==================== -->
+  <div class="section" id="summary">
+    <h2>8. 总结与技巧</h2>
+
+    <h3>8.1 状压 DP 解题步骤</h3>
+    <div class="steps">
+      <div class="step">
+        <strong>确定状态表示</strong>：用哪些位来表示什么信息。通常是"哪些元素已经被选择/访问/分配"。
+      </div>
+      <div class="step">
+        <strong>确定状态维度</strong>：只需 mask 一维，还是需要 mask + 当前位置/行数等额外维度。
+      </div>
+      <div class="step">
+        <strong>确定转移方式</strong>：从 mask 转移到 newMask = mask | (1 &lt;&lt; j)，通常枚举 j。
+      </div>
+      <div class="step">
+        <strong>确定初始状态和终止状态</strong>：从哪个 mask 开始，答案在哪个 mask。
+      </div>
+      <div class="step">
+        <strong>考虑合法性剪枝</strong>：提前排除不合法的状态（如相邻位冲突），减少计算量。
+      </div>
+    </div>
+
+    <h3>8.2 常见优化技巧</h3>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>技巧</th>
+            <th>说明</th>
+            <th>适用场景</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>预处理合法状态</td>
+            <td>提前筛出满足约束的 mask（如无相邻 1），减少枚举量</td>
+            <td>棋盘问题（国王、炮兵）</td>
+          </tr>
+          <tr>
+            <td>滚动数组</td>
+            <td>只保留当前行和上一行的 dp 值，空间从 O(n &times; 2<sup>n</sup>) 降到 O(2<sup>n</sup>)</td>
+            <td>逐行转移的棋盘问题</td>
+          </tr>
+          <tr>
+            <td>记忆化搜索</td>
+            <td>用 map 或数组记录已算过的状态，避免重复计算</td>
+            <td>转移不规则、状态稀疏</td>
+          </tr>
+          <tr>
+            <td>枚举子集优化</td>
+            <td>利用 <code>s = (s-1) &amp; mask</code> 高效枚举子集</td>
+            <td>集合划分问题</td>
+          </tr>
+          <tr>
+            <td>Floyd 预处理</td>
+            <td>对 TSP 类问题先用 Floyd 算出任意两点最短路</td>
+            <td>TSP（可经过非关键点）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>8.3 常见错误</h3>
+    <div class="box box-hard">
+      <div class="box-title">易错点提醒</div>
+      <ul>
+        <li><strong>数组越界</strong>：<code>1 &lt;&lt; n</code> 当 n 较大时可能溢出 int，需要用 <code>1LL &lt;&lt; n</code></li>
+        <li><strong>初始状态遗漏</strong>：忘记初始化起点状态或空集状态</li>
+        <li><strong>位运算优先级</strong>：<code>&amp;</code> 的优先级低于 <code>==</code>，写 <code>mask &amp; 1 == 0</code> 是错的，应该写 <code>(mask &amp; 1) == 0</code></li>
+        <li><strong>枚举顺序</strong>：mask 应从小到大枚举（子集先于超集被计算）</li>
+        <li><strong>集合划分重复计数</strong>：枚举子集时要固定一个元素在"最后一组"中，避免同一种划分被多次计算</li>
+      </ul>
+    </div>
+
+    <h3>8.4 模板总结：棋盘状压 DP 逐行转移</h3>
+    <pre><code><span class="cm">// 棋盘状压 DP 通用模板（逐行）</span>
+<span class="cm">// 适用: n &times; m 棋盘放置问题, m &le; 12</span>
+<span class="ty">int</span> <span class="fn">solve</span>(<span class="ty">int</span> n, <span class="ty">int</span> m) {
+    <span class="cm">// 1. 预处理合法状态（可选）</span>
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; valid;
+    <span class="kw">for</span> (<span class="ty">int</span> s = <span class="num">0</span>; s &lt; (<span class="num">1</span> &lt;&lt; m); s++) {
+        <span class="kw">if</span> ((s &amp; (s &lt;&lt; <span class="num">1</span>)) == <span class="num">0</span>)  <span class="cm">// 无相邻 1（国王/炮兵约束）</span>
+            valid.push_back(s);
+    }
+
+    <span class="cm">// 2. 初始化第一行</span>
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; dp(<span class="num">1</span> &lt;&lt; m, <span class="num">0</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> s : valid)
+        dp[s] = <span class="fn">calcValue</span>(s);  <span class="cm">// 第一行的初始值</span>
+
+    <span class="cm">// 3. 逐行转移</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; n; i++) {
+        <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; ndp(<span class="num">1</span> &lt;&lt; m, <span class="num">0</span>);
+        <span class="kw">for</span> (<span class="ty">int</span> cur : valid) {          <span class="cm">// 当前行状态</span>
+            <span class="kw">for</span> (<span class="ty">int</span> pre : valid) {      <span class="cm">// 上一行状态</span>
+                <span class="kw">if</span> (<span class="fn">compatible</span>(cur, pre)) <span class="cm">// 检查行间约束</span>
+                    ndp[cur] = <span class="fn">max</span>(ndp[cur],
+                        dp[pre] + <span class="fn">calcValue</span>(cur));
+            }
+        }
+        dp = ndp;
+    }
+
+    <span class="cm">// 4. 求答案</span>
+    <span class="ty">int</span> ans = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> s : valid)
+        ans = <span class="fn">max</span>(ans, dp[s]);
+    <span class="kw">return</span> ans;
+}</code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">一句话记忆</div>
+      <p>状压 DP 的本质：把"哪些东西被选了"编码成整数，用位运算来高效地选择、排除、枚举。n &le; 20 时首选考虑状压 DP。</p>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

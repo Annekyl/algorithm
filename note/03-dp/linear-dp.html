@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>线性 DP - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#dp">动态规划篇</a> &gt;
+    线性 DP
+  </div>
+
+  <div class="page-header">
+    <h1>线性 DP</h1>
+    <p class="subtitle">状态沿一维线性排列的经典动态规划模型</p>
+    <div class="tags">
+      <span class="tag tag-dp">动态规划</span>
+      <span class="tag tag-base">基础</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+  </div>
+
+  <!-- ==================== 目录 ==================== -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#dp-basics">DP 基础概念</a></li>
+      <li><a href="#lis">最长递增子序列 (LIS)</a></li>
+      <li><a href="#lcs">最长公共子序列 (LCS)</a></li>
+      <li><a href="#edit-distance">编辑距离 (Edit Distance)</a></li>
+      <li><a href="#number-triangle">数字三角形 (Number Triangle)</a></li>
+    </ul>
+  </div>
+
+  <!-- ================================================================ -->
+  <!--  Section 1: DP 基础概念                                           -->
+  <!-- ================================================================ -->
+  <div class="section" id="dp-basics">
+    <h2>1. DP 基础概念</h2>
+
+    <h3>1.1 什么是动态规划</h3>
+    <p>动态规划 (Dynamic Programming, DP) 是一种通过将复杂问题分解为更小的子问题来求解的算法思想。与分治不同，DP 的子问题之间存在<strong>重叠</strong>，因此需要将每个子问题的解保存下来，避免重复计算。</p>
+
+    <h3>1.2 两个核心性质</h3>
+
+    <div class="box box-info">
+      <div class="box-title">最优子结构 (Optimal Substructure)</div>
+      <p>问题的最优解包含其子问题的最优解。即：可以通过子问题的最优解，组合得到原问题的最优解。这是 DP 能够工作的根本前提。</p>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">重叠子问题 (Overlapping Subproblems)</div>
+      <p>在递归求解过程中，同一个子问题会被多次计算。DP 通过记忆化（自顶向下）或填表（自底向上）来消除重复计算。</p>
+    </div>
+
+    <h3>1.3 三个关键要素</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>要素</th><th>说明</th><th>示例 (LIS)</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>状态定义</strong></td>
+            <td>用什么变量描述子问题？选择维度是 DP 设计中最关键的一步</td>
+            <td><code>dp[i]</code>：以第 i 个元素结尾的最长递增子序列长度</td>
+          </tr>
+          <tr>
+            <td><strong>转移方程</strong></td>
+            <td>当前状态如何由已知状态推导而来？描述状态之间的依赖关系</td>
+            <td><code>dp[i] = max(dp[j] + 1)</code>，其中 <code>j &lt; i</code> 且 <code>a[j] &lt; a[i]</code></td>
+          </tr>
+          <tr>
+            <td><strong>初始条件与边界</strong></td>
+            <td>递推的起点是什么？边界情况如何处理？</td>
+            <td><code>dp[0] = 1</code>，每个元素自身构成长度为 1 的子序列</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>1.4 DP 的两种实现方式</h3>
+
+    <div class="diagram">
+      <pre>
+  自顶向下 (记忆化搜索)              自底向上 (递推填表)
+  ┌───────────────────┐           ┌───────────────────┐
+  │   solve(n)        │           │   dp[0] = ...     │
+  │     ├─ solve(n-1) │           │   dp[1] = ...     │
+  │     ├─ solve(n-2) │           │   dp[2] = ...     │
+  │     └─ ...        │           │   ...             │
+  │   用 memo[] 缓存   │           │   dp[n] = answer  │
+  └───────────────────┘           └───────────────────┘
+  优点: 只算需要的子问题               优点: 无递归开销, 常数更小
+  缺点: 递归栈开销                    缺点: 可能计算不需要的状态
+      </pre>
+    </div>
+
+    <h3>1.5 线性 DP 的特点</h3>
+    <p>线性 DP 是最基础的一类 DP，其状态通常沿着一个线性维度（如数组下标）排列。转移时，当前状态只依赖于前面若干个已计算的状态。常见模型包括：LIS、LCS、编辑距离等。</p>
+  </div>
+
+  <!-- ================================================================ -->
+  <!--  Section 2: LIS 最长递增子序列                                    -->
+  <!-- ================================================================ -->
+  <div class="section" id="lis">
+    <h2>2. 最长递增子序列 (LIS)</h2>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://leetcode.cn/problems/longest-increasing-subsequence/" target="_blank">LeetCode 300. 最长递增子序列</a>
+      </div>
+      <p>给定一个整数数组 nums，找到其中最长严格递增子序列的长度。</p>
+      <p><strong>示例：</strong>输入 <code>[10, 9, 2, 5, 3, 7, 101, 18]</code>，输出 <code>4</code>（子序列为 <code>[2, 3, 7, 101]</code>）</p>
+    </div>
+
+    <h3>2.1 O(n^2) 动态规划</h3>
+
+    <h4>状态定义</h4>
+    <p><code>dp[i]</code> 表示以 <code>a[i]</code> 结尾的最长递增子序列的长度。必须以 <code>a[i]</code> 结尾是关键约束，它保证了我们可以从更短的子序列转移过来。</p>
+
+    <h4>转移方程</h4>
+    <pre><code><span class="cm">// 遍历 i 之前的所有位置 j</span>
+<span class="kw">for</span> (<span class="ty">int</span> <span class="fn">j</span> = <span class="num">0</span>; j &lt; i; j++) {
+    <span class="kw">if</span> (a[j] &lt; a[i])
+        dp[i] = <span class="fn">max</span>(dp[i], dp[j] + <span class="num">1</span>);
+}</code></pre>
+    <p>含义：如果 <code>a[j] &lt; a[i]</code>，说明可以把 <code>a[i]</code> 接在以 <code>a[j]</code> 结尾的递增子序列后面，长度加 1。在所有合法的 j 中取最大值。</p>
+
+    <h4>DP 表填表示例</h4>
+    <p>以数组 <code>[10, 9, 2, 5, 3, 7, 101, 18]</code> 为例：</p>
+
+    <div class="array-vis">
+      <div class="cell">10<span class="idx">a[0]</span></div>
+      <div class="cell">9<span class="idx">a[1]</span></div>
+      <div class="cell">2<span class="idx">a[2]</span></div>
+      <div class="cell">5<span class="idx">a[3]</span></div>
+      <div class="cell">3<span class="idx">a[4]</span></div>
+      <div class="cell">7<span class="idx">a[5]</span></div>
+      <div class="cell">101<span class="idx">a[6]</span></div>
+      <div class="cell">18<span class="idx">a[7]</span></div>
+    </div>
+
+    <div class="array-vis">
+      <div class="cell hi">1<span class="idx">dp[0]</span></div>
+      <div class="cell hi">1<span class="idx">dp[1]</span></div>
+      <div class="cell hi">1<span class="idx">dp[2]</span></div>
+      <div class="cell active">2<span class="idx">dp[3]</span></div>
+      <div class="cell active">2<span class="idx">dp[4]</span></div>
+      <div class="cell done">3<span class="idx">dp[5]</span></div>
+      <div class="cell done">4<span class="idx">dp[6]</span></div>
+      <div class="cell done">4<span class="idx">dp[7]</span></div>
+    </div>
+
+    <div class="steps">
+      <div class="step"><code>dp[0]=1</code>：以 10 结尾，只有自身，长度 1</div>
+      <div class="step"><code>dp[1]=1</code>：9 &lt; 10，无法接在 10 后面，长度 1</div>
+      <div class="step"><code>dp[2]=1</code>：2 比前面都小，长度 1</div>
+      <div class="step"><code>dp[3]=2</code>：5 > 2，可接在 2 后面，<code>dp[2]+1=2</code></div>
+      <div class="step"><code>dp[4]=2</code>：3 > 2，可接在 2 后面，<code>dp[2]+1=2</code></div>
+      <div class="step"><code>dp[5]=3</code>：7 > 5(得2+1=3) 或 7 > 3(得2+1=3)，取最大 3</div>
+      <div class="step"><code>dp[6]=4</code>：101 > 7(得3+1=4)，取最大 4</div>
+      <div class="step"><code>dp[7]=4</code>：18 > 7(得3+1=4)，取最大 4</div>
+    </div>
+
+    <p>最终答案：<code>max(dp[0..7]) = 4</code></p>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n^2)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(n)</span>
+    </div>
+
+    <pre><span class="lang-label">C++</span><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">lis</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; a) {
+    <span class="ty">int</span> n = a.size();
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; dp(n, <span class="num">1</span>);   <span class="cm">// 每个元素自身构成长度为 1 的子序列</span>
+    <span class="ty">int</span> ans = <span class="num">1</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; n; i++) {
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; i; j++) {
+            <span class="kw">if</span> (a[j] &lt; a[i]) {
+                dp[i] = <span class="fn">max</span>(dp[i], dp[j] + <span class="num">1</span>);
+            }
+        }
+        ans = <span class="fn">max</span>(ans, dp[i]);
+    }
+    <span class="kw">return</span> ans;
+}
+</code></pre>
+
+    <h3>2.2 O(n log n) 贪心 + 二分优化</h3>
+
+    <h4>核心思想</h4>
+    <p>维护一个辅助数组 <code>tail[]</code>，其中 <code>tail[len]</code> 表示长度为 <code>len</code> 的递增子序列的<strong>最小末尾元素</code>。这个数组天然有序（递增），因此可以用二分查找来加速。</p>
+
+    <div class="box box-tip">
+      <div class="box-title">贪心策略</div>
+      <p>对于相同的子序列长度，末尾元素越小越好——因为更小的末尾更容易让后面的元素接上来，从而产生更长的子序列。</p>
+    </div>
+
+    <h4>算法流程</h4>
+    <div class="steps">
+      <div class="step">初始化空数组 <code>tail[]</code></div>
+      <div class="step">遍历原数组每个元素 <code>a[i]</code></div>
+      <div class="step">若 <code>a[i]</code> 大于 <code>tail</code> 末尾，直接追加（子序列长度 +1）</div>
+      <div class="step">否则，在 <code>tail</code> 中二分查找第一个 &ge; <code>a[i]</code> 的位置并替换（保持最优末尾）</div>
+      <div class="step"><code>tail</code> 的长度即为 LIS 长度</div>
+    </div>
+
+    <h4>填表过程演示</h4>
+    <p>以 <code>[10, 9, 2, 5, 3, 7, 101, 18]</code> 为例：</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>步骤</th><th>当前元素</th><th>操作</th><th>tail 数组</th><th>长度</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>10</td><td>tail 为空，直接加入</td><td>[10]</td><td>1</td></tr>
+          <tr><td>2</td><td>9</td><td>9 &lt; 10，替换 tail[0]</td><td>[9]</td><td>1</td></tr>
+          <tr><td>3</td><td>2</td><td>2 &lt; 9，替换 tail[0]</td><td>[2]</td><td>1</td></tr>
+          <tr><td>4</td><td>5</td><td>5 > 2，追加</td><td>[2, 5]</td><td>2</td></tr>
+          <tr><td>5</td><td>3</td><td>3 &lt; 5，替换 tail[1]</td><td>[2, 3]</td><td>2</td></tr>
+          <tr><td>6</td><td>7</td><td>7 > 3，追加</td><td>[2, 3, 7]</td><td>3</td></tr>
+          <tr><td>7</td><td>101</td><td>101 > 7，追加</td><td>[2, 3, 7, 101]</td><td>4</td></tr>
+          <tr><td>8</td><td>18</td><td>18 &lt; 101，替换 tail[3]</td><td>[2, 3, 7, 18]</td><td>4</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>注意：</strong><code>tail</code> 数组 <code>[2, 3, 7, 18]</code> 并不是实际的 LIS，它只用于计算长度。实际 LIS 是 <code>[2, 3, 7, 101]</code>。</p>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n log n)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(n)</span>
+    </div>
+
+    <pre><span class="lang-label">C++</span><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">lis_fast</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; a) {
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; tail;  <span class="cm">// tail[i]: 长度为 i+1 的递增子序列的最小末尾</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> x : a) {
+        <span class="cm">// lower_bound 找到第一个 >= x 的位置</span>
+        <span class="kw">auto</span> it = <span class="fn">lower_bound</span>(tail.<span class="fn">begin</span>(), tail.<span class="fn">end</span>(), x);
+        <span class="kw">if</span> (it == tail.<span class="fn">end</span>()) {
+            tail.<span class="fn">push_back</span>(x);      <span class="cm">// x 比所有末尾都大, 延长子序列</span>
+        } <span class="kw">else</span> {
+            *it = x;                  <span class="cm">// 替换, 保持最优末尾</span>
+        }
+    }
+    <span class="kw">return</span> tail.<span class="fn">size</span>();
+}
+</code></pre>
+
+    <h3>2.3 LIS 方案还原</h3>
+    <p>在 O(n^2) DP 的基础上，记录每个状态的前驱 <code>pre[i]</code>，最后从 <code>dp</code> 值最大的位置沿前驱回溯即可。</p>
+
+    <pre><span class="lang-label">C++</span><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">lis_reconstruct</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; a) {
+    <span class="ty">int</span> n = a.size();
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; dp(n, <span class="num">1</span>), pre(n, <span class="num">-1</span>);
+    <span class="ty">int</span> best = <span class="num">0</span>;  <span class="cm">// dp 值最大的位置</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; n; i++) {
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; i; j++) {
+            <span class="kw">if</span> (a[j] &lt; a[i] &amp;&amp; dp[j] + <span class="num">1</span> &gt; dp[i]) {
+                dp[i] = dp[j] + <span class="num">1</span>;
+                pre[i] = j;       <span class="cm">// 记录前驱</span>
+            }
+        }
+        <span class="kw">if</span> (dp[i] &gt; dp[best]) best = i;
+    }
+
+    <span class="cm">// 回溯还原路径</span>
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; seq;
+    <span class="kw">for</span> (<span class="ty">int</span> i = best; i != <span class="num">-1</span>; i = pre[i]) {
+        seq.<span class="fn">push_back</span>(a[i]);
+    }
+    <span class="fn">reverse</span>(seq.<span class="fn">begin</span>(), seq.<span class="fn">end</span>());
+    <span class="kw">return</span> seq;
+}
+</code></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">注意</div>
+      <p>O(n log n) 方法的 <code>tail</code> 数组不直接对应实际 LIS 序列。如需在 O(n log n) 时间内还原方案，需要额外维护每个元素在 <code>tail</code> 中的位置索引，并在替换时记录信息，实现较为复杂。</p>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!--  Section 3: LCS 最长公共子序列                                    -->
+  <!-- ================================================================ -->
+  <div class="section" id="lcs">
+    <h2>3. 最长公共子序列 (LCS)</h2>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://leetcode.cn/problems/longest-common-subsequence/" target="_blank">LeetCode 1143. 最长公共子序列</a>
+      </div>
+      <p>给定两个字符串 text1 和 text2，返回这两个字符串的最长公共子序列的长度。</p>
+      <p><strong>示例：</strong>text1 = <code>"abcde"</code>, text2 = <code>"ace"</code>，输出 <code>3</code>（LCS 为 <code>"ace"</code>）</p>
+    </div>
+
+    <h3>3.1 O(nm) 二维 DP</h3>
+
+    <h4>状态定义</h4>
+    <p><code>dp[i][j]</code> 表示字符串 <code>A</code> 的前 <code>i</code> 个字符与字符串 <code>B</code> 的前 <code>j</code> 个字符的最长公共子序列长度。</p>
+
+    <h4>转移方程</h4>
+    <pre><code><span class="kw">if</span> (A[i-<span class="num">1</span>] == B[j-<span class="num">1</span>])
+    dp[i][j] = dp[i-<span class="num">1</span>][j-<span class="num">1</span>] + <span class="num">1</span>;         <span class="cm">// 字符匹配, LCS 长度 +1</span>
+<span class="kw">else</span>
+    dp[i][j] = <span class="fn">max</span>(dp[i-<span class="num">1</span>][j], dp[i][j-<span class="num">1</span>]); <span class="cm">// 不匹配, 取两种跳过方案的较大值</span></code></pre>
+
+    <p>转移的直观理解：</p>
+    <ul>
+      <li><strong>A[i-1] == B[j-1]：</strong>当前字符可以匹配，LCS 长度在 <code>dp[i-1][j-1]</code> 基础上加 1</li>
+      <li><strong>A[i-1] != B[j-1]：</strong>当前字符不匹配，要么跳过 A 的第 i 个字符（<code>dp[i-1][j]</code>），要么跳过 B 的第 j 个字符（<code>dp[i][j-1]</code>），取较大值</li>
+    </ul>
+
+    <h4>DP 表填表示例</h4>
+    <p>A = <code>"abcde"</code>, B = <code>"ace"</code></p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th></th><th></th><th>-</th><th>a</th><th>c</th><th>e</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td></td><td><strong>0</strong></td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+          <tr><td><strong>a</strong></td><td><strong>0</strong></td><td>0</td><td style="color:var(--accent3)">1</td><td>1</td><td>1</td></tr>
+          <tr><td><strong>b</strong></td><td><strong>0</strong></td><td>0</td><td>1</td><td>1</td><td>1</td></tr>
+          <tr><td><strong>c</strong></td><td><strong>0</strong></td><td>0</td><td>1</td><td style="color:var(--accent3)">2</td><td>2</td></tr>
+          <tr><td><strong>d</strong></td><td><strong>0</strong></td><td>0</td><td>1</td><td>2</td><td>2</td></tr>
+          <tr><td><strong>e</strong></td><td><strong>0</strong></td><td>0</td><td>1</td><td>2</td><td style="color:var(--accent5)">3</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>绿色高亮处为字符匹配时的转移，最终答案为 <code>dp[5][3] = 3</code>。</p>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(nm)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(nm)</span>
+    </div>
+
+    <pre><span class="lang-label">C++</span><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">lcs</span>(<span class="ty">string</span>&amp; A, <span class="ty">string</span>&amp; B) {
+    <span class="ty">int</span> n = A.<span class="fn">size</span>(), m = B.<span class="fn">size</span>();
+    <span class="cm">// dp[i][j]: A 前 i 个字符 与 B 前 j 个字符的 LCS 长度</span>
+    <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; dp(n + <span class="num">1</span>, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;(m + <span class="num">1</span>, <span class="num">0</span>));
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">1</span>; j &lt;= m; j++) {
+            <span class="kw">if</span> (A[i - <span class="num">1</span>] == B[j - <span class="num">1</span>]) {
+                dp[i][j] = dp[i - <span class="num">1</span>][j - <span class="num">1</span>] + <span class="num">1</span>;
+            } <span class="kw">else</span> {
+                dp[i][j] = <span class="fn">max</span>(dp[i - <span class="num">1</span>][j], dp[i][j - <span class="num">1</span>]);
+            }
+        }
+    }
+    <span class="kw">return</span> dp[n][m];
+}
+</code></pre>
+
+    <h3>3.2 空间优化：滚动数组 O(min(n,m))</h3>
+    <p>观察转移方程，<code>dp[i][j]</code> 只依赖于当前行和上一行，因此可以用两行交替（滚动数组）将空间降为 O(m)。进一步，我们可以只用一行，但需要从右向左填充以避免覆盖未使用的值。</p>
+
+    <pre><span class="lang-label">C++</span><code><span class="ty">int</span> <span class="fn">lcs_optimized</span>(<span class="ty">string</span>&amp; A, <span class="ty">string</span>&amp; B) {
+    <span class="cm">// 确保 B 是较短的字符串, 减少空间</span>
+    <span class="kw">if</span> (A.<span class="fn">size</span>() &lt; B.<span class="fn">size</span>()) <span class="fn">swap</span>(A, B);
+    <span class="ty">int</span> n = A.<span class="fn">size</span>(), m = B.<span class="fn">size</span>();
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; dp(m + <span class="num">1</span>, <span class="num">0</span>);
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="ty">int</span> prev = <span class="num">0</span>;  <span class="cm">// 保存 dp[i-1][j-1] 的值</span>
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">1</span>; j &lt;= m; j++) {
+            <span class="ty">int</span> temp = dp[j];  <span class="cm">// 暂存 dp[i-1][j] (下一轮变成 prev)</span>
+            <span class="kw">if</span> (A[i - <span class="num">1</span>] == B[j - <span class="num">1</span>]) {
+                dp[j] = prev + <span class="num">1</span>;
+            } <span class="kw">else</span> {
+                dp[j] = <span class="fn">max</span>(dp[j], dp[j - <span class="num">1</span>]);
+            }
+            prev = temp;
+        }
+    }
+    <span class="kw">return</span> dp[m];
+}
+</code></pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(nm)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(min(n, m))</span>
+    </div>
+
+    <h3>3.3 LCS 方案还原</h3>
+    <p>从 <code>dp[n][m]</code> 开始回溯：</p>
+    <ul>
+      <li>若 <code>A[i-1] == B[j-1]</code>，该字符属于 LCS，加入结果，移动到 <code>(i-1, j-1)</code></li>
+      <li>否则，向 <code>dp</code> 值较大的方向移动（<code>(i-1,j)</code> 或 <code>(i,j-1)</code>）</li>
+    </ul>
+
+    <pre><span class="lang-label">C++</span><code><span class="ty">string</span> <span class="fn">lcs_reconstruct</span>(<span class="ty">string</span>&amp; A, <span class="ty">string</span>&amp; B) {
+    <span class="ty">int</span> n = A.<span class="fn">size</span>(), m = B.<span class="fn">size</span>();
+    <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; dp(n + <span class="num">1</span>, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;(m + <span class="num">1</span>, <span class="num">0</span>));
+
+    <span class="cm">// 填表 (同标准 LCS)</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">1</span>; j &lt;= m; j++)
+            dp[i][j] = (A[i-<span class="num">1</span>] == B[j-<span class="num">1</span>])
+                ? dp[i-<span class="num">1</span>][j-<span class="num">1</span>] + <span class="num">1</span>
+                : <span class="fn">max</span>(dp[i-<span class="num">1</span>][j], dp[i][j-<span class="num">1</span>]);
+
+    <span class="cm">// 回溯还原</span>
+    <span class="ty">string</span> res;
+    <span class="ty">int</span> i = n, j = m;
+    <span class="kw">while</span> (i &gt; <span class="num">0</span> &amp;&amp; j &gt; <span class="num">0</span>) {
+        <span class="kw">if</span> (A[i-<span class="num">1</span>] == B[j-<span class="num">1</span>]) {
+            res += A[i-<span class="num">1</span>];  <span class="cm">// 该字符属于 LCS</span>
+            i--; j--;
+        } <span class="kw">else if</span> (dp[i-<span class="num">1</span>][j] &gt; dp[i][j-<span class="num">1</span>]) {
+            i--;   <span class="cm">// 向上走</span>
+        } <span class="kw">else</span> {
+            j--;   <span class="cm">// 向左走</span>
+        }
+    }
+    <span class="fn">reverse</span>(res.<span class="fn">begin</span>(), res.<span class="fn">end</span>());
+    <span class="kw">return</span> res;
+}
+</code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">经典变体</div>
+      <p><strong>最长公共子串 (Longest Common Substring)：</strong>子串要求连续，转移方程变为 <code>dp[i][j] = (A[i-1]==B[j-1]) ? dp[i-1][j-1]+1 : 0</code>，答案为表中所有值的最大值。</p>
+      <p><strong>LeetCode 583. 两个字符串的删除操作：</strong>答案为 <code>n + m - 2 * LCS(A, B)</code>。</p>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!--  Section 4: 编辑距离                                              -->
+  <!-- ================================================================ -->
+  <div class="section" id="edit-distance">
+    <h2>4. 编辑距离 (Edit Distance)</h2>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://leetcode.cn/problems/edit-distance/" target="_blank">LeetCode 72. 编辑距离</a>
+      </div>
+      <p>给定两个单词 word1 和 word2，计算将 word1 转换成 word2 所需的最少操作数。允许的操作：插入一个字符、删除一个字符、替换一个字符。</p>
+      <p><strong>示例：</strong>word1 = <code>"horse"</code>, word2 = <code>"ros"</code>，输出 <code>3</code></p>
+    </div>
+
+    <h3>4.1 状态定义与转移</h3>
+
+    <h4>状态定义</h4>
+    <p><code>dp[i][j]</code> 表示将 word1 的前 <code>i</code> 个字符转换成 word2 的前 <code>j</code> 个字符所需的最少操作数。</p>
+
+    <h4>转移方程</h4>
+    <pre><code><span class="kw">if</span> (word1[i-<span class="num">1</span>] == word2[j-<span class="num">1</span>])
+    dp[i][j] = dp[i-<span class="num">1</span>][j-<span class="num">1</span>];               <span class="cm">// 字符相同, 无需操作</span>
+<span class="kw">else</span>
+    dp[i][j] = <span class="num">1</span> + <span class="fn">min</span>({
+        dp[i-<span class="num">1</span>][j],                            <span class="cm">// 删除 word1[i]: 从 dp[i-1][j] 转移</span>
+        dp[i][j-<span class="num">1</span>],                            <span class="cm">// 插入 word2[j]: 从 dp[i][j-1] 转移</span>
+        dp[i-<span class="num">1</span>][j-<span class="num">1</span>]                           <span class="cm">// 替换 word1[i] 为 word2[j]</span>
+    });</code></pre>
+
+    <div class="diagram">
+      <pre>
+  三种操作的转移方向:
+  ┌────────────┐
+  │ dp[i-1][j] │ ──删除──&gt; dp[i][j]
+  └────────────┘
+
+  ┌────────────┐
+  │ dp[i][j-1] │ ──插入──&gt; dp[i][j]
+  └────────────┘
+
+  ┌──────────────┐
+  │ dp[i-1][j-1] │ ──替换──&gt; dp[i][j]
+  └──────────────┘
+      </pre>
+    </div>
+
+    <h4>初始条件</h4>
+    <ul>
+      <li><code>dp[i][0] = i</code>：将 word1 的前 i 个字符全部删除，需要 i 次操作</li>
+      <li><code>dp[0][j] = j</code>：在空串基础上插入 j 个字符，需要 j 次操作</li>
+    </ul>
+
+    <h4>DP 表填表示例</h4>
+    <p>word1 = <code>"horse"</code>, word2 = <code>"ros"</code></p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th></th><th>-</th><th>r</th><th>o</th><th>s</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>-</strong></td><td>0</td><td>1</td><td>2</td><td>3</td></tr>
+          <tr><td><strong>h</strong></td><td>1</td><td>1</td><td>2</td><td>3</td></tr>
+          <tr><td><strong>o</strong></td><td>2</td><td>2</td><td>1</td><td>2</td></tr>
+          <tr><td><strong>r</strong></td><td>3</td><td>2</td><td>2</td><td>2</td></tr>
+          <tr><td><strong>s</strong></td><td>4</td><td>3</td><td>3</td><td style="color:var(--accent5)">2</td></tr>
+          <tr><td><strong>e</strong></td><td>5</td><td>4</td><td>4</td><td style="color:var(--accent5)">3</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>答案为 <code>dp[5][3] = 3</code>。一种最优方案：horse &rarr; rorse（替换 h&rarr;r）&rarr; rose（删除 r）&rarr; ros（删除 e）。</p>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(nm)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(nm)</span> 或 <span class="value">O(min(n,m))</span> 滚动数组优化
+    </div>
+
+    <pre><span class="lang-label">C++</span><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">minDistance</span>(<span class="ty">string</span>&amp; word1, <span class="ty">string</span>&amp; word2) {
+    <span class="ty">int</span> n = word1.<span class="fn">size</span>(), m = word2.<span class="fn">size</span>();
+    <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; dp(n + <span class="num">1</span>, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;(m + <span class="num">1</span>));
+
+    <span class="cm">// 初始条件: 空串到目标串的距离</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt;= n; i++) dp[i][<span class="num">0</span>] = i;
+    <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt;= m; j++) dp[<span class="num">0</span>][j] = j;
+
+    <span class="cm">// 填表</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">1</span>; j &lt;= m; j++) {
+            <span class="kw">if</span> (word1[i - <span class="num">1</span>] == word2[j - <span class="num">1</span>]) {
+                dp[i][j] = dp[i - <span class="num">1</span>][j - <span class="num">1</span>];    <span class="cm">// 字符相同, 无操作</span>
+            } <span class="kw">else</span> {
+                dp[i][j] = <span class="num">1</span> + <span class="fn">min</span>({
+                    dp[i - <span class="num">1</span>][j],                  <span class="cm">// 删除</span>
+                    dp[i][j - <span class="num">1</span>],                  <span class="cm">// 插入</span>
+                    dp[i - <span class="num">1</span>][j - <span class="num">1</span>]               <span class="cm">// 替换</span>
+                });
+            }
+        }
+    }
+    <span class="kw">return</span> dp[n][m];
+}
+</code></pre>
+
+    <h3>4.2 空间优化</h3>
+    <p>与 LCS 类似，可以用滚动数组将空间优化到 O(min(n,m))。由于转移依赖 <code>dp[i-1][j]</code>、<code>dp[i][j-1]</code> 和 <code>dp[i-1][j-1]</code>，从右向左遍历即可只用一行数组。</p>
+
+    <pre><span class="lang-label">C++</span><code><span class="ty">int</span> <span class="fn">minDistance_optimized</span>(<span class="ty">string</span>&amp; word1, <span class="ty">string</span>&amp; word2) {
+    <span class="kw">if</span> (word1.<span class="fn">size</span>() &lt; word2.<span class="fn">size</span>()) <span class="fn">swap</span>(word1, word2);
+    <span class="ty">int</span> n = word1.<span class="fn">size</span>(), m = word2.<span class="fn">size</span>();
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; dp(m + <span class="num">1</span>);
+
+    <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt;= m; j++) dp[j] = j;
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="ty">int</span> prev = dp[<span class="num">0</span>];  <span class="cm">// dp[i-1][0]</span>
+        dp[<span class="num">0</span>] = i;
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">1</span>; j &lt;= m; j++) {
+            <span class="ty">int</span> temp = dp[j];
+            <span class="kw">if</span> (word1[i - <span class="num">1</span>] == word2[j - <span class="num">1</span>]) {
+                dp[j] = prev;
+            } <span class="kw">else</span> {
+                dp[j] = <span class="num">1</span> + <span class="fn">min</span>({dp[j], dp[j - <span class="num">1</span>], prev});
+            }
+            prev = temp;
+        }
+    }
+    <span class="kw">return</span> dp[m];
+}
+</code></pre>
+
+    <div class="box box-info">
+      <div class="box-title">编辑距离的扩展</div>
+      <p>实际应用中，不同操作可以有不同的代价。例如 DNA 序列比对中，替换代价可能高于插入/删除。此时只需将转移中的 <code>1</code> 替换为对应代价即可。</p>
+      <p><strong>相关问题：</strong>LeetCode 583（两个字符串的删除操作）、LeetCode 1143（LCS）本质上都是编辑距离的特例。</p>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!--  Section 5: 数字三角形                                            -->
+  <!-- ================================================================ -->
+  <div class="section" id="number-triangle">
+    <h2>5. 数字三角形 (Number Triangle)</h2>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P1216" target="_blank">洛谷 P1216 [IOI1994] 数字三角形</a>
+      </div>
+      <p>给定一个数字三角形，从顶部出发，在每一节点可以选择向左下或右下走，一直走到底层。要求找出一条路径，使路径上的数字之和最大。</p>
+    </div>
+
+    <h3>5.1 问题建模</h3>
+    <div class="diagram">
+      <pre>
+         7
+        / \
+       3   8
+      / \ / \
+     8   1   0
+    / \ / \ / \
+   2   7   4   4
+  / \ / \ / \ / \
+ 4   5   2   6   5
+
+  最优路径: 7 -> 8 -> 7 -> 5 = 27
+      </pre>
+    </div>
+
+    <h3>5.2 自顶向下 DP</h3>
+
+    <h4>状态定义</h4>
+    <p><code>dp[i][j]</code> 表示从三角形顶部走到第 <code>i</code> 行第 <code>j</code> 个位置时的最大路径和（下标从 0 开始）。</p>
+
+    <h4>转移方程</h4>
+    <pre><code><span class="cm">// 第 i 行第 j 个数只能从上一行的 j-1 或 j 位置走来</span>
+dp[i][j] = a[i][j] + <span class="fn">max</span>(dp[i-<span class="num">1</span>][j-<span class="num">1</span>], dp[i-<span class="num">1</span>][j])
+
+<span class="cm">// 注意边界: 每行第一个只能从上一行第一个来, 最后一个同理</span>
+dp[i][<span class="num">0</span>] = a[i][<span class="num">0</span>] + dp[i-<span class="num">1</span>][<span class="num">0</span>];
+dp[i][i] = a[i][i] + dp[i-<span class="num">1</span>][i-<span class="num">1</span>];</code></pre>
+
+    <h4>填表过程</h4>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>行</th><th>原始数据</th><th>dp 值</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>0</td><td>7</td><td><strong>7</strong></td></tr>
+          <tr><td>1</td><td>3, 8</td><td><strong>10</strong>, <strong>15</strong></td></tr>
+          <tr><td>2</td><td>8, 1, 0</td><td><strong>18</strong>, <strong>16</strong>, <strong>15</strong></td></tr>
+          <tr><td>3</td><td>2, 7, 4, 4</td><td><strong>20</strong>, <strong>25</strong>, <strong>20</strong>, <strong>19</strong></td></tr>
+          <tr><td>4</td><td>4, 5, 2, 6, 5</td><td><strong>24</strong>, <strong>30</strong>, <strong>27</strong>, <strong>26</strong>, <strong>24</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>答案为最后一行的最大值 <code>max(dp[n-1][0..n-1]) = 30</code>。</p>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n^2)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(n^2)</span> 或 <span class="value">O(n)</span> 滚动数组
+    </div>
+
+    <pre><span class="lang-label">C++</span><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n;
+    cin &gt;&gt; n;
+    <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; a(n, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;(n, <span class="num">0</span>));
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt;= i; j++)
+            cin &gt;&gt; a[i][j];
+
+    <span class="cm">// dp[i][j]: 走到 (i,j) 的最大路径和</span>
+    <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; dp = a;  <span class="cm">// 用 a 初始化 dp</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; n; i++) {
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt;= i; j++) {
+            <span class="ty">int</span> best = <span class="num">0</span>;
+            <span class="kw">if</span> (j &gt; <span class="num">0</span>) best = <span class="fn">max</span>(best, dp[i-<span class="num">1</span>][j-<span class="num">1</span>]);
+            <span class="kw">if</span> (j &lt; i) best = <span class="fn">max</span>(best, dp[i-<span class="num">1</span>][j]);
+            dp[i][j] += best;
+        }
+    }
+
+    <span class="cm">// 答案是最后一行的最大值</span>
+    <span class="ty">int</span> ans = *<span class="fn">max_element</span>(dp[n-<span class="num">1</span>].<span class="fn">begin</span>(), dp[n-<span class="num">1</span>].<span class="fn">begin</span>() + n);
+    cout &lt;&lt; ans &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}
+</code></pre>
+
+    <h3>5.3 空间优化：从下往上</h3>
+    <p>从底部向上递推可以进一步简化，且只需要一维数组。因为最终答案在 <code>dp[0][0]</code>，无需再取最大值。</p>
+
+    <pre><span class="lang-label">C++</span><code><span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n;
+    cin &gt;&gt; n;
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; dp(n);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        cin &gt;&gt; dp[i];  <span class="cm">// 先读入最后一行</span>
+
+    <span class="cm">// 从倒数第二行开始向上</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = n - <span class="num">2</span>; i &gt;= <span class="num">0</span>; i--) {
+        <span class="ty">int</span> x;
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt;= i; j++) {
+            cin &gt;&gt; x;
+            dp[j] = x + <span class="fn">max</span>(dp[j], dp[j + <span class="num">1</span>]);
+        }
+    }
+    <span class="cm">// 注意: 上面的写法需要将输入存储起来或倒序读入</span>
+    <span class="cm">// 更实用的写法是用二维数组读入后自底向上递推</span>
+    cout &lt;&lt; dp[<span class="num">0</span>] &lt;&lt; endl;
+}
+</code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">技巧：自底向上 vs 自顶向下</div>
+      <p>数字三角形问题中，自底向上更加简洁：无需处理边界条件（每行首尾的特殊情况），且最终答案直接在 <code>dp[0][0]</code>。这是 DP 设计中的常见技巧——选择递推方向可以显著简化代码。</p>
+    </div>
+
+    <h3>5.4 路径还原</h3>
+    <pre><span class="lang-label">C++</span><code><span class="ty">void</span> <span class="fn">printPath</span>(<span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt;&amp; dp, <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt;&amp; a) {
+    <span class="ty">int</span> n = dp.<span class="fn">size</span>();
+    <span class="cm">// 找到最后一行最大值的位置</span>
+    <span class="ty">int</span> col = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">1</span>; j &lt; n; j++)
+        <span class="kw">if</span> (dp[n-<span class="num">1</span>][j] &gt; dp[n-<span class="num">1</span>][col])
+            col = j;
+
+    <span class="cm">// 从底部回溯</span>
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; path;
+    <span class="kw">for</span> (<span class="ty">int</span> i = n - <span class="num">1</span>; i &gt;= <span class="num">0</span>; i--) {
+        path.<span class="fn">push_back</span>(a[i][col]);
+        <span class="kw">if</span> (i &gt; <span class="num">0</span>) {
+            <span class="cm">// 看是从左上方还是正上方来的</span>
+            <span class="kw">if</span> (col &gt; <span class="num">0</span> &amp;&amp; dp[i-<span class="num">1</span>][col-<span class="num">1</span>] &gt; dp[i-<span class="num">1</span>][col])
+                col--;
+        }
+    }
+    <span class="fn">reverse</span>(path.<span class="fn">begin</span>(), path.<span class="fn">end</span>());
+    <span class="kw">for</span> (<span class="ty">int</span> x : path) cout &lt;&lt; x &lt;&lt; <span class="str">" "</span>;
+}
+</code></pre>
+  </div>
+
+  <!-- ================================================================ -->
+  <!--  总结                                                             -->
+  <!-- ================================================================ -->
+  <div class="section">
+    <h2>总结</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>算法</th><th>状态定义</th><th>时间</th><th>空间</th><th>核心技巧</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>LIS (朴素)</td>
+            <td><code>dp[i]</code>: 以 i 结尾的 LIS 长度</td>
+            <td>O(n^2)</td>
+            <td>O(n)</td>
+            <td>枚举前驱</td>
+          </tr>
+          <tr>
+            <td>LIS (优化)</td>
+            <td><code>tail[]</code>: 长度 k 的最小末尾</td>
+            <td>O(n log n)</td>
+            <td>O(n)</td>
+            <td>贪心 + 二分</td>
+          </tr>
+          <tr>
+            <td>LCS</td>
+            <td><code>dp[i][j]</code>: A 前 i 与 B 前 j 的 LCS</td>
+            <td>O(nm)</td>
+            <td>O(nm) / O(min(n,m))</td>
+            <td>二维递推 / 滚动数组</td>
+          </tr>
+          <tr>
+            <td>编辑距离</td>
+            <td><code>dp[i][j]</code>: A 前 i 到 B 前 j 的最少操作数</td>
+            <td>O(nm)</td>
+            <td>O(nm) / O(min(n,m))</td>
+            <td>三种操作取 min</td>
+          </tr>
+          <tr>
+            <td>数字三角形</td>
+            <td><code>dp[i][j]</code>: 走到 (i,j) 的最大路径和</td>
+            <td>O(n^2)</td>
+            <td>O(n^2) / O(n)</td>
+            <td>自底向上简化</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">DP 设计通用步骤</div>
+      <ol>
+        <li><strong>定义状态：</strong>明确 dp 数组每个元素的含义（这一步最关键）</li>
+        <li><strong>写转移方程：</strong>当前状态可以从哪些状态转移过来？取 max/min/求和？</li>
+        <li><strong>确定初始条件和边界：</strong>递推的起点，数组越界的处理</li>
+        <li><strong>确定遍历顺序：</strong>保证转移时所依赖的状态已经计算完毕</li>
+        <li><strong>提取答案：</strong>答案在 dp 数组的哪个位置？是否需要遍历取最值？</li>
+      </ol>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

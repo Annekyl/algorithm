@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>回溯法 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+<div class="breadcrumb">
+  <a href="../index.html">首页</a> &gt;
+  <a href="../index.html#02-search">搜索篇</a> &gt;
+  回溯法
+</div>
+
+<div class="page-header">
+  <h1>回溯法 Backtracking</h1>
+  <p class="subtitle">系统搜索 + 剪枝优化 -- 穷举一切可能的通用框架</p>
+  <div class="tags">
+    <span class="tag tag-mid">中等</span>
+    <span class="tag tag-base">搜索</span>
+    <span class="tag tag-dp">状态空间</span>
+  </div>
+</div>
+
+<!-- ==================== TOC ==================== -->
+<div class="toc">
+  <h3>目录</h3>
+  <ul>
+    <li><a href="#sec-overview">一、回溯法概述</a></li>
+    <li><a href="#sec-permutation">二、全排列</a></li>
+    <li><a href="#sec-combination">三、组合枚举</a></li>
+    <li><a href="#sec-subset">四、子集枚举</a></li>
+    <li><a href="#sec-nqueen">五、N 皇后问题</a></li>
+    <li><a href="#sec-sudoku">六、数独求解</a></li>
+    <li><a href="#sec-framework">七、回溯框架与剪枝模式</a></li>
+  </ul>
+</div>
+
+<!-- ==================== 一、回溯法概述 ==================== -->
+<div class="section" id="sec-overview">
+<h2>一、回溯法概述</h2>
+
+<h3>1.1 什么是回溯法</h3>
+<p>回溯法（Backtracking）是一种通过 <strong>穷举搜索</strong> 来寻找所有（或部分）解的算法框架。核心思想是：在搜索过程中，每一步做出一个选择，递归地继续搜索；当发现当前选择不可能产生有效解时，<strong>撤销选择</strong>（回溯），回到上一步尝试其他分支。</p>
+
+<div class="box box-info">
+  <div class="box-title">核心思想</div>
+  <p>回溯法 = 深度优先搜索（DFS） + 状态回退。本质是在一棵 <strong>状态空间树</strong>（State Space Tree）上做 DFS，通过剪枝来减少搜索空间。</p>
+</div>
+
+<h3>1.2 回溯法与 DFS 的关系</h3>
+<p>回溯法是 DFS 的一种特化形式。两者的关系如下：</p>
+
+<div class="table-wrap">
+<table>
+  <tr><th>特征</th><th>DFS</th><th>回溯法</th></tr>
+  <tr><td>搜索方向</td><td>深度优先</td><td>深度优先</td></tr>
+  <tr><td>核心操作</td><td>标记已访问、递归、取消标记</td><td>做选择、递归、撤销选择</td></tr>
+  <tr><td>目标</td><td>遍历图/树、找连通性</td><td>枚举所有可行解 / 最优解</td></tr>
+  <tr><td>剪枝</td><td>通常不涉及</td><td>剪枝是核心优化手段</td></tr>
+  <tr><td>状态回退</td><td>恢复 visited 数组</td><td>恢复路径、约束条件等全部状态</td></tr>
+</table>
+</div>
+
+<h3>1.3 状态空间树</h3>
+<p>回溯法的搜索过程可以抽象为一棵状态空间树：根节点是初始状态，每个节点代表一个中间决策状态，每条边代表一个决策选择，叶子节点代表完整解（或不可行状态）。</p>
+
+<div class="diagram">
+<pre>
+                    (根: 初始状态)
+                   /      |       \
+              选择1      选择2      选择3
+             /    \        |       /   \
+           s1.1  s1.2    s2.1   s3.1  s3.2
+           /       \             |
+        叶子(解)   剪枝X      叶子(解)
+
+    X = 剪掉的分支，不满足约束条件
+    叶子 = 到达搜索终点，得到一个可行解
+</pre>
+</div>
+
+<h3>1.4 回溯法三要素</h3>
+<div class="steps">
+  <div class="step"><strong>选择路径</strong> -- 当前已经做出的选择列表（如已放置的皇后位置）</div>
+  <div class="step"><strong>候选列表</strong> -- 当前还可以做的选择（下一步合法的决策）</div>
+  <div class="step"><strong>结束条件</strong> -- 到达决策树底部（找到一个解 / 无法继续）</div>
+</div>
+
+<div class="complexity">
+  <span class="label">典型时间复杂度</span>
+  <span class="value">O(b^d)</span>
+  <span class="label">b 为分支因子，d 为搜索深度</span>
+</div>
+
+<h3>1.5 回溯法适用场景</h3>
+<ul>
+  <li>需要找到 <strong>所有可能解</strong>（全排列、组合、子集）</li>
+  <li>需要找到 <strong>满足约束条件的解</strong>（N 皇后、数独）</li>
+  <li>需要找到 <strong>最优解</strong>（配合剪枝 / 记忆化，如旅行商问题 TSP）</li>
+  <li>解空间可以用树状结构表示，且深度不大</li>
+</ul>
+</div>
+
+<!-- ==================== 二、全排列 ==================== -->
+<div class="section" id="sec-permutation">
+<h2>二、全排列</h2>
+
+<h3>2.1 问题描述</h3>
+<p>给定一个不含重复数字的数组，返回其所有可能的全排列。例如 <code>[1,2,3]</code> 的全排列为 <code>[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]</code>，共 n! 个。</p>
+
+<h3>2.2 方法一：STL next_permutation</h3>
+<p>C++ 标准库提供了 <code>next_permutation</code> 函数，可以按字典序生成下一个排列。需要先排序确保从最小排列开始。</p>
+
+<pre><code><span class="pp">#include</span> <span class="str">&lt;algorithm&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;vector&gt;</span>
+
+<span class="ty">void</span> <span class="fn">permutations_stl</span>(<span class="ty">std::vector&lt;int&gt;</span>&amp; nums) {
+    <span class="fn">std::sort</span>(nums.<span class="fn">begin</span>(), nums.<span class="fn">end</span>());
+    <span class="kw">do</span> {
+        <span class="cm">// 处理当前排列 nums</span>
+        <span class="fn">print</span>(nums);
+    } <span class="kw">while</span> (<span class="fn">std::next_permutation</span>(nums.<span class="fn">begin</span>(), nums.<span class="fn">end</span>()));
+}
+<span class="cm">// 时间复杂度: O(n! * n)  总共 n! 个排列，每次生成需要 O(n)</span></code></pre>
+
+<h3>2.3 方法二：回溯法手写全排列</h3>
+<p>回溯法的核心是通过 "选择-递归-撤销" 三个步骤枚举所有排列。</p>
+
+<div class="diagram">
+<pre>
+    排列 [1,2,3] 的状态空间树:
+
+                       []
+                /       |       \
+             [1]       [2]       [3]
+            /   \     /   \     /   \
+         [1,2] [1,3][2,1][2,3][3,1][3,2]
+          |     |    |     |    |     |
+       [123] [132][213][231][312][321]
+
+    每层选择一个未使用的数字加入路径
+    路径长度 == n 时得到一个完整排列
+</pre>
+</div>
+
+<h4>执行过程跟踪（n=3）</h4>
+<div class="steps">
+  <div class="step">path=[], 从 {1,2,3} 中选 1, path=[1], 剩余 {2,3}</div>
+  <div class="step">path=[1], 从 {2,3} 中选 2, path=[1,2], 剩余 {3}</div>
+  <div class="step">path=[1,2], 从 {3} 中选 3, path=[1,2,3], 长度==3, 记录解! 回溯</div>
+  <div class="step">path=[1], 撤销 2, 选 3, path=[1,3], 剩余 {2}</div>
+  <div class="step">path=[1,3], 选 2, path=[1,3,2], 记录解! 回溯</div>
+  <div class="step">path=[], 撤销 1, 选 2, 继续搜索 ...</div>
+</div>
+
+<h4>完整代码</h4>
+<pre><code><span class="pp">#include</span> <span class="str">&lt;vector&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="ty">vector&lt;vector&lt;int&gt;&gt;</span> ans;
+<span class="ty">vector&lt;int&gt;</span> path;
+<span class="ty">vector&lt;bool&gt;</span> used;  <span class="cm">// 标记数字是否已使用</span>
+
+<span class="ty">void</span> <span class="fn">dfs</span>(<span class="ty">vector&lt;int&gt;</span>&amp; nums) {
+    <span class="cm">// 结束条件：路径长度 == 数组长度</span>
+    <span class="kw">if</span> (path.<span class="fn">size</span>() == nums.<span class="fn">size</span>()) {
+        ans.<span class="fn">push_back</span>(path);
+        <span class="kw">return</span>;
+    }
+    <span class="cm">// 遍历所有候选数字</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; nums.<span class="fn">size</span>(); i++) {
+        <span class="kw">if</span> (used[i]) <span class="kw">continue</span>;  <span class="cm">// 剪枝：跳过已使用的</span>
+        <span class="cm">// 做选择</span>
+        path.<span class="fn">push_back</span>(nums[i]);
+        used[i] = <span class="kw">true</span>;
+        <span class="cm">// 递归</span>
+        <span class="fn">dfs</span>(nums);
+        <span class="cm">// 撤销选择（回溯）</span>
+        path.<span class="fn">pop_back</span>();
+        used[i] = <span class="kw">false</span>;
+    }
+}
+
+<span class="ty">vector&lt;vector&lt;int&gt;&gt;</span> <span class="fn">permute</span>(<span class="ty">vector&lt;int&gt;</span>&amp; nums) {
+    ans.<span class="fn">clear</span>();
+    path.<span class="fn">clear</span>();
+    used.<span class="fn">assign</span>(nums.<span class="fn">size</span>(), <span class="kw">false</span>);
+    <span class="fn">dfs</span>(nums);
+    <span class="kw">return</span> ans;
+}</code></pre>
+
+<div class="complexity">
+  <span class="label">时间复杂度</span>
+  <span class="value">O(n! * n)</span>
+  <span class="label">n! 个排列，每个排列复制需要 O(n)</span>
+</div>
+<div class="complexity">
+  <span class="label">空间复杂度</span>
+  <span class="value">O(n)</span>
+  <span class="label">递归栈 + path 数组深度均为 n</span>
+</div>
+
+<h3>2.4 有重复元素的全排列</h3>
+<p>当数组包含重复元素时，需要额外剪枝：先排序，然后在同层中跳过相同的数字。</p>
+
+<pre><code><span class="ty">void</span> <span class="fn">dfs_unique</span>(<span class="ty">vector&lt;int&gt;</span>&amp; nums) {
+    <span class="kw">if</span> (path.<span class="fn">size</span>() == nums.<span class="fn">size</span>()) {
+        ans.<span class="fn">push_back</span>(path);
+        <span class="kw">return</span>;
+    }
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; nums.<span class="fn">size</span>(); i++) {
+        <span class="kw">if</span> (used[i]) <span class="kw">continue</span>;
+        <span class="cm">// 剪枝：同层去重</span>
+        <span class="cm">// 如果当前数字和前一个相同，且前一个未使用，跳过</span>
+        <span class="kw">if</span> (i &gt; <span class="num">0</span> &amp;&amp; nums[i] == nums[i - <span class="num">1</span>] &amp;&amp; !used[i - <span class="num">1</span>])
+            <span class="kw">continue</span>;
+        path.<span class="fn">push_back</span>(nums[i]);
+        used[i] = <span class="kw">true</span>;
+        <span class="fn">dfs_unique</span>(nums);
+        path.<span class="fn">pop_back</span>();
+        used[i] = <span class="kw">false</span>;
+    }
+}
+
+<span class="cm">// 调用前必须先排序！</span>
+<span class="fn">sort</span>(nums.<span class="fn">begin</span>(), nums.<span class="fn">end</span>());
+<span class="fn">dfs_unique</span>(nums);</code></pre>
+
+<div class="box box-tip">
+  <div class="box-title">去重关键点</div>
+  <p>必须 <strong>先排序</strong>，让相同元素相邻。判断条件 <code>!used[i-1]</code> 表示前一个相同的数字在 <strong>同层</strong>（已经被回溯撤销），而非在同一路径上。这样保证相同的数字在排列中只被选择一次。</p>
+</div>
+
+<h3>2.5 经典题目</h3>
+<div class="problem">
+  <div class="problem-title"><a href="https://leetcode.cn/problems/permutations/" target="_blank">LeetCode 46. 全排列</a></div>
+  <p>无重复元素，基础全排列。</p>
+</div>
+<div class="problem">
+  <div class="problem-title"><a href="https://leetcode.cn/problems/permutations-ii/" target="_blank">LeetCode 47. 全排列 II</a></div>
+  <p>有重复元素的全排列，需要同层去重。</p>
+</div>
+<div class="problem">
+  <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1706" target="_blank">洛谷 P1706 全排列问题</a></div>
+  <p>输出 1~n 的全排列，格式化输出练习。</p>
+</div>
+</div>
+
+<!-- ==================== 三、组合枚举 ==================== -->
+<div class="section" id="sec-combination">
+<h2>三、组合枚举</h2>
+
+<h3>3.1 问题描述</h3>
+<p>从 n 个数中选 k 个数，求所有组合（C(n,k) 种）。组合与排列的区别：组合不考虑顺序，{1,2} 和 {2,1} 算同一个组合。</p>
+
+<h3>3.2 状态空间树</h3>
+<div class="diagram">
+<pre>
+    C(4,2): 从 {1,2,3,4} 中选 2 个
+
+                         []
+              /      |       |       \
+            [1]     [2]     [3]     [4]
+          / | \    / | \     |        |
+       12  13  14 23  24   34       (无)
+
+    关键：每个选择只考虑"比上一个更大的数"
+    保证不会重复: [1,2] 不会出现 [2,1]
+</pre>
+</div>
+
+<h3>3.3 回溯实现</h3>
+<pre><code><span class="ty">vector&lt;vector&lt;int&gt;&gt;</span> ans;
+<span class="ty">vector&lt;int&gt;</span> path;
+
+<span class="cm">// 从 [start, n] 中选数加入组合</span>
+<span class="ty">void</span> <span class="fn">dfs_combine</span>(<span class="ty">int</span> n, <span class="ty">int</span> k, <span class="ty">int</span> start) {
+    <span class="cm">// 剪枝：剩余数字不够了</span>
+    <span class="kw">if</span> (path.<span class="fn">size</span>() + (n - start + <span class="num">1</span>) &lt; k)
+        <span class="kw">return</span>;
+
+    <span class="cm">// 结束条件</span>
+    <span class="kw">if</span> (path.<span class="fn">size</span>() == k) {
+        ans.<span class="fn">push_back</span>(path);
+        <span class="kw">return</span>;
+    }
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = start; i &lt;= n; i++) {
+        path.<span class="fn">push_back</span>(i);
+        <span class="fn">dfs_combine</span>(n, k, i + <span class="num">1</span>);  <span class="cm">// i+1 保证不重复选</span>
+        path.<span class="fn">pop_back</span>();
+    }
+}
+
+<span class="ty">vector&lt;vector&lt;int&gt;&gt;</span> <span class="fn">combine</span>(<span class="ty">int</span> n, <span class="ty">int</span> k) {
+    ans.<span class="fn">clear</span>();
+    path.<span class="fn">clear</span>();
+    <span class="fn">dfs_combine</span>(n, k, <span class="num">1</span>);
+    <span class="kw">return</span> ans;
+}</code></pre>
+
+<h3>3.4 剪枝优化</h3>
+<p>当递归到 <code>start</code> 位置时，剩余可选数字为 <code>[start, n]</code> 共 <code>n - start + 1</code> 个。如果剩余数字不足以凑齐 k 个，可以提前剪枝。</p>
+
+<div class="box box-warn">
+  <div class="box-title">关键剪枝条件</div>
+  <p><code>path.size() + (n - start + 1) < k</code>：已选数字 + 剩余可选数字 < 需要的数字，直接返回。这可以将搜索空间从 O(C(n,k)) 的实际递归调用减少很多。</p>
+</div>
+
+<h3>3.5 优化循环上界</h3>
+<p>进一步优化：当还需要选 <code>k - path.size()</code> 个数字时，循环只需遍历到 <code>n - (k - path.size()) + 1</code>：</p>
+
+<pre><code><span class="cm">// 优化后的循环上界</span>
+<span class="ty">int</span> need = k - path.<span class="fn">size</span>();  <span class="cm">// 还需要选几个</span>
+<span class="kw">for</span> (<span class="ty">int</span> i = start; i &lt;= n - need + <span class="num">1</span>; i++) {
+    path.<span class="fn">push_back</span>(i);
+    <span class="fn">dfs_combine</span>(n, k, i + <span class="num">1</span>);
+    path.<span class="fn">pop_back</span>();
+}</code></pre>
+
+<div class="complexity">
+  <span class="label">时间复杂度</span>
+  <span class="value">O(C(n,k) * k)</span>
+  <span class="label">生成 C(n,k) 个组合，每个组合复制 O(k)</span>
+</div>
+
+<h3>3.6 经典题目</h3>
+<div class="problem">
+  <div class="problem-title"><a href="https://leetcode.cn/problems/combinations/" target="_blank">LeetCode 77. 组合</a></div>
+  <p>基础组合枚举。</p>
+</div>
+<div class="problem">
+  <div class="problem-title"><a href="https://leetcode.cn/problems/combination-sum/" target="_blank">LeetCode 39. 组合总和</a></div>
+  <p>可重复选择，目标和为 target 的组合。</p>
+</div>
+<div class="problem">
+  <div class="problem-title"><a href="https://leetcode.cn/problems/combination-sum-ii/" target="_blank">LeetCode 40. 组合总和 II</a></div>
+  <p>有重复元素、不可重复选择的组合。</p>
+</div>
+</div>
+
+<!-- ==================== 四、子集枚举 ==================== -->
+<div class="section" id="sec-subset">
+<h2>四、子集枚举</h2>
+
+<h3>4.1 问题描述</h3>
+<p>给定一个不含重复元素的集合，枚举其所有子集。n 个元素的集合共有 2^n 个子集（包含空集）。</p>
+
+<h3>4.2 方法一：位掩码枚举</h3>
+<p>用一个 n 位二进制数表示子集：第 i 位为 1 表示第 i 个元素在子集中。枚举 0 到 2^n - 1 的所有整数即可。</p>
+
+<div class="diagram">
+<pre>
+    集合 {1,2,3} 的子集（位掩码）:
+
+    000 = {}         100 = {1}
+    001 = {3}        101 = {1,3}
+    010 = {2}        110 = {1,2}
+    011 = {2,3}      111 = {1,2,3}
+
+    每个二进制位对应一个元素是否被选中
+</pre>
+</div>
+
+<pre><code><span class="ty">vector&lt;vector&lt;int&gt;&gt;</span> <span class="fn">subsets_bitmask</span>(<span class="ty">vector&lt;int&gt;</span>&amp; nums) {
+    <span class="ty">int</span> n = nums.<span class="fn">size</span>();
+    <span class="ty">vector&lt;vector&lt;int&gt;&gt;</span> ans;
+    <span class="cm">// 枚举 0 到 2^n - 1</span>
+    <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">0</span>; mask &lt; (<span class="num">1</span> &lt;&lt; n); mask++) {
+        <span class="ty">vector&lt;int&gt;</span> subset;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+            <span class="kw">if</span> (mask &amp; (<span class="num">1</span> &lt;&lt; i))
+                subset.<span class="fn">push_back</span>(nums[i]);
+        }
+        ans.<span class="fn">push_back</span>(subset);
+    }
+    <span class="kw">return</span> ans;
+}
+<span class="cm">// 时间复杂度: O(2^n * n)  空间复杂度: O(n)</span></code></pre>
+
+<h3>4.3 方法二：递归回溯</h3>
+<p>与组合枚举类似，但子集不需要长度限制，每到达一个节点就记录当前路径。</p>
+
+<pre><code><span class="ty">vector&lt;vector&lt;int&gt;&gt;</span> ans;
+<span class="ty">vector&lt;int&gt;</span> path;
+
+<span class="ty">void</span> <span class="fn">dfs_subset</span>(<span class="ty">vector&lt;int&gt;</span>&amp; nums, <span class="ty">int</span> start) {
+    <span class="cm">// 每个节点都是一个子集（包括空集在内）</span>
+    ans.<span class="fn">push_back</span>(path);
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = start; i &lt; nums.<span class="fn">size</span>(); i++) {
+        path.<span class="fn">push_back</span>(nums[i]);
+        <span class="fn">dfs_subset</span>(nums, i + <span class="num">1</span>);
+        path.<span class="fn">pop_back</span>();
+    }
+}
+
+<span class="ty">vector&lt;vector&lt;int&gt;&gt;</span> <span class="fn">subsets</span>(<span class="ty">vector&lt;int&gt;</span>&amp; nums) {
+    ans.<span class="fn">clear</span>();
+    path.<span class="fn">clear</span>();
+    <span class="fn">dfs_subset</span>(nums, <span class="num">0</span>);
+    <span class="kw">return</span> ans;
+}</code></pre>
+
+<h3>4.4 子集去重</h3>
+<p>当输入数组有重复元素时，需要先排序，然后在同一层跳过重复元素：</p>
+
+<pre><code><span class="ty">void</span> <span class="fn">dfs_subset_dup</span>(<span class="ty">vector&lt;int&gt;</span>&amp; nums, <span class="ty">int</span> start) {
+    ans.<span class="fn">push_back</span>(path);
+    <span class="kw">for</span> (<span class="ty">int</span> i = start; i &lt; nums.<span class="fn">size</span>(); i++) {
+        <span class="cm">// 同层去重：跳过同一层中重复的数字</span>
+        <span class="kw">if</span> (i &gt; start &amp;&amp; nums[i] == nums[i - <span class="num">1</span>])
+            <span class="kw">continue</span>;
+        path.<span class="fn">push_back</span>(nums[i]);
+        <span class="fn">dfs_subset_dup</span>(nums, i + <span class="num">1</span>);
+        path.<span class="fn">pop_back</span>();
+    }
+}
+
+<span class="cm">// 调用前必须先排序</span>
+<span class="fn">sort</span>(nums.<span class="fn">begin</span>(), nums.<span class="fn">end</span>());
+<span class="fn">dfs_subset_dup</span>(nums, <span class="num">0</span>);</code></pre>
+
+<div class="complexity">
+  <span class="label">时间复杂度</span>
+  <span class="value">O(2^n * n)</span>
+  <span class="label">枚举 2^n 个子集，每个子集复制 O(n)</span>
+</div>
+
+<h3>4.5 位运算技巧速查</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>操作</th><th>表达式</th><th>说明</th></tr>
+  <tr><td>判断第 i 位</td><td><code>mask &amp; (1 &lt;&lt; i)</code></td><td>非0则第 i 个元素被选中</td></tr>
+  <tr><td>设置第 i 位</td><td><code>mask | (1 &lt;&lt; i)</code></td><td>加入第 i 个元素</td></tr>
+  <tr><td>清除第 i 位</td><td><code>mask &amp; ~(1 &lt;&lt; i)</code></td><td>移除第 i 个元素</td></tr>
+  <tr><td>枚举子集</td><td><code>for(int s=mask; s; s=(s-1)&amp;mask)</code></td><td>枚举 mask 的所有非空子集</td></tr>
+  <tr><td>最低位 1</td><td><code>mask &amp; (-mask)</code></td><td>lowbit 操作</td></tr>
+  <tr><td>统计 1 的个数</td><td><code>__builtin_popcount(mask)</code></td><td>GCC 内建函数</td></tr>
+</table>
+</div>
+
+<h3>4.6 经典题目</h3>
+<div class="problem">
+  <div class="problem-title"><a href="https://leetcode.cn/problems/subsets/" target="_blank">LeetCode 78. 子集</a></div>
+  <p>基础子集枚举。</p>
+</div>
+<div class="problem">
+  <div class="problem-title"><a href="https://leetcode.cn/problems/subsets-ii/" target="_blank">LeetCode 90. 子集 II</a></div>
+  <p>有重复元素的子集，需要去重。</p>
+</div>
+<div class="problem">
+  <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P10447" target="_blank">洛谷 P10447 子集和问题</a></div>
+  <p>子集和为目标值的判定与求解。</p>
+</div>
+</div>
+
+<!-- ==================== 五、N 皇后问题 ==================== -->
+<div class="section" id="sec-nqueen">
+<h2>五、N 皇后问题</h2>
+
+<h3>5.1 问题描述</h3>
+<p>在 N x N 的棋盘上放置 N 个皇后，使得它们互不攻击。皇后可以攻击同行、同列、同对角线上的任意棋子。</p>
+
+<h3>5.2 约束分析</h3>
+<p>每个皇后有三个约束：</p>
+<ul>
+  <li><strong>列冲突</strong>：同一列不能有两个皇后</li>
+  <li><strong>主对角线冲突</strong>：行差等于列差的格子在同一主对角线上（row - col 相同）</li>
+  <li><strong>副对角线冲突</strong>：行差等于负列差的格子在同一副对角线上（row + col 相同）</li>
+</ul>
+
+<div class="diagram">
+<pre>
+    N=4 棋盘示例 (一种合法解):
+
+    . Q . .      行0: 皇后在列1
+    . . . Q      行1: 皇后在列3
+    Q . . .      行2: 皇后在列0
+    . . Q .      行3: 皇后在列2
+
+    对角线编号规则:
+    主对角线 (row-col): -3 -2 -1  0   1  2  3   (2N-1条)
+    副对角线 (row+col):  0  1  2  3   4  5  6   (2N-1条)
+    为避免负数，主对角线加 n-1:  0  1  2  3  4  5  6
+</pre>
+</div>
+
+<h3>5.3 优化后的回溯实现</h3>
+<p>使用三个布尔数组快速判断列、主对角线、副对角线是否已被占用，将冲突检查从 O(n) 降为 O(1)。</p>
+
+<pre><code><span class="pp">#include</span> <span class="str">&lt;vector&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;string&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="ty">vector&lt;vector&lt;string&gt;&gt;</span> solutions;
+<span class="ty">vector&lt;string&gt;</span> board;
+<span class="ty">vector&lt;bool&gt;</span> col_used;      <span class="cm">// 列占用标记</span>
+<span class="ty">vector&lt;bool&gt;</span> diag1_used;    <span class="cm">// 主对角线: row - col + n - 1</span>
+<span class="ty">vector&lt;bool&gt;</span> diag2_used;    <span class="cm">// 副对角线: row + col</span>
+
+<span class="ty">void</span> <span class="fn">dfs_queen</span>(<span class="ty">int</span> row, <span class="ty">int</span> n) {
+    <span class="kw">if</span> (row == n) {
+        solutions.<span class="fn">push_back</span>(board);
+        <span class="kw">return</span>;
+    }
+    <span class="kw">for</span> (<span class="ty">int</span> c = <span class="num">0</span>; c &lt; n; c++) {
+        <span class="ty">int</span> d1 = row - c + n - <span class="num">1</span>;  <span class="cm">// 主对角线编号 [0, 2n-2]</span>
+        <span class="ty">int</span> d2 = row + c;          <span class="cm">// 副对角线编号 [0, 2n-2]</span>
+        <span class="kw">if</span> (col_used[c] || diag1_used[d1] || diag2_used[d2])
+            <span class="kw">continue</span>;  <span class="cm">// 剪枝：冲突则跳过</span>
+
+        <span class="cm">// 做选择：放置皇后</span>
+        board[row][c] = <span class="str">'Q'</span>;
+        col_used[c] = diag1_used[d1] = diag2_used[d2] = <span class="kw">true</span>;
+
+        <span class="fn">dfs_queen</span>(row + <span class="num">1</span>, n);
+
+        <span class="cm">// 撤销选择</span>
+        board[row][c] = <span class="str">'.'</span>;
+        col_used[c] = diag1_used[d1] = diag2_used[d2] = <span class="kw">false</span>;
+    }
+}
+
+<span class="ty">vector&lt;vector&lt;string&gt;&gt;</span> <span class="fn">solveNQueens</span>(<span class="ty">int</span> n) {
+    solutions.<span class="fn">clear</span>();
+    board.<span class="fn">assign</span>(n, <span class="ty">string</span>(n, <span class="str">'.'</span>));
+    col_used.<span class="fn">assign</span>(n, <span class="kw">false</span>);
+    diag1_used.<span class="fn">assign</span>(<span class="num">2</span> * n - <span class="num">1</span>, <span class="kw">false</span>);
+    diag2_used.<span class="fn">assign</span>(<span class="num">2</span> * n - <span class="num">1</span>, <span class="kw">false</span>);
+    <span class="fn">dfs_queen</span>(<span class="num">0</span>, n);
+    <span class="kw">return</span> solutions;
+}</code></pre>
+
+<h3>5.4 逐行放置的执行跟踪（N=4）</h3>
+<div class="steps">
+  <div class="step">row=0: 尝试 col=0, 放置 Q, 标记列0, 对角线, 递归 row=1</div>
+  <div class="step">row=1: col=0 冲突(列), col=1 冲突(对角线), col=2 放置 Q, 递归 row=2</div>
+  <div class="step">row=2: col=0 冲突(列), col=1 冲突(列), col=2 冲突(列), col=3 冲突(对角线), 无路可走, 回溯</div>
+  <div class="step">row=1: 撤销 col=2, 尝试 col=3 冲突(对角线), 回溯到 row=0</div>
+  <div class="step">row=0: 撤销 col=0, 尝试 col=1, 放置 Q, 递归 ...</div>
+  <div class="step">最终找到 2 个解: (1,3,0,2) 和 (2,0,3,1)</div>
+</div>
+
+<h3>5.5 位运算优化版（极速）</h3>
+<p>使用三个整数的位来表示列、主对角线、副对角线的占用情况，配合 <code>lowbit</code> 操作可以极速枚举。</p>
+
+<pre><code><span class="ty">int</span> count = <span class="num">0</span>;
+
+<span class="ty">void</span> <span class="fn">dfs_queen_bit</span>(<span class="ty">int</span> n, <span class="ty">int</span> row,
+                   <span class="ty">int</span> cols, <span class="ty">int</span> diag1, <span class="ty">int</span> diag2) {
+    <span class="kw">if</span> (row == n) {
+        count++;
+        <span class="kw">return</span>;
+    }
+    <span class="cm">// available 中为 1 的位表示可以放置皇后的位置</span>
+    <span class="ty">int</span> available = ((<span class="num">1</span> &lt;&lt; n) - <span class="num">1</span>) &amp; ~(cols | diag1 | diag2);
+    <span class="kw">while</span> (available) {
+        <span class="ty">int</span> pos = available &amp; (-available);  <span class="cm">// 取最低位的 1</span>
+        available -= pos;  <span class="cm">// 清除该位</span>
+        <span class="fn">dfs_queen_bit</span>(n, row + <span class="num">1</span>,
+                      cols | pos,
+                      (diag1 | pos) &lt;&lt; <span class="num">1</span>,
+                      (diag2 | pos) &gt;&gt; <span class="num">1</span>);
+    }
+}
+<span class="cm">// 初始调用: dfs_queen_bit(n, 0, 0, 0, 0);</span></code></pre>
+
+<div class="complexity">
+  <span class="label">时间复杂度</span>
+  <span class="value">O(N!)</span>
+  <span class="label">实际远小于 N!，因为大量分支被剪枝</span>
+</div>
+
+<h3>5.6 经典题目</h3>
+<div class="problem">
+  <div class="problem-title"><a href="https://leetcode.cn/problems/n-queens/" target="_blank">LeetCode 51. N 皇后</a></div>
+  <p>输出所有解的棋盘布局。</p>
+</div>
+<div class="problem">
+  <div class="problem-title"><a href="https://leetcode.cn/problems/n-queens-ii/" target="_blank">LeetCode 52. N 皇后 II</a></div>
+  <p>只输出解的个数，可用位运算极致优化。</p>
+</div>
+<div class="problem">
+  <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1219" target="_blank">洛谷 P1219 八皇后</a></div>
+  <p>经典八皇后，输出前 3 个解。</p>
+</div>
+</div>
+
+<!-- ==================== 六、数独求解 ==================== -->
+<div class="section" id="sec-sudoku">
+<h2>六、数独求解</h2>
+
+<h3>6.1 问题描述</h3>
+<p>在一个 9x9 的网格中填入数字 1-9，使得每行、每列、每个 3x3 的宫格内数字不重复。部分格子已预填。</p>
+
+<h3>6.2 约束传播优化</h3>
+<p>朴素的暴力回溯效率很低。优化策略：</p>
+<ul>
+  <li><strong>位掩码标记</strong>：用 9 位整数记录每行/列/宫已使用的数字</li>
+  <li><strong>最少候选优先</strong>：每次选择候选数字最少的空格来填（MRV 启发式）</li>
+  <li><strong>O(1) 可行性检查</strong>：通过位运算快速判断数字是否可用</li>
+</ul>
+
+<h3>6.3 完整实现</h3>
+<pre><code><span class="pp">#include</span> <span class="str">&lt;vector&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">class</span> <span class="ty">SudokuSolver</span> {
+<span class="kw">private</span>:
+    <span class="ty">vector&lt;vector&lt;int&gt;&gt;</span> board;
+    <span class="ty">int</span> row_mask[<span class="num">9</span>];   <span class="cm">// row_mask[i]: 第 i 行已填数字的位掩码</span>
+    <span class="ty">int</span> col_mask[<span class="num">9</span>];   <span class="cm">// col_mask[j]: 第 j 列已填数字的位掩码</span>
+    <span class="ty">int</span> box_mask[<span class="num">9</span>];   <span class="cm">// box_mask[k]: 第 k 个宫已填数字的位掩码</span>
+    <span class="ty">vector&lt;pair&lt;int,int&gt;&gt;</span> blanks;  <span class="cm">// 空格坐标列表</span>
+
+    <span class="cm">// 获取 (r,c) 所在宫的编号</span>
+    <span class="ty">int</span> <span class="fn">box_id</span>(<span class="ty">int</span> r, <span class="ty">int</span> c) {
+        <span class="kw">return</span> (r / <span class="num">3</span>) * <span class="num">3</span> + c / <span class="num">3</span>;
+    }
+
+    <span class="cm">// 获取 (r,c) 处可以填的数字集合（位掩码）</span>
+    <span class="ty">int</span> <span class="fn">candidates</span>(<span class="ty">int</span> r, <span class="ty">int</span> c) {
+        <span class="kw">return</span> ~(row_mask[r] | col_mask[c] | box_mask[<span class="fn">box_id</span>(r, c)]) &amp; <span class="num">0x1FF</span>;
+    }
+
+    <span class="ty">bool</span> <span class="fn">dfs</span>(<span class="ty">int</span> idx) {
+        <span class="kw">if</span> (idx == blanks.<span class="fn">size</span>()) <span class="kw">return true</span>;
+
+        <span class="kw">auto</span> [r, c] = blanks[idx];
+        <span class="ty">int</span> avail = <span class="fn">candidates</span>(r, c);
+        <span class="kw">while</span> (avail) {
+            <span class="ty">int</span> d = avail &amp; (-avail);  <span class="cm">// 取最低位</span>
+            avail -= d;
+
+            <span class="cm">// 获取数字值 (1-9)</span>
+            <span class="ty">int</span> num = <span class="fn">__builtin_ctz</span>(d) + <span class="num">1</span>;
+
+            <span class="cm">// 做选择</span>
+            board[r][c] = num;
+            row_mask[r] |= d;
+            col_mask[c] |= d;
+            box_mask[<span class="fn">box_id</span>(r, c)] |= d;
+
+            <span class="kw">if</span> (<span class="fn">dfs</span>(idx + <span class="num">1</span>)) <span class="kw">return true</span>;
+
+            <span class="cm">// 撤销选择</span>
+            board[r][c] = <span class="num">0</span>;
+            row_mask[r] ^= d;
+            col_mask[c] ^= d;
+            box_mask[<span class="fn">box_id</span>(r, c)] ^= d;
+        }
+        <span class="kw">return false</span>;
+    }
+
+<span class="kw">public</span>:
+    <span class="ty">bool</span> <span class="fn">solve</span>(<span class="ty">vector&lt;vector&lt;int&gt;&gt;</span>&amp; b) {
+        board = b;
+        <span class="fn">memset</span>(row_mask, <span class="num">0</span>, <span class="kw">sizeof</span>(row_mask));
+        <span class="fn">memset</span>(col_mask, <span class="num">0</span>, <span class="kw">sizeof</span>(col_mask));
+        <span class="fn">memset</span>(box_mask, <span class="num">0</span>, <span class="kw">sizeof</span>(box_mask));
+        blanks.<span class="fn">clear</span>();
+
+        <span class="cm">// 预处理：统计已填数字和空格</span>
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; <span class="num">9</span>; i++)
+            <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; <span class="num">9</span>; j++)
+                <span class="kw">if</span> (board[i][j]) {
+                    <span class="ty">int</span> d = <span class="num">1</span> &lt;&lt; (board[i][j] - <span class="num">1</span>);
+                    row_mask[i] |= d;
+                    col_mask[j] |= d;
+                    box_mask[<span class="fn">box_id</span>(i, j)] |= d;
+                } <span class="kw">else</span> {
+                    blanks.<span class="fn">push_back</span>({i, j});
+                }
+
+        <span class="kw">return</span> <span class="fn">dfs</span>(<span class="num">0</span>);
+    }
+};</code></pre>
+
+<h3>6.4 MRV 启发式（最少候选优先）</h3>
+<p>在实际应用中，可以对 <code>blanks</code> 数组按候选数字数量排序，优先填写候选最少的空格。这可以大幅减少搜索树的分支因子。</p>
+
+<div class="box box-tip">
+  <div class="box-title">MRV 原理</div>
+  <p>选择候选最少的变量先赋值，可以尽早触发冲突检测，将无效分支在更浅的层剪掉。在数独难题中，MRV 可以将搜索时间从秒级降到毫秒级。</p>
+</div>
+
+<pre><code><span class="cm">// MRV 排序（预处理阶段）</span>
+<span class="fn">sort</span>(blanks.<span class="fn">begin</span>(), blanks.<span class="fn">end</span>(), [&amp;](<span class="kw">auto</span>&amp; a, <span class="kw">auto</span>&amp; b) {
+    <span class="ty">int</span> ca = <span class="fn">__builtin_popcount</span>(<span class="fn">candidates</span>(a.first, a.second));
+    <span class="ty">int</span> cb = <span class="fn">__builtin_popcount</span>(<span class="fn">candidates</span>(b.first, b.second));
+    <span class="kw">return</span> ca &lt; cb;
+});</code></pre>
+
+<div class="complexity">
+  <span class="label">最坏时间复杂度</span>
+  <span class="value">O(9^m)</span>
+  <span class="label">m 为空格数，实际远小于该值</span>
+</div>
+
+<h3>6.5 经典题目</h3>
+<div class="problem">
+  <div class="problem-title"><a href="https://leetcode.cn/problems/sudoku-solver/" target="_blank">LeetCode 37. 解数独</a></div>
+  <p>经典数独求解，原地修改。</p>
+</div>
+<div class="problem">
+  <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1784" target="_blank">洛谷 P1784 数独</a></div>
+  <p>数独变种题目，练习回溯与约束传播。</p>
+</div>
+</div>
+
+<!-- ==================== 七、回溯框架 ==================== -->
+<div class="section" id="sec-framework">
+<h2>七、回溯框架与剪枝模式</h2>
+
+<h3>7.1 通用回溯模板</h3>
+<pre><code><span class="cm">// 回溯法通用框架</span>
+<span class="ty">void</span> <span class="fn">backtrack</span>(<span class="cm">/* 状态参数 */</span>) {
+    <span class="cm">// 1. 结束条件：到达搜索树底部</span>
+    <span class="kw">if</span> (<span class="cm">/* 满足终止条件 */</span>) {
+        <span class="cm">// 收集解 / 更新答案</span>
+        <span class="kw">return</span>;
+    }
+
+    <span class="cm">// 2. 剪枝：提前排除不可能的分支</span>
+    <span class="kw">if</span> (<span class="cm">/* 不满足约束 */</span>) <span class="kw">return</span>;
+
+    <span class="cm">// 3. 遍历所有候选选择</span>
+    <span class="kw">for</span> (<span class="cm">/* 每个候选 choice */</span>) {
+        <span class="cm">// 3a. 做选择（修改状态）</span>
+        <span class="fn">make_choice</span>(choice);
+
+        <span class="cm">// 3b. 递归进入下一层</span>
+        <span class="fn">backtrack</span>(<span class="cm">/* 新状态 */</span>);
+
+        <span class="cm">// 3c. 撤销选择（恢复状态）</span>
+        <span class="fn">undo_choice</span>(choice);
+    }
+}</code></pre>
+
+<h3>7.2 七种常见剪枝模式</h3>
+
+<h4>模式一：可行性剪枝（约束检查）</h4>
+<p>当前状态已经违反问题约束，直接返回。</p>
+<pre><code><span class="cm">// N 皇后示例：当前放置位置与已有皇后冲突</span>
+<span class="kw">if</span> (col_used[c] || diag1_used[d1] || diag2_used[d2])
+    <span class="kw">continue</span>;</code></pre>
+
+<h4>模式二：最优性剪枝（界剪枝）</h4>
+<p>当前路径即使走完也无法超越已知最优解，提前返回。</p>
+<pre><code><span class="cm">// 旅行商问题示例</span>
+<span class="kw">if</span> (current_cost + lower_bound(remaining) &gt;= best_cost)
+    <span class="kw">return</span>;  <span class="cm">// 剩余部分的下界 + 已花费 >= 当前最优</span></code></pre>
+
+<h4>模式三：重复性剪枝（去重）</h4>
+<p>避免枚举重复的解，如全排列中的同层去重。</p>
+<pre><code><span class="cm">// 有重复元素的组合去重</span>
+<span class="kw">if</span> (i &gt; start &amp;&amp; nums[i] == nums[i - <span class="num">1</span>]) <span class="kw">continue</span>;</code></pre>
+
+<h4>模式四：对称性剪枝</h4>
+<p>利用问题的对称性减少搜索。例如选 k 个数时，固定第一个数为最小值。</p>
+<pre><code><span class="cm">// 分组问题：固定第一组选最小元素，避免等价分组</span>
+<span class="kw">if</span> (group_idx == <span class="num">0</span> &amp;&amp; i != <span class="num">0</span>) <span class="kw">break</span>;  <span class="cm">// 第一组只从最小元素开始</span></code></pre>
+
+<h4>模式五：搜索顺序优化</h4>
+<p>先搜索分支少的选项（MRV），或者先搜索约束强的位置。</p>
+<pre><code><span class="cm">// 数独中先填候选最少的格子</span>
+<span class="cm">// 组合中先选大的数（更快触发剪枝）</span></code></pre>
+
+<h4>模式六：可行性预判（提前终止）</h4>
+<p>在搜索前先检查全局可行性，避免无效搜索。</p>
+<pre><code><span class="cm">// 数独预处理：检查每行/列/宫是否已冲突</span>
+<span class="cm">// N 皇后：提前判断某些行是否无路可走</span></code></pre>
+
+<h4>模式七：记忆化回溯</h4>
+<p>对重叠子问题记忆化，避免重复计算。</p>
+<pre><code><span class="cm">// 数位DP中的记忆化回溯</span>
+<span class="ty">unordered_map</span>&lt;<span class="ty">string</span>, <span class="ty">int</span>&gt; memo;
+<span class="kw">auto</span> key = <span class="fn">encode_state</span>(pos, tight, sum);
+<span class="kw">if</span> (memo.<span class="fn">count</span>(key)) <span class="kw">return</span> memo[key];
+<span class="cm">// ... 递归 ...</span>
+<span class="kw">return</span> memo[key] = result;</code></pre>
+
+<h3>7.3 回溯法常用技巧总结</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>技巧</th><th>说明</th><th>典型应用</th></tr>
+  <tr><td>used 数组</td><td>标记元素是否已选择</td><td>全排列、组合</td></tr>
+  <tr><td>start 参数</td><td>控制搜索起点避免重复</td><td>组合、子集</td></tr>
+  <tr><td>位掩码</td><td>用整数位表示集合状态</td><td>N 皇后、数独、状态压缩</td></tr>
+  <tr><td>同层去重</td><td>排序后跳过同层相同元素</td><td>有重复元素的排列/组合/子集</td></tr>
+  <tr><td>MRV 启发</td><td>优先选择分支最少的变量</td><td>数独、约束满足问题</td></tr>
+  <tr><td>可行性剪枝</td><td>违反约束时提前返回</td><td>所有回溯问题</td></tr>
+  <tr><td>最优性剪枝</td><td>无法超越最优时提前返回</td><td>TSP、最优解问题</td></tr>
+  <tr><td>迭代加深</td><td>限制搜索深度，逐层加深</td><td>IDA*、博弈搜索</td></tr>
+</table>
+</div>
+
+<h3>7.4 回溯与其他算法的关系</h3>
+<div class="diagram">
+<pre>
+    回溯法在算法体系中的位置:
+
+    搜索算法
+    |
+    +-- DFS (基础深度优先搜索)
+    |     |
+    |     +-- 回溯法 (DFS + 剪枝 + 状态恢复)
+    |           |
+    |           +-- 全排列 / 组合 / 子集
+    |           +-- N 皇后 / 数独 (约束满足)
+    |           +-- TSP (最优解 + 剪枝)
+    |           +-- 数位DP (记忆化回溯)
+    |
+    +-- BFS (广度优先搜索)
+    |
+    +-- 迭代加深 (IDDFS / IDA*)
+
+    回溯法 vs 动态规划:
+    - 回溯法: 求所有解，适用于解空间较小的问题
+    - 动态规划: 求最优解/计数，适用于有重叠子问题的问题
+</pre>
+</div>
+
+<h3>7.5 复杂度分析要点</h3>
+<div class="box box-info">
+  <div class="box-title">如何分析回溯算法的时间复杂度</div>
+  <p>回溯法的时间复杂度通常表示为 <strong>O(f(n) * g(n))</strong>，其中：</p>
+  <ul>
+    <li><strong>f(n)</strong> = 状态空间树中的节点数（取决于分支因子和深度）</li>
+    <li><strong>g(n)</strong> = 每个节点的处理时间（构造解、复制等）</li>
+  </ul>
+  <p>剪枝可以显著减少 f(n)，但最坏情况不变。实际竞赛中，常数优化（位运算等）非常重要。</p>
+</div>
+
+<h3>7.6 综合经典题目</h3>
+<div class="problem">
+  <div class="problem-title"><a href="https://leetcode.cn/problems/sudoku-solver/" target="_blank">LeetCode 37. 解数独</a></div>
+  <p>约束传播 + 回溯求解经典数独。</p>
+</div>
+<div class="problem">
+  <div class="problem-title"><a href="https://leetcode.cn/problems/n-queens/" target="_blank">LeetCode 51. N 皇后</a></div>
+  <p>列 + 对角线剪枝的回溯经典题。</p>
+</div>
+<div class="problem">
+  <div class="problem-title"><a href="https://leetcode.cn/problems/word-search/" target="_blank">LeetCode 79. 单词搜索</a></div>
+  <p>二维网格上的回溯搜索。</p>
+</div>
+<div class="problem">
+  <div class="problem-title"><a href="https://leetcode.cn/problems/palindrome-partitioning/" target="_blank">LeetCode 131. 分割回文串</a></div>
+  <p>回溯枚举所有分割方案 + 回文判定。</p>
+</div>
+<div class="problem">
+  <div class="problem-title"><a href="https://leetcode.cn/problems/letter-combinations-of-a-phone-number/" target="_blank">LeetCode 17. 电话号码的字母组合</a></div>
+  <p>多层选择的回溯枚举。</p>
+</div>
+<div class="problem">
+  <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1219" target="_blank">洛谷 P1219 八皇后</a></div>
+  <p>经典 N 皇后入门题目。</p>
+</div>
+<div class="problem">
+  <div class="problem-title"><a href="https://www.luogu.com.cn/problem/P1706" target="_blank">洛谷 P1706 全排列问题</a></div>
+  <p>回溯法生成全排列入门练习。</p>
+</div>
+
+<div class="box box-hard">
+  <div class="box-title">竞赛实战建议</div>
+  <ul>
+    <li>当 n <= 20 时，考虑位掩码枚举（2^20 约 10^6）</li>
+    <li>当 n <= 12 时，考虑全排列枚举（12! 约 5 * 10^8，需剪枝）</li>
+    <li>回溯法常与 <strong>可行性剪枝 + 最优性剪枝</strong> 组合使用</li>
+    <li>竞赛中应优先实现简单版本，再逐步优化剪枝</li>
+    <li>当时间紧迫时，<code>next_permutation</code> 可以快速实现排列枚举</li>
+  </ul>
+</div>
+</div>
+
+</div>
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

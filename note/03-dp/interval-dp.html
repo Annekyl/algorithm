@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>区间 DP - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+<!-- 面包屑导航 -->
+<div class="breadcrumb">
+  <a href="../index.html">首页</a> &gt;
+  <a href="../index.html#03-dp">动态规划篇</a> &gt;
+  区间 DP
+</div>
+
+<!-- 页面标题 -->
+<div class="page-header">
+  <h1>区间 DP</h1>
+  <p class="subtitle">Interval Dynamic Programming &mdash; 将大区间拆分为小区间逐步合并</p>
+  <div class="tags">
+    <span class="tag tag-dp">动态规划</span>
+    <span class="tag tag-mid">中等</span>
+    <span class="tag tag-base">O(n<sup>3</sup>)</span>
+  </div>
+</div>
+
+<!-- 目录 -->
+<div class="toc">
+  <h3>目录</h3>
+  <ul>
+    <li><a href="#overview">1. 区间 DP 概述</a></li>
+    <li><a href="#stone-merge">2. 经典模型 - 石子合并</a></li>
+    <li><a href="#matrix-chain">3. 矩阵链乘法</a></li>
+    <li><a href="#bracket">4. 括号匹配问题</a></li>
+    <li><a href="#burst-balloons">5. 戳气球 - 逆向思维</a></li>
+    <li><a href="#circular">6. 环形区间 DP - 断环成链</a></li>
+    <li><a href="#summary">7. 总结与对比</a></li>
+  </ul>
+</div>
+
+<!-- ==================== 1. 区间DP概述 ==================== -->
+<div class="section" id="overview">
+  <h2>1. 区间 DP 概述</h2>
+
+  <h3>什么是区间 DP</h3>
+  <p>区间 DP 是一类在 <strong>区间</strong> 上进行状态转移的动态规划。核心思想是：将一个大区间的问题分解为若干小区间的子问题，通过枚举 <strong>分割点</strong> 来合并子问题的答案。</p>
+  <p>区间 DP 适用于满足以下特征的问题：</p>
+  <ul>
+    <li>问题定义在一段 <strong>连续区间</strong> 上</li>
+    <li>大区间的答案可以由 <strong>两个或多个不相交的小区间</strong> 合并得到</li>
+    <li>满足 <strong>最优子结构</strong> 和 <strong>无后效性</strong></li>
+  </ul>
+
+  <h3>状态定义</h3>
+  <p>定义二维状态数组：</p>
+  <div class="box box-info">
+    <div class="box-title">核心状态</div>
+    <p><code>dp[l][r]</code> 表示将区间 <code>[l, r]</code> 合并（或处理）为一个整体的最小（最大）代价。</p>
+  </div>
+
+  <h3>转移方程的一般形式</h3>
+  <pre><code><span class="cm">// 枚举分割点 k，将 [l,r] 分为 [l,k] 和 [k+1,r]</span>
+<span class="kw">for</span> (<span class="ty">int</span> k = l; k &lt; r; k++) {
+    dp[l][r] = <span class="fn">min</span>(dp[l][r], dp[l][k] + dp[k+<span class="num">1</span>][r] + cost(l, k, r));
+}</code></pre>
+  <p>其中 <code>cost(l, k, r)</code> 是将两段子区间合并为 <code>[l, r]</code> 时产生的额外代价。不同题目中这个代价的定义不同。</p>
+
+  <h3>DP 表的填充顺序</h3>
+  <p>区间 DP 的关键在于填充顺序：先填小区间，再填大区间。通常按 <strong>区间长度</strong> 从小到大枚举：</p>
+  <pre><code><span class="kw">for</span> (<span class="ty">int</span> len = <span class="num">2</span>; len &lt;= n; len++)       <span class="cm">// 枚举区间长度</span>
+    <span class="kw">for</span> (<span class="ty">int</span> l = <span class="num">1</span>; l + len - <span class="num">1</span> &lt;= n; l++)  <span class="cm">// 枚举左端点</span>
+    {
+        <span class="ty">int</span> r = l + len - <span class="num">1</span>;               <span class="cm">// 计算右端点</span>
+        <span class="kw">for</span> (<span class="ty">int</span> k = l; k &lt; r; k++)         <span class="cm">// 枚举分割点</span>
+            dp[l][r] = <span class="fn">min</span>(dp[l][r], dp[l][k] + dp[k+<span class="num">1</span>][r] + cost(l, k, r));
+    }</code></pre>
+
+  <h3>DP 表填充顺序可视化</h3>
+  <p>下图展示了 <code>dp[l][r]</code> 表的填充顺序，数字表示计算的先后次序。对角线上的长度为 1 的区间先计算，然后逐条对角线向上填充：</p>
+  <div class="diagram">
+    <pre>
+        r:  1    2    3    4    5    6
+  l:
+  1        [1]  (1)  (3)  (6)  (10) (15)
+  2              [2]  (2)  (5)  (9)  (14)
+  3                   [4]  (4)  (8)  (13)
+  4                        [7]  (7)  (12)
+  5                             [11] (11)
+  6                                  [16]
+
+  填充顺序:  对角线1(长度1) -> 对角线2(长度2) -> ... -> 对角线n(长度n)
+  [n] = 长度为1的区间, 先计算
+  (n) = 长度 &gt;= 2的区间, 后计算
+    </pre>
+  </div>
+
+  <h3>复杂度分析</h3>
+  <div class="complexity">
+    <span class="label">时间复杂度</span>
+    <span class="value">O(n<sup>3</sup>)</span>
+  </div>
+  <div class="complexity">
+    <span class="label">空间复杂度</span>
+    <span class="value">O(n<sup>2</sup>)</span>
+  </div>
+  <p>状态数 O(n<sup>2</sup>)，每个状态枚举分割点 O(n)，总计 O(n<sup>3</sup>)。空间为二维数组 O(n<sup>2</sup>)。</p>
+
+  <div class="box box-tip">
+    <div class="box-title">技巧提示</div>
+    <p>区间 DP 的代码框架高度统一，几乎所有的区间 DP 问题都可以用 <strong>三层循环</strong> 的模板来解决。关键是正确地定义状态和转移方程。</p>
+  </div>
+</div>
+
+<!-- ==================== 2. 石子合并 ==================== -->
+<div class="section" id="stone-merge">
+  <h2>2. 经典模型 - 石子合并</h2>
+
+  <div class="problem">
+    <div class="problem-title">石子合并 (Stone Merge)</div>
+    <p>有 n 堆石子排成一排，每次可以将 <strong>相邻的两堆</strong> 合并为一堆，合并的代价为两堆石子的总数。求将所有石子合并为一堆的 <strong>最小总代价</strong>。</p>
+    <p><strong>输入：</strong>第一行 n，第二行 n 个整数表示每堆石子数量。</p>
+    <p><strong>输出：</strong>最小总代价。</p>
+  </div>
+
+  <h3>状态定义</h3>
+  <div class="box box-info">
+    <div class="box-title">状态</div>
+    <p><code>dp[l][r]</code> = 将区间 <code>[l, r]</code> 内的所有石子合并为一堆的最小代价。</p>
+    <p><code>sum[i]</code> = 石子数量的前缀和，用于 O(1) 计算区间和。</p>
+  </div>
+
+  <h3>转移方程</h3>
+  <p>对于区间 <code>[l, r]</code>，枚举最后一个分割点 <code>k</code>（即最后将 <code>[l, k]</code> 和 <code>[k+1, r]</code> 合并）：</p>
+  <pre><code><span class="cm">// 前缀和: sum[i] = a[1] + a[2] + ... + a[i]</span>
+<span class="cm">// 区间和: sum[r] - sum[l-1]</span>
+
+dp[l][r] = <span class="fn">min</span>( dp[l][k] + dp[k+<span class="num">1</span>][r] + sum[r] - sum[l-<span class="num">1</span>] )   <span class="cm">// l &lt;= k &lt; r</span>
+
+<span class="cm">// 边界: dp[i][i] = 0 （单堆不需要合并）</span>
+<span class="cm">// 答案: dp[1][n]</span></code></pre>
+
+  <h3>DP 表填充过程图解</h3>
+  <p>以 n=4，石子数量 [4, 1, 3, 2] 为例：</p>
+  <div class="array-vis">
+    <div class="cell hi">4<span class="idx">1</span></div>
+    <div class="cell hi">1<span class="idx">2</span></div>
+    <div class="cell hi">3<span class="idx">3</span></div>
+    <div class="cell hi">2<span class="idx">4</span></div>
+  </div>
+
+  <div class="diagram">
+    <pre>
+  Step 1: 长度=1, dp[i][i] = 0
+
+       r=1   r=2   r=3   r=4
+  l=1  [0]
+  l=2        [0]
+  l=3              [0]
+  l=4                    [0]
+
+  Step 2: 长度=2
+    dp[1][2] = dp[1][1] + dp[2][2] + (4+1)     = 5
+    dp[2][3] = dp[2][2] + dp[3][3] + (1+3)     = 4
+    dp[3][4] = dp[3][3] + dp[4][4] + (3+2)     = 5
+
+       r=1   r=2   r=3   r=4
+  l=1  [0]    5
+  l=2        [0]    4
+  l=3              [0]    5
+  l=4                    [0]
+
+  Step 3: 长度=3
+    dp[1][3]: k=1 -> 0+4+(4+1+3)=12
+              k=2 -> 5+0+(4+1+3)=13
+              min = 12
+    dp[2][4]: k=2 -> 0+5+(1+3+2)=11
+              k=3 -> 4+0+(1+3+2)=10
+              min = 10
+
+       r=1   r=2   r=3   r=4
+  l=1  [0]    5    12
+  l=2        [0]    4    10
+  l=3              [0]    5
+  l=4                    [0]
+
+  Step 4: 长度=4
+    dp[1][4]: k=1 -> 0+10+(4+1+3+2)=20
+              k=2 -> 5+5+(4+1+3+2)=20
+              k=3 -> 12+0+(4+1+3+2)=22
+              min = 20
+
+  答案: dp[1][4] = 20
+    </pre>
+  </div>
+
+  <h3>完整 C++ 代码</h3>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> INF = <span class="num">0x3f3f3f3f</span>;
+<span class="kw">const int</span> N = <span class="num">310</span>;
+
+<span class="ty">int</span> n;
+<span class="ty">int</span> a[N], sum[N];
+<span class="ty">int</span> dp[N][N];
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;n);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;a[i]);
+        sum[i] = sum[i-<span class="num">1</span>] + a[i];
+    }
+
+    <span class="cm">// 初始化: dp[i][i] = 0, 其余为 INF</span>
+    <span class="fn">memset</span>(dp, <span class="num">0x3f</span>, <span class="kw">sizeof</span>(dp));
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        dp[i][i] = <span class="num">0</span>;
+
+    <span class="cm">// 区间DP: 按长度枚举</span>
+    <span class="kw">for</span> (<span class="ty">int</span> len = <span class="num">2</span>; len &lt;= n; len++) {
+        <span class="kw">for</span> (<span class="ty">int</span> l = <span class="num">1</span>; l + len - <span class="num">1</span> &lt;= n; l++) {
+            <span class="ty">int</span> r = l + len - <span class="num">1</span>;
+            <span class="kw">for</span> (<span class="ty">int</span> k = l; k &lt; r; k++) {
+                dp[l][r] = <span class="fn">min</span>(dp[l][r],
+                    dp[l][k] + dp[k+<span class="num">1</span>][r] + sum[r] - sum[l-<span class="num">1</span>]);
+            }
+        }
+    }
+
+    <span class="fn">printf</span>(<span class="str">"%d\n"</span>, dp[<span class="num">1</span>][n]);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <h3>前缀和优化说明</h3>
+  <p>如果不使用前缀和，每次计算 <code>cost(l, k, r)</code> 需要 O(r-l+1) 的时间遍历求和，总复杂度会退化为 O(n<sup>4</sup>)。使用前缀和后：</p>
+  <pre><code><span class="cm">// 区间 [l, r] 的和可以在 O(1) 内求出</span>
+<span class="ty">int</span> range_sum = sum[r] - sum[l-<span class="num">1</span>];</code></pre>
+  <p>这样总时间复杂度保持在 O(n<sup>3</sup>)。</p>
+
+  <div class="box box-warn">
+    <div class="box-title">注意：环形石子合并</div>
+    <p>如果石子排成 <strong>环形</strong>，需要使用 "断环成链" 技巧（见第 6 节），将数组复制一倍后在长度为 2n 的序列上做区间 DP，答案为 <code>max(dp[i][i+n-1])</code>（i 从 1 到 n）。</p>
+  </div>
+
+  <h3>经典题目</h3>
+  <div class="problem">
+    <div class="problem-title">洛谷 P1880 [NOI1995] 石子合并</div>
+    <p>环形石子合并，分别求最小值和最大值。使用断环成链技巧。</p>
+  </div>
+</div>
+
+<!-- ==================== 3. 矩阵链乘法 ==================== -->
+<div class="section" id="matrix-chain">
+  <h2>3. 矩阵链乘法 (Matrix Chain Multiplication)</h2>
+
+  <div class="problem">
+    <div class="problem-title">矩阵链乘法问题</div>
+    <p>给定 n 个矩阵 A<sub>1</sub>, A<sub>2</sub>, ..., A<sub>n</sub>，其中 A<sub>i</sub> 的维度为 p<sub>i-1</sub> x p<sub>i</sub>。矩阵乘法满足结合律，不同的加括号方式会导致不同的乘法次数。求使总乘法次数最少的加括号方案。</p>
+    <p><strong>例如：</strong>A<sub>1</sub>(10x30), A<sub>2</sub>(30x5), A<sub>3</sub>(5x60)</p>
+    <ul>
+      <li>(A<sub>1</sub>A<sub>2</sub>)A<sub>3</sub>: 10*30*5 + 10*5*60 = 1500 + 3000 = 4500</li>
+      <li>A<sub>1</sub>(A<sub>2</sub>A<sub>3</sub>): 30*5*60 + 10*30*60 = 9000 + 18000 = 27000</li>
+    </ul>
+  </div>
+
+  <h3>状态定义</h3>
+  <div class="box box-info">
+    <div class="box-title">状态</div>
+    <p><code>dp[i][j]</code> = 计算矩阵链 A<sub>i</sub> x A<sub>i+1</sub> x ... x A<sub>j</sub> 所需的最少乘法次数。</p>
+    <p>维度数组 <code>p[0..n]</code>，其中 A<sub>i</sub> 的维度为 <code>p[i-1] x p[i]</code>。</p>
+  </div>
+
+  <h3>转移方程</h3>
+  <pre><code><span class="cm">// 在 k 处分割: (A_i ... A_k) x (A_{k+1} ... A_j)</span>
+dp[i][j] = <span class="fn">min</span>( dp[i][k] + dp[k+<span class="num">1</span>][j] + p[i-<span class="num">1</span>] * p[k] * p[j] )   <span class="cm">// i &lt;= k &lt; j</span>
+
+<span class="cm">// 边界: dp[i][i] = 0 （单个矩阵不需要乘法）</span>
+<span class="cm">// 答案: dp[1][n]</span></code></pre>
+
+  <h3>DP 表填充过程</h3>
+  <p>以 p = [10, 30, 5, 60] 为例（3 个矩阵）：</p>
+  <div class="diagram">
+    <pre>
+  Step 1: 长度=1, dp[i][i] = 0
+
+         A1    A2    A3
+  A1     [0]
+  A2           [0]
+  A3                 [0]
+
+  Step 2: 长度=2
+    dp[1][2] = p0*p1*p2 = 10*30*5  = 1500
+    dp[2][3] = p1*p2*p3 = 30*5*60  = 9000
+
+         A1    A2    A3
+  A1     [0]  1500
+  A2           [0]  9000
+  A3                 [0]
+
+  Step 3: 长度=3
+    dp[1][3]:
+      k=1: dp[1][1] + dp[2][3] + p0*p1*p3 = 0 + 9000 + 10*30*60  = 27000
+      k=2: dp[1][2] + dp[3][3] + p0*p2*p3 = 1500 + 0 + 10*5*60  = 4500
+      min = 4500
+
+  答案: dp[1][3] = 4500 (最优方案: (A1*A2)*A3)
+    </pre>
+  </div>
+
+  <h3>完整 C++ 代码</h3>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">110</span>;
+<span class="kw">const int</span> INF = <span class="num">0x3f3f3f3f</span>;
+
+<span class="ty">int</span> n;
+<span class="ty">int</span> p[N];         <span class="cm">// 维度数组, A_i 为 p[i-1] x p[i]</span>
+<span class="ty">int</span> dp[N][N];      <span class="cm">// dp[i][j] = 最少乘法次数</span>
+<span class="ty">int</span> split[N][N];   <span class="cm">// 记录最优分割点 (用于构造方案)</span>
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;n);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt;= n; i++)
+        <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;p[i]);
+
+    <span class="fn">memset</span>(dp, <span class="num">0x3f</span>, <span class="kw">sizeof</span>(dp));
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        dp[i][i] = <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> len = <span class="num">2</span>; len &lt;= n; len++) {
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i + len - <span class="num">1</span> &lt;= n; i++) {
+            <span class="ty">int</span> j = i + len - <span class="num">1</span>;
+            <span class="kw">for</span> (<span class="ty">int</span> k = i; k &lt; j; k++) {
+                <span class="ty">int</span> cost = dp[i][k] + dp[k+<span class="num">1</span>][j] + p[i-<span class="num">1</span>] * p[k] * p[j];
+                <span class="kw">if</span> (cost &lt; dp[i][j]) {
+                    dp[i][j] = cost;
+                    split[i][j] = k;
+                }
+            }
+        }
+    }
+
+    <span class="fn">printf</span>(<span class="str">"%d\n"</span>, dp[<span class="num">1</span>][n]);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <h3>构造最优加括号方案</h3>
+  <pre><code><span class="cm">// 递归打印最优括号方案</span>
+<span class="ty">void</span> <span class="fn">print</span>(<span class="ty">int</span> i, <span class="ty">int</span> j) {
+    <span class="kw">if</span> (i == j) {
+        <span class="fn">printf</span>(<span class="str">"A%d"</span>, i);
+        <span class="kw">return</span>;
+    }
+    <span class="fn">printf</span>(<span class="str">"("</span>);
+    <span class="fn">print</span>(i, split[i][j]);
+    <span class="fn">print</span>(split[i][j] + <span class="num">1</span>, j);
+    <span class="fn">printf</span>(<span class="str">")"</span>);
+}</code></pre>
+
+  <div class="box box-tip">
+    <div class="box-title">与石子合并的区别</div>
+    <p>矩阵链乘法的 <code>cost</code> 不再是简单的区间和，而是两个子链矩阵相乘的代价 <code>p[i-1] * p[k] * p[j]</code>，这是区分两个模型的关键。但整体框架完全一致。</p>
+  </div>
+</div>
+
+<!-- ==================== 4. 括号匹配问题 ==================== -->
+<div class="section" id="bracket">
+  <h2>4. 括号匹配问题</h2>
+
+  <div class="problem">
+    <div class="problem-title">UVa 1626 - Brackets Sequence</div>
+    <p>给定一个由 <code>(</code>, <code>)</code>, <code>[</code>, <code>]</code> 组成的括号序列，求最少需要添加多少个括号才能使其成为一个合法的括号序列，并输出结果。</p>
+  </div>
+
+  <h3>状态定义</h3>
+  <div class="box box-info">
+    <div class="box-title">状态</div>
+    <p><code>dp[l][r]</code> = 使区间 <code>[l, r]</code> 变为合法括号序列需要添加的最少括号数。</p>
+  </div>
+
+  <h3>转移方程</h3>
+  <pre><code><span class="cm">// 情况1: s[l] 和 s[r] 匹配，可以直接配对</span>
+<span class="kw">if</span> (s[l] 匹配 s[r])
+    dp[l][r] = <span class="fn">min</span>(dp[l][r], dp[l+<span class="num">1</span>][r-<span class="num">1</span>]);
+
+<span class="cm">// 情况2: 在 k 处分割为两个子问题</span>
+dp[l][r] = <span class="fn">min</span>(dp[l][r], dp[l][k] + dp[k+<span class="num">1</span>][r]);  <span class="cm">// l &lt;= k &lt; r</span>
+
+<span class="cm">// 边界: dp[i][i] = 1 (单个字符至少需要配一个)</span>
+<span class="cm">//       dp[i][i-1] = 0 (空串合法, 处理长度为偶数时的边界)</span></code></pre>
+
+  <h3>括号匹配条件</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>左括号</th><th>匹配的右括号</th></tr>
+      <tr><td><code>(</code></td><td><code>)</code></td></tr>
+      <tr><td><code>[</code></td><td><code>]</code></td></tr>
+    </table>
+  </div>
+
+  <h3>DP 表填充过程</h3>
+  <p>以 s = <code>"([])"</code> 为例：</p>
+  <div class="diagram">
+    <pre>
+  字符:   (   [   ]   )
+  下标:   1   2   3   4
+
+  Step 1: 长度=1, dp[i][i] = 1
+       1   2   3   4
+  1   [1]
+  2        [1]
+  3             [1]
+  4                  [1]
+
+  Step 2: 长度=2
+    dp[1][2]: '(' 和 '[' 不匹配 -> min(dp[1][1]+dp[2][2]) = 2
+    dp[2][3]: '[' 和 ']' 匹配   -> dp[3][2] = 0 (空串)   = 0
+    dp[3][4]: ']' 和 ')' 不匹配 -> min(dp[3][3]+dp[4][4]) = 2
+
+       1   2   3   4
+  1   [1]  2
+  2        [1]  0
+  3             [1]  2
+  4                  [1]
+
+  Step 3: 长度=3
+    dp[1][3]: '(' 和 ']' 不匹配
+              k=1: dp[1][1]+dp[2][3] = 1+0 = 1
+              k=2: dp[1][2]+dp[3][3] = 2+1 = 3
+              min = 1
+    dp[2][4]: '[' 和 ')' 不匹配
+              k=2: dp[2][2]+dp[3][4] = 1+2 = 3
+              k=3: dp[2][3]+dp[4][4] = 0+1 = 1
+              min = 1
+
+  Step 4: 长度=4
+    dp[1][4]: '(' 和 ')' 匹配 -> dp[2][3] = 0
+              k=1: dp[1][1]+dp[2][4] = 1+1 = 2
+              k=2: dp[1][2]+dp[3][4] = 2+2 = 4
+              k=3: dp[1][3]+dp[4][4] = 1+1 = 2
+              min = 0
+
+  答案: dp[1][4] = 0 (原串已经合法)
+    </pre>
+  </div>
+
+  <h3>完整 C++ 代码</h3>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">110</span>;
+<span class="kw">const int</span> INF = <span class="num">0x3f3f3f3f</span>;
+
+<span class="ty">int</span> dp[N][N];
+<span class="ty">char</span> s[N];
+<span class="ty">int</span> n;
+
+<span class="ty">bool</span> <span class="fn">match</span>(<span class="ty">char</span> a, <span class="ty">char</span> b) {
+    <span class="kw">return</span> (a == <span class="str">'('</span> &amp;&amp; b == <span class="str">')'</span>) || (a == <span class="str">'['</span> &amp;&amp; b == <span class="str">']'</span>);
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">scanf</span>(<span class="str">"%s"</span>, s + <span class="num">1</span>);
+    n = <span class="fn">strlen</span>(s + <span class="num">1</span>);
+
+    <span class="fn">memset</span>(dp, <span class="num">0x3f</span>, <span class="kw">sizeof</span>(dp));
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        dp[i][i] = <span class="num">1</span>;               <span class="cm">// 单字符需要一个配对</span>
+        dp[i][i-<span class="num">1</span>] = <span class="num">0</span>;            <span class="cm">// 空串合法</span>
+    }
+
+    <span class="kw">for</span> (<span class="ty">int</span> len = <span class="num">2</span>; len &lt;= n; len++) {
+        <span class="kw">for</span> (<span class="ty">int</span> l = <span class="num">1</span>; l + len - <span class="num">1</span> &lt;= n; l++) {
+            <span class="ty">int</span> r = l + len - <span class="num">1</span>;
+            <span class="cm">// 情况1: s[l] 和 s[r] 配对</span>
+            <span class="kw">if</span> (<span class="fn">match</span>(s[l], s[r]))
+                dp[l][r] = <span class="fn">min</span>(dp[l][r], dp[l+<span class="num">1</span>][r-<span class="num">1</span>]);
+            <span class="cm">// 情况2: 枚举分割点</span>
+            <span class="kw">for</span> (<span class="ty">int</span> k = l; k &lt; r; k++)
+                dp[l][r] = <span class="fn">min</span>(dp[l][r], dp[l][k] + dp[k+<span class="num">1</span>][r]);
+        }
+    }
+
+    <span class="fn">printf</span>(<span class="str">"%d\n"</span>, dp[<span class="num">1</span>][n]);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <h3>输出构造方案的代码</h3>
+  <pre><code><span class="cm">// 递归输出添加最少括号后的合法序列</span>
+<span class="ty">void</span> <span class="fn">print</span>(<span class="ty">int</span> l, <span class="ty">int</span> r) {
+    <span class="kw">if</span> (l &gt; r) <span class="kw">return</span>;
+    <span class="kw">if</span> (l == r) {
+        <span class="kw">if</span> (s[l] == <span class="str">'('</span> || s[l] == <span class="str">')'</span>) <span class="fn">printf</span>(<span class="str">"()"</span>);
+        <span class="kw">else</span> <span class="fn">printf</span>(<span class="str">"[]"</span>);
+        <span class="kw">return</span>;
+    }
+    <span class="cm">// 情况1: s[l] 和 s[r] 匹配</span>
+    <span class="kw">if</span> (<span class="fn">match</span>(s[l], s[r]) &amp;&amp; dp[l][r] == dp[l+<span class="num">1</span>][r-<span class="num">1</span>]) {
+        <span class="fn">putchar</span>(s[l]);
+        <span class="fn">print</span>(l+<span class="num">1</span>, r-<span class="num">1</span>);
+        <span class="fn">putchar</span>(s[r]);
+        <span class="kw">return</span>;
+    }
+    <span class="cm">// 情况2: 枚举分割点</span>
+    <span class="kw">for</span> (<span class="ty">int</span> k = l; k &lt; r; k++) {
+        <span class="kw">if</span> (dp[l][r] == dp[l][k] + dp[k+<span class="num">1</span>][r]) {
+            <span class="fn">print</span>(l, k);
+            <span class="fn">print</span>(k+<span class="num">1</span>, r);
+            <span class="kw">return</span>;
+        }
+    }
+}</code></pre>
+</div>
+
+<!-- ==================== 5. 戳气球 ==================== -->
+<div class="section" id="burst-balloons">
+  <h2>5. 戳气球 (Burst Balloons) - 逆向思维</h2>
+
+  <div class="problem">
+    <div class="problem-title">LeetCode 312 - Burst Balloons</div>
+    <p>有 n 个气球，每个气球上有一个数字。戳破第 i 个气球可以获得 <code>nums[left] * nums[i] * nums[right]</code> 个金币，其中 <code>left</code> 和 <code>right</code> 是第 i 个气球左右两侧 <strong>尚未被戳破</strong> 的气球。求戳破所有气球能获得的最大金币数。</p>
+    <p><strong>注意：</strong>边界外的气球数字视为 1。nums = [3, 1, 5, 8]，答案为 167。</p>
+  </div>
+
+  <h3>为什么需要逆向思维</h3>
+  <p>如果正向思考 "先戳哪个"，戳破一个气球后，左右邻居会改变，状态难以定义。</p>
+  <p><strong>逆向思维：</strong>假设我们是 "添加气球" 而不是 "戳破气球"。考虑 <strong>最后被戳破</strong> 的气球 k，此时区间 [l, r] 内只有气球 k 还存活，它的左右邻居就是 l 和 r 边界上的值。</p>
+
+  <div class="box box-hard">
+    <div class="box-title">关键洞察 (逆向思维)</div>
+    <p>设 <code>dp[l][r]</code> = 戳破开区间 <code>(l, r)</code> 内所有气球能获得的最大金币数（不包括 l 和 r）。</p>
+    <p>假设 k 是区间 (l, r) 内 <strong>最后一个</strong> 被戳破的气球，则：</p>
+    <p><code>dp[l][r] = max( dp[l][k] + dp[k][r] + nums[l] * nums[k] * nums[r] )</code></p>
+    <p>戳破 k 时，(l, r) 内的其他气球都已被戳破，所以 k 的左右邻居就是 l 和 r。</p>
+  </div>
+
+  <h3>状态定义与转移</h3>
+  <pre><code><span class="cm">// 在原数组首尾各加一个 1: val[0] = val[n+1] = 1</span>
+<span class="cm">// dp[l][r] = 戳破 (l, r) 内所有气球的最大收益, l &lt; r</span>
+
+dp[l][r] = <span class="fn">max</span>( dp[l][k] + dp[k][r] + val[l]*val[k]*val[r] )   <span class="cm">// l &lt; k &lt; r</span>
+
+<span class="cm">// 边界: dp[l][r] = 0, 当 r - l &lt;= 1 (区间内没有气球)</span>
+<span class="cm">// 答案: dp[0][n+1]</span></code></pre>
+
+  <h3>DP 表填充过程</h3>
+  <p>以 nums = [3, 1, 5]，扩展为 val = [1, 3, 1, 5, 1]：</p>
+  <div class="diagram">
+    <pre>
+  val:  1   3   1   5   1
+  idx:  0   1   2   3   4
+
+  长度=2 (间隔1): dp[l][r] = 0 (区间内无气球)
+
+  长度=3 (间隔2):
+    dp[0][2] = val[0]*val[1]*val[2] = 1*3*1 = 3  (最后戳1)
+    dp[1][3] = val[1]*val[2]*val[3] = 3*1*5 = 15 (最后戳2)
+    dp[2][4] = val[2]*val[3]*val[4] = 1*5*1 = 5  (最后戳3)
+
+  长度=4 (间隔3):
+    dp[0][3]:
+      k=1: dp[0][1]+dp[1][3]+val[0]*val[1]*val[3] = 0+15+1*3*5 = 30
+      k=2: dp[0][2]+dp[2][3]+val[0]*val[2]*val[3] = 3+0+1*1*5  = 8
+      max = 30
+    dp[1][4]:
+      k=2: dp[1][2]+dp[2][4]+val[1]*val[2]*val[4] = 0+5+3*1*1  = 8
+      k=3: dp[1][3]+dp[3][4]+val[1]*val[3]*val[4] = 15+0+3*5*1 = 30
+      max = 30
+
+  长度=5 (间隔4):
+    dp[0][4]:
+      k=1: dp[0][1]+dp[1][4]+val[0]*val[1]*val[4] = 0+30+1*3*1  = 33
+      k=2: dp[0][2]+dp[2][4]+val[0]*val[2]*val[4] = 3+5+1*1*1   = 9
+      k=3: dp[0][3]+dp[3][4]+val[0]*val[3]*val[4] = 30+0+1*5*1  = 35
+      max = 35
+
+  答案: dp[0][4] = 35
+    </pre>
+  </div>
+
+  <h3>完整 C++ 代码</h3>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">class</span> <span class="ty">Solution</span> {
+<span class="kw">public</span>:
+    <span class="ty">int</span> <span class="fn">maxCoins</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; nums) {
+        <span class="ty">int</span> n = nums.size();
+        <span class="cm">// 扩展数组: 首尾加1</span>
+        <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; val(n + <span class="num">2</span>);
+        val[<span class="num">0</span>] = val[n + <span class="num">1</span>] = <span class="num">1</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+            val[i] = nums[i - <span class="num">1</span>];
+
+        <span class="cm">// dp[l][r] = 戳破 (l,r) 内所有气球的最大收益</span>
+        <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; dp(n + <span class="num">2</span>, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;(n + <span class="num">2</span>, <span class="num">0</span>));
+
+        <span class="cm">// 按区间长度枚举 (注意这里长度的含义是间隔)</span>
+        <span class="kw">for</span> (<span class="ty">int</span> len = <span class="num">2</span>; len &lt;= n + <span class="num">1</span>; len++) {
+            <span class="kw">for</span> (<span class="ty">int</span> l = <span class="num">0</span>; l + len &lt;= n + <span class="num">1</span>; l++) {
+                <span class="ty">int</span> r = l + len;
+                <span class="kw">for</span> (<span class="ty">int</span> k = l + <span class="num">1</span>; k &lt; r; k++) {
+                    dp[l][r] = <span class="fn">max</span>(dp[l][r],
+                        dp[l][k] + dp[k][r] + val[l] * val[k] * val[r]);
+                }
+            }
+        }
+
+        <span class="kw">return</span> dp[<span class="num">0</span>][n + <span class="num">1</span>];
+    }
+};</code></pre>
+
+  <div class="box box-warn">
+    <div class="box-title">重要区别</div>
+    <p>戳气球问题的状态定义是 <strong>开区间</strong> <code>(l, r)</code>，即 l 和 r 不被包含在区间内。这是因为逆向思维中，最后戳破的气球 k 的 "邻居" 是 l 和 r，它们必须在区间外面。这与石子合并的 <strong>闭区间</strong> <code>[l, r]</code> 不同。</p>
+  </div>
+</div>
+
+<!-- ==================== 6. 环形区间DP ==================== -->
+<div class="section" id="circular">
+  <h2>6. 环形区间 DP - 断环成链</h2>
+
+  <h3>问题背景</h3>
+  <p>当石子排成 <strong>环形</strong> 时，第 1 堆和第 n 堆相邻。区间 DP 通常处理的是线性序列，如何将环形问题转化为线性问题？</p>
+
+  <h3>断环成链技巧</h3>
+  <div class="box box-tip">
+    <div class="box-title">核心思想</div>
+    <p>将长度为 n 的环形数组 <strong>复制一倍</strong>，得到长度为 2n 的线性数组。然后在新数组上做标准的区间 DP。</p>
+    <p>环形上任意一段连续的 n 个元素，都对应新数组上某个长度为 n 的区间。</p>
+  </div>
+
+  <div class="diagram">
+    <pre>
+  原始环形数组 (n=4):
+
+       a1 ---- a2
+      /          \
+    a4           a3
+      \          /
+       ---------
+
+  断环成链后 (长度 2n=8):
+
+    a1  a2  a3  a4  a1  a2  a3  a4
+    |_______________|
+    从a1开始的一段
+
+        |_______________|
+        从a2开始的一段
+
+            |_______________|
+            从a3开始的一段
+
+                |_______________|
+                从a4开始的一段
+
+  答案 = max/min( dp[i][i+n-1] ),  1 &lt;= i &lt;= n
+    </pre>
+  </div>
+
+  <h3>实现步骤</h3>
+  <div class="steps">
+    <div class="step">将数组 a[1..n] 复制为 a[n+1..2n]，即 <code>a[i+n] = a[i]</code></div>
+    <div class="step">对长度为 2n 的数组计算前缀和</div>
+    <div class="step">在新数组上做标准区间 DP，区间范围 [1, 2n]</div>
+    <div class="step">答案为 <code>min(dp[i][i+n-1])</code>，其中 1 &lt;= i &lt;= n</div>
+  </div>
+
+  <h3>完整 C++ 代码 - 环形石子合并</h3>
+  <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">410</span>;       <span class="cm">// 注意: 开两倍空间</span>
+<span class="kw">const int</span> INF = <span class="num">0x3f3f3f3f</span>;
+
+<span class="ty">int</span> n;
+<span class="ty">int</span> a[N], sum[N];
+<span class="ty">int</span> dp_min[N][N], dp_max[N][N];
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;n);
+
+    <span class="cm">// 读入并断环成链</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;a[i]);
+        a[i + n] = a[i];          <span class="cm">// 复制一倍</span>
+    }
+
+    <span class="cm">// 前缀和 (长度 2n)</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= <span class="num">2</span> * n; i++)
+        sum[i] = sum[i - <span class="num">1</span>] + a[i];
+
+    <span class="cm">// 初始化</span>
+    <span class="fn">memset</span>(dp_min, <span class="num">0x3f</span>, <span class="kw">sizeof</span>(dp_min));
+    <span class="fn">memset</span>(dp_max, <span class="num">0</span>, <span class="kw">sizeof</span>(dp_max));
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= <span class="num">2</span> * n; i++)
+        dp_min[i][i] = <span class="num">0</span>;
+
+    <span class="cm">// 区间DP</span>
+    <span class="kw">for</span> (<span class="ty">int</span> len = <span class="num">2</span>; len &lt;= n; len++) {
+        <span class="kw">for</span> (<span class="ty">int</span> l = <span class="num">1</span>; l + len - <span class="num">1</span> &lt;= <span class="num">2</span> * n; l++) {
+            <span class="ty">int</span> r = l + len - <span class="num">1</span>;
+            <span class="kw">for</span> (<span class="ty">int</span> k = l; k &lt; r; k++) {
+                <span class="ty">int</span> cost = sum[r] - sum[l - <span class="num">1</span>];
+                dp_min[l][r] = <span class="fn">min</span>(dp_min[l][r],
+                    dp_min[l][k] + dp_min[k+<span class="num">1</span>][r] + cost);
+                dp_max[l][r] = <span class="fn">max</span>(dp_max[l][r],
+                    dp_max[l][k] + dp_max[k+<span class="num">1</span>][r] + cost);
+            }
+        }
+    }
+
+    <span class="cm">// 枚举所有起点, 取最优</span>
+    <span class="ty">int</span> ans_min = INF, ans_max = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        ans_min = <span class="fn">min</span>(ans_min, dp_min[i][i + n - <span class="num">1</span>]);
+        ans_max = <span class="fn">max</span>(ans_max, dp_max[i][i + n - <span class="num">1</span>]);
+    }
+
+    <span class="fn">printf</span>(<span class="str">"%d\n%d\n"</span>, ans_min, ans_max);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+  <h3>其他环形区间 DP 问题</h3>
+  <p>断环成链技巧适用于所有环形区间 DP 问题，常见的有：</p>
+  <ul>
+    <li><strong>环形石子合并：</strong>求最大/最小合并代价</li>
+    <li><strong>环形取珠子：</strong>环形序列上取相邻元素的最大收益</li>
+    <li><strong>多边形三角剖分：</strong>环形多边形的最优三角剖分</li>
+  </ul>
+
+  <div class="box box-warn">
+    <div class="box-title">空间注意</div>
+    <p>断环成链后数组长度变为 2n，DP 表大小为 O((2n)<sup>2</sup>) = O(4n<sup>2</sup>)。注意开足够的空间，避免数组越界。</p>
+  </div>
+</div>
+
+<!-- ==================== 7. 总结 ==================== -->
+<div class="section" id="summary">
+  <h2>7. 总结与对比</h2>
+
+  <h3>区间 DP 通用模板</h3>
+  <pre><code><span class="cm">// 区间 DP 通用框架</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">510</span>;
+<span class="kw">const int</span> INF = <span class="num">0x3f3f3f3f</span>;
+
+<span class="ty">int</span> n;
+<span class="ty">int</span> dp[N][N];      <span class="cm">// 状态数组</span>
+<span class="cm">// 可能需要的辅助数组: 前缀和、维度数组等</span>
+
+<span class="ty">int</span> <span class="fn">solve</span>() {
+    <span class="cm">// 1. 初始化: dp[i][i] = 边界值</span>
+    <span class="fn">memset</span>(dp, <span class="num">0x3f</span>, <span class="kw">sizeof</span>(dp));
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        dp[i][i] = <span class="num">0</span>;
+
+    <span class="cm">// 2. 按区间长度从小到大枚举</span>
+    <span class="kw">for</span> (<span class="ty">int</span> len = <span class="num">2</span>; len &lt;= n; len++) {
+        <span class="kw">for</span> (<span class="ty">int</span> l = <span class="num">1</span>; l + len - <span class="num">1</span> &lt;= n; l++) {
+            <span class="ty">int</span> r = l + len - <span class="num">1</span>;
+            <span class="cm">// 3. 枚举分割点, 更新 dp[l][r]</span>
+            <span class="kw">for</span> (<span class="ty">int</span> k = l; k &lt; r; k++) {
+                dp[l][r] = <span class="fn">min</span>(dp[l][r],    <span class="cm">// 或 max</span>
+                    dp[l][k] + dp[k+<span class="num">1</span>][r] + cost(l, k, r));
+            }
+        }
+    }
+
+    <span class="kw">return</span> dp[<span class="num">1</span>][n];
+}</code></pre>
+
+  <h3>各模型对比</h3>
+  <div class="table-wrap">
+    <table>
+      <tr>
+        <th>模型</th>
+        <th>状态定义</th>
+        <th>cost 函数</th>
+        <th>求解目标</th>
+        <th>特殊技巧</th>
+      </tr>
+      <tr>
+        <td>石子合并</td>
+        <td>dp[l][r] 闭区间</td>
+        <td>sum[r] - sum[l-1]</td>
+        <td>min 代价</td>
+        <td>前缀和优化</td>
+      </tr>
+      <tr>
+        <td>矩阵链乘</td>
+        <td>dp[i][j] 闭区间</td>
+        <td>p[i-1]*p[k]*p[j]</td>
+        <td>min 乘法次数</td>
+        <td>记录分割点</td>
+      </tr>
+      <tr>
+        <td>括号匹配</td>
+        <td>dp[l][r] 闭区间</td>
+        <td>+1 (不匹配时)</td>
+        <td>min 添加数</td>
+        <td>两端匹配特判</td>
+      </tr>
+      <tr>
+        <td>戳气球</td>
+        <td>dp[l][r] 开区间</td>
+        <td>val[l]*val[k]*val[r]</td>
+        <td>max 金币</td>
+        <td>逆向思维</td>
+      </tr>
+      <tr>
+        <td>环形区间DP</td>
+        <td>dp[l][r] 闭区间</td>
+        <td>因题而异</td>
+        <td>因题而异</td>
+        <td>断环成链</td>
+      </tr>
+    </table>
+  </div>
+
+  <h3>常见优化</h3>
+  <div class="box box-tip">
+    <div class="box-title">四边形不等式优化</div>
+    <p>如果 cost 函数满足 <strong>四边形不等式</strong>（quadrangle inequality），即：</p>
+    <p><code>w(a, c) + w(b, d) &lt;= w(a, d) + w(b, c)</code>，其中 a &lt;= b &lt;= c &lt;= d</p>
+    <p>则分割点具有单调性，可以将枚举分割点的范围缩小，将时间复杂度从 O(n<sup>3</sup>) 优化到 O(n<sup>2</sup>)。</p>
+    <p>石子合并问题就满足四边形不等式条件。</p>
+  </div>
+
+  <h3>解题方法论</h3>
+  <div class="steps">
+    <div class="step"><strong>确定状态：</strong>明确 dp[l][r] 代表什么含义（闭区间还是开区间）</div>
+    <div class="step"><strong>写转移方程：</strong>枚举分割点 k，写出 dp[l][r] 与子区间状态的关系</div>
+    <div class="step"><strong>确定边界：</strong>长度为 1 的区间（或长度为 0 的开区间）的初始值</div>
+    <div class="step"><strong>确定填充顺序：</strong>按区间长度从小到大枚举</div>
+    <div class="step"><strong>处理特殊情况：</strong>环形问题使用断环成链</div>
+    <div class="step"><strong>输出答案：</strong>dp[1][n] 或 dp[0][n+1] 等</div>
+  </div>
+
+  <h3>经典题目推荐</h3>
+  <div class="table-wrap">
+    <table>
+      <tr>
+        <th>题目</th>
+        <th>来源</th>
+        <th>难度</th>
+        <th>模型</th>
+      </tr>
+      <tr>
+        <td>P1880 石子合并</td>
+        <td>洛谷</td>
+        <td><span class="tag tag-mid">中等</span></td>
+        <td>环形石子合并</td>
+      </tr>
+      <tr>
+        <td>P1005 矩阵取数游戏</td>
+        <td>洛谷</td>
+        <td><span class="tag tag-hard">困难</span></td>
+        <td>区间 DP + 高精度</td>
+      </tr>
+      <tr>
+        <td>P4170 涂色</td>
+        <td>洛谷</td>
+        <td><span class="tag tag-mid">中等</span></td>
+        <td>括号匹配类</td>
+      </tr>
+      <tr>
+        <td>LeetCode 312 Burst Balloons</td>
+        <td>力扣</td>
+        <td><span class="tag tag-hard">困难</span></td>
+        <td>逆向区间 DP</td>
+      </tr>
+      <tr>
+        <td>LeetCode 516 Longest Palindromic Subseq</td>
+        <td>力扣</td>
+        <td><span class="tag tag-mid">中等</span></td>
+        <td>区间 DP</td>
+      </tr>
+      <tr>
+        <td>LeetCode 1000 Min Cost to Merge Stones</td>
+        <td>力扣</td>
+        <td><span class="tag tag-hard">困难</span></td>
+        <td>石子合并变体</td>
+      </tr>
+      <tr>
+        <td>LeetCode 1246 Palindrome Removal</td>
+        <td>力扣</td>
+        <td><span class="tag tag-hard">困难</span></td>
+        <td>区间 DP</td>
+      </tr>
+      <tr>
+        <td>UVa 10003 Cutting Sticks</td>
+        <td>UVa</td>
+        <td><span class="tag tag-mid">中等</span></td>
+        <td>切割木棍</td>
+      </tr>
+      <tr>
+        <td>UVa 1626 Brackets Sequence</td>
+        <td>UVa</td>
+        <td><span class="tag tag-hard">困难</span></td>
+        <td>括号匹配 + 输出方案</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="box box-info">
+    <div class="box-title">一句话总结</div>
+    <p>区间 DP = <strong>枚举区间长度</strong> + <strong>枚举左右端点</strong> + <strong>枚举分割点</strong>。框架固定，关键在于正确识别 cost 函数和状态的开闭区间。</p>
+  </div>
+</div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

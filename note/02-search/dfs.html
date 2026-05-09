@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DFS 深度优先搜索 - ACM 算法笔记</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="container">
+
+  <!-- 面包屑导航 -->
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#search">搜索</a> &gt;
+    DFS 深度优先搜索
+  </div>
+
+  <!-- 页面标题 -->
+  <div class="page-header">
+    <h1>DFS 深度优先搜索</h1>
+    <div class="subtitle">Depth-First Search — 沿分支深入到底再回溯的搜索策略</div>
+    <div class="tags">
+      <span class="tag tag-base">搜索基础</span>
+      <span class="tag tag-graph">图论</span>
+      <span class="tag tag-mid">回溯</span>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#basic">DFS 基础 — 递归与迭代实现</a></li>
+      <li><a href="#graph">DFS 遍历图 — 邻接表与 visited 数组</a></li>
+      <li><a href="#component">连通块计数 — Connected Components 与 Flood Fill</a></li>
+      <li><a href="#pruning">剪枝策略 — 可行性 / 最优性 / 重复性 / 搜索顺序</a></li>
+      <li><a href="#euler">DFS 序 — 树的欧拉序</a></li>
+      <li><a href="#dfstree">DFS 树 — 树边 / 回边 / 前向边 / 横叉边</a></li>
+      <li><a href="#problems">经典例题汇总</a></li>
+    </ul>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 1. DFS 基础 -->
+  <!-- ============================================================ -->
+  <div class="section" id="basic">
+    <h2>1. DFS 基础</h2>
+
+    <p>DFS（Depth-First Search，深度优先搜索）是一种沿着分支尽可能深入地探索，直到无路可走时再回溯到上一个节点继续探索的搜索策略。其核心思想可以用一句话概括：<strong>能走就走，走不通就退</strong>。</p>
+
+    <h3>1.1 递归实现（最直观）</h3>
+    <p>递归版本的 DFS 利用系统调用栈自动保存状态，代码简洁且易于理解。基本框架如下：</p>
+
+    <pre><code><span class="cm">// 递归 DFS 通用框架</span>
+<span class="ty">int</span> <span class="fn">dfs</span>(<span class="ty">int</span> u) {
+    <span class="cm">// 1. 边界条件 / 终止条件</span>
+    <span class="kw">if</span> (到达终点) {
+        更新答案;
+        <span class="kw">return</span>;
+    }
+
+    <span class="cm">// 2. 枚举所有可能的下一步</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; 候选数量; i++) {
+        <span class="cm">// 剪枝：判断当前分支是否可行</span>
+        <span class="kw">if</span> (不可行) <span class="kw">continue</span>;
+
+        <span class="cm">// 3. 做选择</span>
+        标记已访问 / 修改状态;
+
+        <span class="cm">// 4. 递归深入</span>
+        <span class="fn">dfs</span>(下一个状态);
+
+        <span class="cm">// 5. 撤销选择（回溯）</span>
+        恢复状态;
+    }
+}</code></pre>
+
+    <h3>1.2 迭代实现（显式栈）</h3>
+    <p>当递归深度过大导致栈溢出时，可使用显式栈模拟递归过程。迭代版本需要手动管理状态：</p>
+
+    <pre><code><span class="cm">// 迭代 DFS（使用显式栈）</span>
+<span class="ty">void</span> <span class="fn">dfs_iterative</span>(<span class="ty">int</span> start) {
+    <span class="ty">stack</span>&lt;<span class="ty">int</span>&gt; st;
+    st.<span class="fn">push</span>(start);
+    visited[start] = <span class="kw">true</span>;
+
+    <span class="kw">while</span> (!st.<span class="fn">empty</span>()) {
+        <span class="ty">int</span> u = st.<span class="fn">top</span>();
+        st.<span class="fn">pop</span>();
+
+        <span class="cm">// 处理当前节点</span>
+        <span class="fn">process</span>(u);
+
+        <span class="cm">// 将邻居逆序压栈（保证与递归版顺序一致）</span>
+        <span class="kw">for</span> (<span class="ty">int</span> i = adj[u].<span class="fn">size</span>() - <span class="num">1</span>; i >= <span class="num">0</span>; i--) {
+            <span class="ty">int</span> v = adj[u][i];
+            <span class="kw">if</span> (!visited[v]) {
+                visited[v] = <span class="kw">true</span>;
+                st.<span class="fn">push</span>(v);
+            }
+        }
+    }
+}</code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">递归 vs 迭代的选择</div>
+      <p>一般竞赛中优先使用递归版本，代码更短更易调试。当递归深度可能超过 10<sup>5</sup> 时，改用迭代版或手动扩大栈空间（<code>#pragma comment(linker, "/STACK:1024000000")</code>）。</p>
+    </div>
+
+    <h3>1.3 DFS 遍历顺序图示</h3>
+    <p>以一棵简单的树为例，展示 DFS 的访问顺序。从根节点 1 出发，优先访问左子树：</p>
+
+    <div class="diagram">
+      <pre>
+          1          ← 先访问根节点
+         / \
+        2   5        ← 优先深入左子树
+       / \   \
+      3   4   6      ← 继续深入
+          |
+          7          ← 最深的叶子节点
+
+  DFS 访问顺序: 1 → 2 → 3 → 4 → 7 → 5 → 6
+  递归调用栈变化:
+    [1] → [1,2] → [1,2,3] → [1,2] → [1,2,4] → [1,2,4,7]
+    → [1,2,4] → [1,2] → [1] → [1,5] → [1,5,6] → [1,5] → [1] → []
+      </pre>
+    </div>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(V + E)</span>
+      <span class="label">（图）/ O(n)（树）</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(V)</span>
+      <span class="label">（递归栈深度）</span>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 2. DFS 遍历图 -->
+  <!-- ============================================================ -->
+  <div class="section" id="graph">
+    <h2>2. DFS 遍历图</h2>
+
+    <p>图的 DFS 遍历是 DFS 最基础的应用。使用邻接表存储图，配合 <code>visited</code> 数组记录每个节点是否已被访问，避免重复访问导致死循环。</p>
+
+    <h3>2.1 邻接表 + visited 数组</h3>
+
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> N = <span class="num">100010</span>;
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; adj[N];   <span class="cm">// 邻接表</span>
+<span class="ty">bool</span> visited[N];       <span class="cm">// 访问标记</span>
+
+<span class="ty">void</span> <span class="fn">dfs</span>(<span class="ty">int</span> u) {
+    visited[u] = <span class="kw">true</span>;  <span class="cm">// 标记已访问</span>
+    <span class="fn">printf</span>(<span class="str">"%d "</span>, u);   <span class="cm">// 处理当前节点（前序）</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> v : adj[u]) {
+        <span class="kw">if</span> (!visited[v]) {
+            <span class="fn">dfs</span>(v);      <span class="cm">// 递归访问邻居</span>
+        }
+    }
+    <span class="cm">// printf("%d ", u);  // 后序遍历（取消注释即可）</span>
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, m;  <span class="cm">// n 个节点，m 条边</span>
+    <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;n, &amp;m);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; m; i++) {
+        <span class="ty">int</span> u, v;
+        <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;u, &amp;v);
+        adj[u].<span class="fn">push_back</span>(v);
+        adj[v].<span class="fn">push_back</span>(u);  <span class="cm">// 无向图需双向建边</span>
+    }
+
+    <span class="fn">dfs</span>(<span class="num">1</span>);  <span class="cm">// 从节点 1 开始遍历</span>
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <h3>2.2 图的 DFS 遍历过程演示</h3>
+    <p>以如下无向图为例，从节点 1 出发进行 DFS：</p>
+
+    <div class="diagram">
+      <pre>
+  图结构（邻接表）:                DFS 遍历过程:
+      1 --- 2                     Step 1: 访问 1, 邻居 [2,3]
+      |   / |                     Step 2: 访问 2, 邻居 [1,3,4]
+      3    |                      Step 3: 访问 3, 邻居 [1,2]（均已访问）
+      |    |                      Step 4: 回溯到 2, 访问 4, 邻居 [2,5]
+      5 --- 4                     Step 5: 访问 5, 邻居 [4]（已访问）
+                                  Step 6: 回溯完成
+  adj[1] = {2, 3}
+  adj[2] = {1, 3, 4}             访问顺序: 1 → 2 → 3 → 4 → 5
+  adj[3] = {1, 2}
+  adj[4] = {2, 5}                visited:   [T, T, T, T, T]
+  adj[5] = {4}                        idx:   [1, 2, 3, 4, 5]
+      </pre>
+    </div>
+
+    <h3>2.3 有向图 DFS</h3>
+    <p>有向图的 DFS 与无向图类似，区别在于建边时只需添加单向边。有向图 DFS 可用于检测环、拓扑排序等。</p>
+
+    <pre><code><span class="cm">// 有向图 DFS 检测环</span>
+<span class="ty">int</span> state[N];  <span class="cm">// 0=未访问, 1=在栈中, 2=已完成</span>
+<span class="ty">bool</span> hasCycle = <span class="kw">false</span>;
+
+<span class="ty">void</span> <span class="fn">dfs_cycle</span>(<span class="ty">int</span> u) {
+    state[u] = <span class="num">1</span>;  <span class="cm">// 标记为"正在访问"</span>
+    <span class="kw">for</span> (<span class="ty">int</span> v : adj[u]) {
+        <span class="kw">if</span> (state[v] == <span class="num">1</span>) {
+            hasCycle = <span class="kw">true</span>;  <span class="cm">// 遇到栈中的节点，存在环</span>
+            <span class="kw">return</span>;
+        }
+        <span class="kw">if</span> (state[v] == <span class="num">0</span>) {
+            <span class="fn">dfs_cycle</span>(v);
+        }
+    }
+    state[u] = <span class="num">2</span>;  <span class="cm">// 标记为"已完成"</span>
+}</code></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">注意：visited 数组的初始化</div>
+      <p>全局数组默认值为 0（false），因此通常无需显式初始化。但在多组测试数据时，必须清空 visited 数组，否则会影响后续测试用例的结果。推荐使用 <code>memset(visited, 0, sizeof(visited))</code> 或将 visited 作为局部变量。</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 3. 连通块计数 -->
+  <!-- ============================================================ -->
+  <div class="section" id="component">
+    <h2>3. 连通块计数</h2>
+
+    <p>连通块计数是 DFS 的经典应用之一。对于无向图，从每个未访问的节点出发进行一次 DFS，每次 DFS 遍历到的所有节点构成一个连通分量。DFS 的次数即为连通块数量。</p>
+
+    <h3>3.1 连通块计数模板</h3>
+
+    <pre><code><span class="cm">// 连通块计数</span>
+<span class="ty">int</span> <span class="fn">countComponents</span>(<span class="ty">int</span> n) {
+    <span class="ty">int</span> count = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="kw">if</span> (!visited[i]) {
+            <span class="fn">dfs</span>(i);       <span class="cm">// 从 i 出发遍历整个连通块</span>
+            count++;      <span class="cm">// DFS 次数 = 连通块数量</span>
+        }
+    }
+    <span class="kw">return</span> count;
+}</code></pre>
+
+    <h3>3.2 Flood Fill（洪水填充）</h3>
+    <p>Flood Fill 是连通块问题在二维网格上的变体，常用于图像处理和棋盘类问题。核心思路是：从某个格子出发，将所有相邻的同类格子标记为已访问。</p>
+
+    <pre><code><span class="cm">// Flood Fill — 二维网格 DFS</span>
+<span class="kw">const</span> <span class="ty">int</span> dx[] = {<span class="num">-1</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span>};
+<span class="kw">const</span> <span class="ty">int</span> dy[] = {<span class="num">0</span>, <span class="num">0</span>, <span class="num">-1</span>, <span class="num">1</span>};
+<span class="ty">char</span> grid[N][N];
+<span class="ty">bool</span> vis[N][N];
+<span class="ty">int</span> n, m;
+
+<span class="ty">void</span> <span class="fn">floodFill</span>(<span class="ty">int</span> x, <span class="ty">int</span> y, <span class="ty">char</span> target) {
+    vis[x][y] = <span class="kw">true</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> d = <span class="num">0</span>; d &lt; <span class="num">4</span>; d++) {
+        <span class="ty">int</span> nx = x + dx[d], ny = y + dy[d];
+        <span class="kw">if</span> (nx >= <span class="num">0</span> &amp;&amp; nx &lt; n &amp;&amp; ny >= <span class="num">0</span> &amp;&amp; ny &lt; m
+            &amp;&amp; !vis[nx][ny] &amp;&amp; grid[nx][ny] == target) {
+            <span class="fn">floodFill</span>(nx, ny, target);
+        }
+    }
+}
+
+<span class="ty">int</span> <span class="fn">countIslands</span>() {
+    <span class="ty">int</span> cnt = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; m; j++)
+            <span class="kw">if</span> (!vis[i][j] &amp;&amp; grid[i][j] == <span class="str">'1'</span>) {
+                <span class="fn">floodFill</span>(i, j, <span class="str">'1'</span>);
+                cnt++;
+            }
+    <span class="kw">return</span> cnt;
+}</code></pre>
+
+    <h3>3.3 Flood Fill 过程演示</h3>
+    <div class="diagram">
+      <pre>
+  网格地图:                    连通块 1 (★)    连通块 2 (●)    连通块 3 (▲)
+  1 1 0 0 1                    ★ ★ 0 0 ●      连通块数量 = 3
+  1 0 0 1 1                    ★ 0 0 ● ●
+  0 0 1 0 0        →           0 0 ▲ 0 0
+  0 1 0 0 0                    0 ▲ 0 0 0
+  1 1 0 1 1                    ★ ★ 0 ▲ ▲
+
+  每次从一个未访问的 '1' 出发执行一次 DFS/floodFill,
+  标记所有可达的 '1'，DFS 调用次数 = 连通块数量。
+      </pre>
+    </div>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n * m)</span>
+      <span class="label">每个格子最多访问一次</span>
+    </div>
+
+    <h3>3.4 经典例题：岛屿数量</h3>
+    <div class="problem">
+      <div class="problem-title">LeetCode 200. <a href="https://leetcode.cn/problems/number-of-islands/" target="_blank">岛屿数量 (Number of Islands)</a></div>
+      <p>给定一个由 '1'（陆地）和 '0'（水）组成的二维网格，计算岛屿的数量。岛屿总是被水包围，且每座岛屿只能由水平和垂直方向上相邻的陆地连接而成。</p>
+      <p><strong>思路：</strong>直接套用 Flood Fill 模板，遇到 '1' 就 DFS 标记整个岛屿，计数 +1。</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 4. 剪枝策略 -->
+  <!-- ============================================================ -->
+  <div class="section" id="pruning">
+    <h2>4. 剪枝策略</h2>
+
+    <p>剪枝是 DFS 搜索优化的核心技术。通过提前判断某些分支不可能产生有效解或更优解，在搜索过程中跳过这些分支，从而大幅减少搜索空间。剪枝是 DFS 能否通过竞赛题目的关键。</p>
+
+    <h3>4.1 可行性剪枝</h3>
+    <p>当搜索到某个状态时，如果能判断从当前状态出发不可能到达合法解，则直接剪掉该分支。这是最基本也最常见的剪枝。</p>
+
+    <pre><code><span class="cm">// 经典例题：组合总和 — 从 n 个数中选 k 个，使其和为 target</span>
+<span class="ty">int</span> a[N], path[N];
+<span class="ty">int</span> n, k, target;
+
+<span class="ty">void</span> <span class="fn">dfs</span>(<span class="ty">int</span> idx, <span class="ty">int</span> cnt, <span class="ty">int</span> sum) {
+    <span class="cm">// 可行性剪枝：和已超过目标，不可能有解</span>
+    <span class="kw">if</span> (sum > target) <span class="kw">return</span>;
+
+    <span class="cm">// 可行性剪枝：剩余元素不够，无法凑齐 k 个</span>
+    <span class="kw">if</span> (cnt + (n - idx + <span class="num">1</span>) &lt; k) <span class="kw">return</span>;
+
+    <span class="kw">if</span> (cnt == k) {
+        <span class="kw">if</span> (sum == target) {
+            <span class="fn">printSolution</span>(path, k);
+        }
+        <span class="kw">return</span>;
+    }
+    <span class="kw">if</span> (idx > n) <span class="kw">return</span>;
+
+    <span class="cm">// 选第 idx 个数</span>
+    path[cnt] = a[idx];
+    <span class="fn">dfs</span>(idx + <span class="num">1</span>, cnt + <span class="num">1</span>, sum + a[idx]);
+
+    <span class="cm">// 不选第 idx 个数</span>
+    <span class="fn">dfs</span>(idx + <span class="num">1</span>, cnt, sum);
+}</code></pre>
+
+    <h3>4.2 最优性剪枝</h3>
+    <p>当搜索到某个状态时，如果能判断从当前状态出发不可能得到比当前已知最优解更优的解，则剪掉该分支。常用于求最值问题。</p>
+
+    <pre><code><span class="cm">// 经典例题：旅行商问题 (TSP) — 最优性剪枝</span>
+<span class="ty">int</span> ans = INT_MAX;
+<span class="ty">int</span> currentCost = <span class="num">0</span>;
+
+<span class="ty">void</span> <span class="fn">dfs_tsp</span>(<span class="ty">int</span> u, <span class="ty">int</span> visitedCnt, <span class="ty">int</span> cost) {
+    <span class="cm">// 最优性剪枝：当前代价已超过已知最优解</span>
+    <span class="kw">if</span> (cost >= ans) <span class="kw">return</span>;
+
+    <span class="kw">if</span> (visitedCnt == n) {
+        ans = <span class="fn">min</span>(ans, cost + dist[u][<span class="num">0</span>]);  <span class="cm">// 回到起点</span>
+        <span class="kw">return</span>;
+    }
+
+    <span class="kw">for</span> (<span class="ty">int</span> v = <span class="num">0</span>; v &lt; n; v++) {
+        <span class="kw">if</span> (!visited[v]) {
+            visited[v] = <span class="kw">true</span>;
+            <span class="fn">dfs_tsp</span>(v, visitedCnt + <span class="num">1</span>, cost + dist[u][v]);
+            visited[v] = <span class="kw">false</span>;
+        }
+    }
+}</code></pre>
+
+    <h3>4.3 重复性剪枝</h3>
+    <p>当搜索中会出现大量重复状态时，通过记忆化或排序去重来避免重复计算。</p>
+
+    <pre><code><span class="cm">// 经典例题：N 皇后 — 重复性剪枝</span>
+<span class="cm">// 由于每行只能放一个皇后，不需要判断行冲突</span>
+<span class="ty">int</span> col[N], diag1[<span class="num">2</span> * N], diag2[<span class="num">2</span> * N];
+<span class="ty">int</span> ans = <span class="num">0</span>, n;
+
+<span class="ty">void</span> <span class="fn">dfs_nqueen</span>(<span class="ty">int</span> row) {
+    <span class="kw">if</span> (row == n) {
+        ans++;
+        <span class="kw">return</span>;
+    }
+    <span class="kw">for</span> (<span class="ty">int</span> c = <span class="num">0</span>; c &lt; n; c++) {
+        <span class="cm">// 用 O(1) 判断是否冲突，避免重复检查</span>
+        <span class="kw">if</span> (col[c] || diag1[row - c + n] || diag2[row + c]) <span class="kw">continue</span>;
+
+        col[c] = diag1[row - c + n] = diag2[row + c] = <span class="num">1</span>;
+        <span class="fn">dfs_nqueen</span>(row + <span class="num">1</span>);
+        col[c] = diag1[row - c + n] = diag2[row + c] = <span class="num">0</span>;
+    }
+}
+
+<span class="cm">// 组合去重：当数组有重复元素时，先排序再跳过相同元素</span>
+<span class="ty">void</span> <span class="fn">dfs_dedup</span>(<span class="ty">int</span> idx) {
+    <span class="kw">for</span> (<span class="ty">int</span> i = idx; i &lt; n; i++) {
+        <span class="cm">// 重复性剪枝：跳过相同元素</span>
+        <span class="kw">if</span> (i > idx &amp;&amp; a[i] == a[i - <span class="num">1</span>]) <span class="kw">continue</span>;
+        path[depth] = a[i];
+        <span class="fn">dfs_dedup</span>(i + <span class="num">1</span>);
+    }
+}</code></pre>
+
+    <h3>4.4 搜索顺序优化</h3>
+    <p>合理的搜索顺序可以使剪枝更早生效，从而大幅提升效率。常见策略包括：优先搜索分支少的节点、从约束最强的维度开始搜索等。</p>
+
+    <pre><code><span class="cm">// 搜索顺序优化示例：数独求解</span>
+<span class="cm">// 策略：每次选择候选数最少的空格子（MRV 启发式）</span>
+<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt; <span class="fn">findBestCell</span>() {
+    <span class="ty">int</span> minChoices = <span class="num">10</span>, bx = <span class="num">-1</span>, by = <span class="num">-1</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; <span class="num">9</span>; i++) {
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; <span class="num">9</span>; j++) {
+            <span class="kw">if</span> (board[i][j] != <span class="num">0</span>) <span class="kw">continue</span>;
+            <span class="ty">int</span> cnt = <span class="fn">countCandidates</span>(i, j);
+            <span class="kw">if</span> (cnt &lt; minChoices) {
+                minChoices = cnt;
+                bx = i; by = j;
+            }
+        }
+    }
+    <span class="kw">return</span> {bx, by};
+}
+
+<span class="ty">bool</span> <span class="fn">solveSudoku</span>() {
+    <span class="kw">auto</span> [x, y] = <span class="fn">findBestCell</span>();
+    <span class="kw">if</span> (x == <span class="num">-1</span>) <span class="kw">return true</span>;  <span class="cm">// 所有格子已填满</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> num = <span class="num">1</span>; num &lt;= <span class="num">9</span>; num++) {
+        <span class="kw">if</span> (<span class="fn">isValid</span>(x, y, num)) {
+            board[x][y] = num;
+            <span class="kw">if</span> (<span class="fn">solveSudoku</span>()) <span class="kw">return true</span>;
+            board[x][y] = <span class="num">0</span>;
+        }
+    }
+    <span class="kw">return false</span>;
+}</code></pre>
+
+    <div class="box box-hard">
+      <div class="box-title">剪枝的本质</div>
+      <p>剪枝的本质是在搜索树中尽早排除不可能产生有效解或更优解的分支。好的剪枝可以让指数级的搜索空间变得可接受。在竞赛中，剪枝能力往往是区分选手水平的关键因素。</p>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>剪枝类型</th>
+            <th>判断依据</th>
+            <th>适用场景</th>
+            <th>示例</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>可行性剪枝</td>
+            <td>当前状态是否可能导致合法解</td>
+            <td>所有 DFS 搜索</td>
+            <td>和超过目标、剩余元素不足</td>
+          </tr>
+          <tr>
+            <td>最优性剪枝</td>
+            <td>当前状态能否产生更优解</td>
+            <td>求最值问题</td>
+            <td>TSP、最大/最小值搜索</td>
+          </tr>
+          <tr>
+            <td>重复性剪枝</td>
+            <td>当前状态是否与之前重复</td>
+            <td>有重复元素的排列组合</td>
+            <td>全排列去重、组合去重</td>
+          </tr>
+          <tr>
+            <td>搜索顺序优化</td>
+            <td>先搜索约束强的分支</td>
+            <td>约束满足问题</td>
+            <td>数独 MRV、背包优先选性价比高的</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 5. DFS 序 -->
+  <!-- ============================================================ -->
+  <div class="section" id="euler">
+    <h2>5. DFS 序</h2>
+
+    <p>DFS 序（Euler Tour）是指在对树进行 DFS 遍历时，记录每个节点的<strong>进入时间</strong>（tin）和<strong>离开时间</strong>（tout）。DFS 序是树上问题的重要工具，可以将树上的子树问题转化为区间问题。</p>
+
+    <h3>5.1 DFS 序的定义与求法</h3>
+
+    <pre><code><span class="cm">// 求 DFS 序</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; adj[N];
+<span class="ty">int</span> tin[N], tout[N], timer = <span class="num">0</span>;
+<span class="ty">int</span> euler[N];  <span class="cm">// DFS 序数组</span>
+
+<span class="ty">void</span> <span class="fn">dfs_euler</span>(<span class="ty">int</span> u, <span class="ty">int</span> parent) {
+    tin[u] = ++timer;       <span class="cm">// 进入时间</span>
+    euler[timer] = u;       <span class="cm">// 记录 DFS 序</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> v : adj[u]) {
+        <span class="kw">if</span> (v != parent) {
+            <span class="fn">dfs_euler</span>(v, u);
+        }
+    }
+
+    tout[u] = timer;        <span class="cm">// 离开时间</span>
+}</code></pre>
+
+    <h3>5.2 DFS 序的性质</h3>
+    <div class="box box-info">
+      <div class="box-title">核心性质</div>
+      <p>节点 u 的子树在 DFS 序中对应区间 <code>[tin[u], tout[u]]</code>，区间长度恰好等于以 u 为根的子树大小。因此：</p>
+      <ul>
+        <li><strong>子树查询：</strong>将子树问题转化为区间查询问题（配合线段树 / 树状数组）</li>
+        <li><strong>判断祖先关系：</strong>u 是 v 的祖先当且仅当 <code>tin[u] &lt;= tin[v] &amp;&amp; tout[v] &lt;= tout[u]</code></li>
+        <li><strong>子树修改 + 路径查询：</strong>结合 DFS 序和数据结构高效处理</li>
+      </ul>
+    </div>
+
+    <h3>5.3 DFS 序演示</h3>
+    <div class="diagram">
+      <pre>
+  树结构:                     DFS 遍历过程（tin/tout）:
+       1                      tin[1]=1
+      / \                         访问 2: tin[2]=2
+     2   5                           访问 3: tin[3]=3, tout[3]=3
+    / \   \                          访问 4: tin[4]=4, tout[4]=4
+   3   4   6                     tout[2]=4
+                                    访问 5: tin[5]=5
+  DFS 序: 1 2 3 4 5 6               访问 6: tin[6]=6, tout[6]=6
+                                    tout[5]=6
+  节点  tin  tout  子树区间       tout[1]=6
+    1     1    6    [1,6]
+    2     2    4    [2,4]        子树 2 的节点 = euler[2..4] = {2,3,4} ✓
+    3     3    3    [3,3]
+    4     4    4    [4,4]
+    5     5    6    [5,6]
+    6     6    6    [6,6]
+      </pre>
+    </div>
+
+    <h3>5.4 应用：子树求和（配合树状数组）</h3>
+
+    <pre><code><span class="cm">// 利用 DFS 序 + 树状数组实现子树求和</span>
+<span class="ty">int</span> bit[N];
+
+<span class="ty">void</span> <span class="fn">update</span>(<span class="ty">int</span> i, <span class="ty">int</span> val) {
+    <span class="kw">for</span> (; i &lt; N; i += i &amp; -i) bit[i] += val;
+}
+
+<span class="ty">int</span> <span class="fn">query</span>(<span class="ty">int</span> i) {
+    <span class="ty">int</span> s = <span class="num">0</span>;
+    <span class="kw">for</span> (; i > <span class="num">0</span>; i -= i &amp; -i) s += bit[i];
+    <span class="kw">return</span> s;
+}
+
+<span class="cm">// 修改节点 u 的值</span>
+<span class="ty">void</span> <span class="fn">modifyNode</span>(<span class="ty">int</span> u, <span class="ty">int</span> val) {
+    <span class="fn">update</span>(tin[u], val);
+}
+
+<span class="cm">// 查询以 u 为根的子树和</span>
+<span class="ty">int</span> <span class="fn">querySubtree</span>(<span class="ty">int</span> u) {
+    <span class="kw">return</span> <span class="fn">query</span>(tout[u]) - <span class="fn">query</span>(tin[u] - <span class="num">1</span>);
+}</code></pre>
+
+    <div class="complexity">
+      <span class="label">预处理</span>
+      <span class="value">O(n)</span>
+      <span class="label">单次查询/修改</span>
+      <span class="value">O(log n)</span>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 6. DFS 树 -->
+  <!-- ============================================================ -->
+  <div class="section" id="dfstree">
+    <h2>6. DFS 树</h2>
+
+    <p>对图进行 DFS 遍历时，可以将所有边分为四类。这些边构成的结构称为 DFS 树（DFS Tree），是图论算法的重要基础。</p>
+
+    <h3>6.1 四种边的定义</h3>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>边的类型</th>
+            <th>定义</th>
+            <th>方向特征</th>
+            <th>无向图中</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>树边 (Tree Edge)</strong></td>
+            <td>DFS 过程中首次访问某节点时经过的边</td>
+            <td>父 → 子</td>
+            <td>存在</td>
+          </tr>
+          <tr>
+            <td><strong>回边 (Back Edge)</strong></td>
+            <td>从后代指向祖先的边</td>
+            <td>子 → 祖先</td>
+            <td>存在（无向图中等价于返祖边）</td>
+          </tr>
+          <tr>
+            <td><strong>前向边 (Forward Edge)</strong></td>
+            <td>从祖先指向非直系后代的边</td>
+            <td>祖先 → 非直系后代</td>
+            <td>不存在（无向图中归入树边）</td>
+          </tr>
+          <tr>
+            <td><strong>横叉边 (Cross Edge)</strong></td>
+            <td>连接两个没有祖先-后代关系的节点的边</td>
+            <td>左子树 → 右子树（或反之）</td>
+            <td>不存在（无向图中归入树边）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>6.2 边的分类判断</h3>
+    <p>利用 tin（进入时间）和 tout（离开时间）可以判断边的类型。对于有向图中的边 u → v：</p>
+
+    <div class="diagram">
+      <pre>
+  边的分类判断逻辑:
+
+  if (v 未被访问)
+      → 树边 (Tree Edge)
+  else if (tin[v] &lt; tin[u] &amp;&amp; tout[u] &lt;= tout[v])
+      → 回边 (Back Edge)     // v 是 u 的祖先
+  else if (tin[u] &lt; tin[v] &amp;&amp; tout[v] &lt;= tout[u])
+      → 前向边 (Forward Edge) // v 是 u 的后代
+  else
+      → 横叉边 (Cross Edge)   // 互不为祖先后代
+
+  时间关系图:
+      u ────────────────── u
+      |  tin[u]    tout[u] |
+      |   ┌───────────┐    |
+      |   │  Back Edge │←──│── v (祖先区间包含 u)
+      |   │  v ──→ u   │   |
+      |   └───────────┘    |
+      |   ┌───────────┐    |
+      |   │Forward Edge│   |
+      |   │  u ──→ v   │──→│── v (u 的区间包含 v)
+      |   └───────────┘    |
+      └────────────────────┘
+              ┌───────────┐
+              │Cross Edge │   v (与 u 无包含关系)
+              │  u ──→ v  │
+              └───────────┘
+      </pre>
+    </div>
+
+    <h3>6.3 DFS 树的应用：桥和割点</h3>
+    <p>利用 DFS 树可以高效地求解图中的桥（Bridge）和割点（Articulation Point）。</p>
+
+    <pre><code><span class="cm">// Tarjan 求桥和割点</span>
+<span class="ty">int</span> tin[N], low[N], timer = <span class="num">0</span>;
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; adj[N];
+<span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; bridges;
+<span class="ty">set</span>&lt;<span class="ty">int</span>&gt; articulationPoints;
+
+<span class="ty">void</span> <span class="fn">tarjan</span>(<span class="ty">int</span> u, <span class="ty">int</span> parent) {
+    tin[u] = low[u] = ++timer;
+    <span class="ty">int</span> childCnt = <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> v : adj[u]) {
+        <span class="kw">if</span> (v == parent) <span class="kw">continue</span>;
+
+        <span class="kw">if</span> (tin[v]) {
+            <span class="cm">// 回边：更新 low 值</span>
+            low[u] = <span class="fn">min</span>(low[u], tin[v]);
+        } <span class="kw">else</span> {
+            <span class="cm">// 树边</span>
+            <span class="fn">tarjan</span>(v, u);
+            low[u] = <span class="fn">min</span>(low[u], low[v]);
+
+            <span class="cm">// 判断桥：如果 low[v] > tin[u]</span>
+            <span class="kw">if</span> (low[v] > tin[u]) {
+                bridges.<span class="fn">push_back</span>({u, v});
+            }
+
+            <span class="cm">// 判断割点</span>
+            <span class="kw">if</span> (low[v] >= tin[u] &amp;&amp; parent != <span class="num">-1</span>) {
+                articulationPoints.<span class="fn">insert</span>(u);
+            }
+            childCnt++;
+        }
+    }
+
+    <span class="cm">// 根节点是割点当且仅当有两个以上子树</span>
+    <span class="kw">if</span> (parent == <span class="num">-1</span> &amp;&amp; childCnt > <span class="num">1</span>) {
+        articulationPoints.<span class="fn">insert</span>(u);
+    }
+}</code></pre>
+
+    <div class="box box-info">
+      <div class="box-title">low 数组的含义</div>
+      <p><code>low[u]</code> 表示从 u 出发，经过 u 的子树中的节点，再通过<strong>最多一条回边</strong>所能到达的最小 tin 值。如果 <code>low[v] > tin[u]</code>，说明 v 的子树无法通过回边到达 u 的祖先，因此边 (u, v) 是桥。</p>
+    </div>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(V + E)</span>
+      <span class="label">Tarjan 算法</span>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 7. 经典例题汇总 -->
+  <!-- ============================================================ -->
+  <div class="section" id="problems">
+    <h2>7. 经典例题汇总</h2>
+
+    <h3>7.1 迷宫问题</h3>
+    <div class="problem">
+      <div class="problem-title">洛谷 P1605 迷宫</div>
+      <p>给定一个 N*M 的迷宫，其中有些格子可以走（0），有些不能走（1）。求从起点到终点的路径数。</p>
+      <p><strong>思路：</strong>经典 DFS + 回溯，每到一个格子标记为已走，四个方向搜索，回溯时恢复标记。</p>
+    </div>
+
+    <pre><code><span class="cm">// 迷宫路径计数</span>
+<span class="ty">int</span> n, m, sx, sy, ex, ey, ans = <span class="num">0</span>;
+<span class="ty">bool</span> grid[N][N], vis[N][N];
+<span class="kw">const</span> <span class="ty">int</span> dx[] = {<span class="num">-1</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span>};
+<span class="kw">const</span> <span class="ty">int</span> dy[] = {<span class="num">0</span>, <span class="num">0</span>, <span class="num">-1</span>, <span class="num">1</span>};
+
+<span class="ty">void</span> <span class="fn">dfs_maze</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="kw">if</span> (x == ex &amp;&amp; y == ey) {
+        ans++;
+        <span class="kw">return</span>;
+    }
+    <span class="kw">for</span> (<span class="ty">int</span> d = <span class="num">0</span>; d &lt; <span class="num">4</span>; d++) {
+        <span class="ty">int</span> nx = x + dx[d], ny = y + dy[d];
+        <span class="kw">if</span> (nx >= <span class="num">1</span> &amp;&amp; nx &lt;= n &amp;&amp; ny >= <span class="num">1</span> &amp;&amp; ny &lt;= m
+            &amp;&amp; !vis[nx][ny] &amp;&amp; grid[nx][ny]) {
+            vis[nx][ny] = <span class="kw">true</span>;
+            <span class="fn">dfs_maze</span>(nx, ny);
+            vis[nx][ny] = <span class="kw">false</span>;  <span class="cm">// 回溯</span>
+        }
+    }
+}</code></pre>
+
+    <h3>7.2 全排列生成</h3>
+    <div class="problem">
+      <div class="problem-title">洛谷 P1706 全排列问题</div>
+      <p>输出自然数 1 到 n 的所有全排列。</p>
+      <p><strong>思路：</strong>DFS 逐位确定排列中的数字，用 visited 数组标记已使用的数字。</p>
+    </div>
+
+    <pre><code><span class="cm">// 全排列生成</span>
+<span class="ty">int</span> n, path[N];
+<span class="ty">bool</span> used[N];
+
+<span class="ty">void</span> <span class="fn">dfs_perm</span>(<span class="ty">int</span> depth) {
+    <span class="kw">if</span> (depth == n + <span class="num">1</span>) {
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+            <span class="fn">printf</span>(<span class="str">"%5d"</span>, path[i]);
+        <span class="fn">printf</span>(<span class="str">"\n"</span>);
+        <span class="kw">return</span>;
+    }
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="kw">if</span> (!used[i]) {
+            used[i] = <span class="kw">true</span>;
+            path[depth] = i;
+            <span class="fn">dfs_perm</span>(depth + <span class="num">1</span>);
+            used[i] = <span class="kw">false</span>;
+        }
+    }
+}</code></pre>
+
+    <h3>7.3 连通块计数经典题</h3>
+    <div class="problem">
+      <div class="problem-title">洛谷 P1596 Lake Counting</div>
+      <p>有一个大小为 N*M 的园子，雨后积起了水。八连通的积水被认为是连接在一起的。求园子里一共有多少水洼。</p>
+      <p><strong>思路：</strong>八方向 Flood Fill，每找到一个未访问的 'W' 就 DFS 标记整个水洼。</p>
+    </div>
+
+    <pre><code><span class="cm">// 八连通 Flood Fill</span>
+<span class="kw">const</span> <span class="ty">int</span> dx8[] = {<span class="num">-1</span>,<span class="num">-1</span>,<span class="num">-1</span>,<span class="num">0</span>,<span class="num">0</span>,<span class="num">1</span>,<span class="num">1</span>,<span class="num">1</span>};
+<span class="kw">const</span> <span class="ty">int</span> dy8[] = {<span class="num">-1</span>,<span class="num">0</span>,<span class="num">1</span>,<span class="num">-1</span>,<span class="num">1</span>,<span class="num">-1</span>,<span class="num">0</span>,<span class="num">1</span>};
+
+<span class="ty">void</span> <span class="fn">dfs_lake</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    vis[x][y] = <span class="kw">true</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> d = <span class="num">0</span>; d &lt; <span class="num">8</span>; d++) {
+        <span class="ty">int</span> nx = x + dx8[d], ny = y + dy8[d];
+        <span class="kw">if</span> (nx >= <span class="num">0</span> &amp;&amp; nx &lt; n &amp;&amp; ny >= <span class="num">0</span> &amp;&amp; ny &lt; m
+            &amp;&amp; !vis[nx][ny] &amp;&amp; grid[nx][ny] == <span class="str">'W'</span>) {
+            <span class="fn">dfs_lake</span>(nx, ny);
+        }
+    }
+}</code></pre>
+
+    <h3>7.4 更多推荐题目</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>题目</th>
+            <th>难度</th>
+            <th>知识点</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>洛谷 P1219 八皇后</td>
+            <td><span class="tag tag-mid">中等</span></td>
+            <td>DFS + 剪枝</td>
+            <td>N 皇后问题，回溯经典</td>
+          </tr>
+          <tr>
+            <td>洛谷 P1141 01 迷宫</td>
+            <td><span class="tag tag-mid">中等</span></td>
+            <td>DFS + 连通块 + 记忆化</td>
+            <td>求每个格子可达的格子数</td>
+          </tr>
+          <tr>
+            <td>洛谷 P1330 封锁阳光大学</td>
+            <td><span class="tag tag-mid">中等</span></td>
+            <td>DFS 染色 / 二分图判定</td>
+            <td>DFS 在图染色中的应用</td>
+          </tr>
+          <tr>
+            <td>洛谷 P3388 割点</td>
+            <td><span class="tag tag-hard">困难</span></td>
+            <td>DFS 树 + Tarjan</td>
+            <td>求图中所有割点</td>
+          </tr>
+          <tr>
+            <td>洛谷 P3387 缩点</td>
+            <td><span class="tag tag-hard">困难</span></td>
+            <td>DFS + Tarjan SCC</td>
+            <td>强连通分量缩点</td>
+          </tr>
+          <tr>
+            <td>洛谷 P2812 校园网络</td>
+            <td><span class="tag tag-hard">困难</span></td>
+            <td>DFS + SCC + 缩点</td>
+            <td>强连通分量应用</td>
+          </tr>
+          <tr>
+            <td>洛谷 P1433 吃奶酪</td>
+            <td><span class="tag tag-mid">中等</span></td>
+            <td>DFS + 最优性剪枝</td>
+            <td>类 TSP 问题</td>
+          </tr>
+          <tr>
+            <td>LeetCode 695 岛屿最大面积</td>
+            <td><span class="tag tag-easy">简单</span></td>
+            <td>Flood Fill</td>
+            <td>二维网格连通块</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 总结 -->
+  <!-- ============================================================ -->
+  <div class="section">
+    <h2>总结</h2>
+
+    <div class="box box-tip">
+      <div class="box-title">DFS 核心要点</div>
+      <ul>
+        <li>DFS 的核心是 <strong>"能走就走，走不通就退"</strong>，利用递归栈或显式栈实现</li>
+        <li>图的 DFS 需要 <code>visited</code> 数组避免重复访问，时间复杂度 O(V+E)</li>
+        <li>连通块计数通过 DFS 调用次数实现；Flood Fill 是其二维网格版本</li>
+        <li>剪枝是 DFS 效率的关键：可行性剪枝、最优性剪枝、重复性剪枝、搜索顺序优化</li>
+        <li>DFS 序将子树问题转化为区间问题，配合数据结构可高效处理树上操作</li>
+        <li>DFS 树的四种边（树边、回边、前向边、横叉边）是理解图论算法的基础</li>
+        <li>Tarjan 算法利用 DFS 树和 low 数组求解桥、割点、强连通分量等问题</li>
+      </ul>
+    </div>
+
+    <div class="complexity">
+      <span class="label">DFS 时间复杂度</span>
+      <span class="value">O(V + E)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(V)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">适用场景</span>
+      <span class="value">图遍历 / 回溯 / 连通性 / 排列组合</span>
+    </div>
+  </div>
+
+</div>
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

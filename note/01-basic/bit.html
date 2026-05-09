@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>位运算 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> / <a href="../index.html">01 基础篇</a> / 位运算
+  </div>
+
+  <div class="page-header">
+    <h1>位运算</h1>
+    <p class="subtitle">Bit Manipulation &mdash; 位运算基础、常用技巧、枚举子集与状态压缩</p>
+    <div class="tags">
+      <span class="tag tag-base">基础</span>
+      <span class="tag tag-mid">中等</span>
+      <span class="tag tag-math">数学</span>
+    </div>
+  </div>
+
+  <!-- ===== TOC ===== -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#sec-basic">1. 基础位运算</a></li>
+      <li><a href="#sec-truth">2. 真值表与位运算性质</a></li>
+      <li><a href="#sec-tricks">3. 常用位运算技巧</a></li>
+      <li><a href="#sec-lowbit">4. lowbit 操作</a></li>
+      <li><a href="#sec-count">5. 统计二进制中 1 的个数</a></li>
+      <li><a href="#sec-enumerate-bit">6. 枚举二进制位</a></li>
+      <li><a href="#sec-subset">7. 枚举子集</a></li>
+      <li><a href="#sec-bitmask">8. 状态压缩基础</a></li>
+      <li><a href="#sec-application">9. 位运算在算法中的应用</a></li>
+      <li><a href="#sec-problems">10. 经典例题</a></li>
+    </ul>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 1: 基础位运算 -->
+  <!-- ============================== -->
+  <div class="section" id="sec-basic">
+    <h2>1. 基础位运算</h2>
+
+    <p>计算机中所有数据都以二进制形式存储。位运算直接对二进制位进行操作，速度极快，是竞赛编程中的重要工具。C++ 中 <code>int</code> 类型为 32 位，<code>long long</code> 为 64 位，均使用补码表示。</p>
+
+    <h3>1.1 六种基本位运算</h3>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>运算符</th><th>名称</th><th>符号</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>按位与</td><td>AND</td><td><code>&amp;</code></td><td>两位都为 1 时结果为 1</td></tr>
+          <tr><td>按位或</td><td>OR</td><td><code>|</code></td><td>两位至少一个为 1 时结果为 1</td></tr>
+          <tr><td>按位异或</td><td>XOR</td><td><code>^</code></td><td>两位不同时结果为 1</td></tr>
+          <tr><td>按位取反</td><td>NOT</td><td><code>~</code></td><td>每一位取反（0 变 1，1 变 0）</td></tr>
+          <tr><td>左移</td><td>LSH</td><td><code>&lt;&lt;</code></td><td>所有位向左移动，右侧补 0</td></tr>
+          <tr><td>右移</td><td>RSH</td><td><code>&gt;&gt;</code></td><td>所有位向右移动，左侧补符号位（算术右移）</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>1.2 真值表</h3>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>A</th><th>B</th><th>A &amp; B (AND)</th><th>A | B (OR)</th><th>A ^ B (XOR)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+          <tr><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td></tr>
+          <tr><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td></tr>
+          <tr><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>1.3 移位运算示例</h3>
+
+    <div class="diagram">
+      <pre>
+左移:  5 &lt;&lt; 2
+       5 = 00000101
+           --------
+           00010100  = 20  (相当于 5 * 2^2 = 20)
+
+右移:  20 &gt;&gt; 3
+      20 = 00010100
+           --------
+           00000010  = 2   (相当于 20 / 2^3 = 2)
+
+注意: 1 &lt;&lt; n 等价于 2^n
+      n &gt;&gt; 1 等价于 n / 2（向下取整）
+      </pre>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">注意</div>
+      <p>左移溢出: <code>1 &lt;&lt; 31</code> 对 <code>int</code> 会溢出（变为负数）。竞赛中常用 <code>1LL &lt;&lt; n</code> 来表示第 n 位。<code>~n</code> 在 <code>int</code> 下等于 <code>-n-1</code>（补码性质）。</p>
+    </div>
+
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> a = <span class="num">5</span>;  <span class="cm">// 0101</span>
+    <span class="ty">int</span> b = <span class="num">3</span>;  <span class="cm">// 0011</span>
+
+    cout &lt;&lt; (a &amp; b) &lt;&lt; endl;  <span class="cm">// 1   (0001)</span>
+    cout &lt;&lt; (a | b) &lt;&lt; endl;  <span class="cm">// 7   (0111)</span>
+    cout &lt;&lt; (a ^ b) &lt;&lt; endl;  <span class="cm">// 6   (0110)</span>
+    cout &lt;&lt; ~a &lt;&lt; endl;       <span class="cm">// -6  (补码: ...11111010)</span>
+    cout &lt;&lt; (a &lt;&lt; <span class="num">1</span>) &lt;&lt; endl;  <span class="cm">// 10  (1010)</span>
+    cout &lt;&lt; (a &gt;&gt; <span class="num">1</span>) &lt;&lt; endl;  <span class="cm">// 2   (0010)</span>
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 2: 真值表与位运算性质 -->
+  <!-- ============================== -->
+  <div class="section" id="sec-truth">
+    <h2>2. 真值表与位运算性质</h2>
+
+    <h3>2.1 NOT 运算真值表</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>A</th><th>~A</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>0</td><td>1</td></tr>
+          <tr><td>1</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>2.2 位运算的重要性质</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>性质</th><th>公式</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>交换律</td><td>a &amp; b = b &amp; a</td><td>AND、OR、XOR 均满足</td></tr>
+          <tr><td>结合律</td><td>(a &amp; b) &amp; c = a &amp; (b &amp; c)</td><td>AND、OR、XOR 均满足</td></tr>
+          <tr><td>分配律</td><td>a &amp; (b | c) = (a&amp;b) | (a&amp;c)</td><td>AND 对 OR 有分配律</td></tr>
+          <tr><td>自反性</td><td>a ^ a = 0</td><td>任何数异或自身为 0</td></tr>
+          <tr><td>恒等性</td><td>a ^ 0 = a</td><td>任何数异或 0 不变</td></tr>
+          <tr><td>德摩根律</td><td>~(a &amp; b) = (~a) | (~b)</td><td>类比集合的德摩根律</td></tr>
+          <tr><td>取反等价</td><td>~n = -n - 1</td><td>补码表示下的关系</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">技巧</div>
+      <p>XOR 的自反性（<code>a ^ a = 0</code>）是解决"只出现一次的数"等问题的核心。</p>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 3: 常用位运算技巧 -->
+  <!-- ============================== -->
+  <div class="section" id="sec-tricks">
+    <h2>3. 常用位运算技巧</h2>
+
+    <h3>3.1 判断奇偶: <code>n &amp; 1</code></h3>
+    <p>二进制最低位为 1 表示奇数，为 0 表示偶数。<code>n &amp; 1</code> 取出最低位。</p>
+
+    <div class="diagram">
+      <pre>
+奇数:  7 = 0111    7 &amp; 1 = 1  (奇数)
+偶数:  6 = 0110    6 &amp; 1 = 0  (偶数)
+       </pre>
+    </div>
+
+    <pre><code><span class="kw">if</span> (n &amp; <span class="num">1</span>) {
+    <span class="cm">// n 是奇数</span>
+} <span class="kw">else</span> {
+    <span class="cm">// n 是偶数</span>
+}</code></pre>
+
+    <h3>3.2 取绝对值: <code>(n ^ (n &gt;&gt; 31)) - (n &gt;&gt; 31)</code></h3>
+    <p>对于 32 位有符号整数，<code>n &gt;&gt; 31</code> 得到符号位（正数为 0，负数为 -1 即全 1）。利用 XOR 和减法实现无分支绝对值。</p>
+
+    <div class="diagram">
+      <pre>
+当 n >= 0 时:  n >> 31 = 0
+               (n ^ 0) - 0 = n
+
+当 n < 0 时:   n >> 31 = -1 (即 0xFFFFFFFF)
+               n ^ (-1) = ~n (按位取反)
+               ~n - (-1) = ~n + 1 = -n  (补码取反加一)
+       </pre>
+    </div>
+
+    <pre><code><span class="ty">int</span> <span class="fn">abs_bit</span>(<span class="ty">int</span> n) {
+    <span class="ty">int</span> mask = n &gt;&gt; <span class="num">31</span>;
+    <span class="kw">return</span> (n ^ mask) - mask;
+}
+
+<span class="cm">// 64 位版本</span>
+<span class="ty">long long</span> <span class="fn">abs_bit64</span>(<span class="ty">long long</span> n) {
+    <span class="ty">long long</span> mask = n &gt;&gt; <span class="num">63</span>;
+    <span class="kw">return</span> (n ^ mask) - mask;
+}</code></pre>
+
+    <h3>3.3 交换两数: XOR 交换</h3>
+    <p>利用 XOR 的自反性，无需临时变量即可交换两个数。注意：当 <code>a</code> 和 <code>b</code> 指向同一地址时此方法会出错。</p>
+
+    <div class="steps">
+      <div class="step"><code>a ^= b;</code> &mdash; 此时 a 存储了 a 和 b 的 XOR 信息</div>
+      <div class="step"><code>b ^= a;</code> &mdash; b = b ^ (a ^ b) = a，b 变成了原来的 a</div>
+      <div class="step"><code>a ^= b;</code> &mdash; a = (a ^ b) ^ a = b，a 变成了原来的 b</div>
+    </div>
+
+    <pre><code><span class="ty">void</span> <span class="fn">swap_xor</span>(<span class="ty">int</span> &amp;a, <span class="ty">int</span> &amp;b) {
+    a ^= b;
+    b ^= a;
+    a ^= b;
+}
+
+<span class="cm">// 更简洁的写法（STL 中 __swap 用的就是类似思路）</span>
+<span class="cm">// 注意: 当 &amp;a == &amp;b 时不要用 XOR 交换！</span></code></pre>
+
+    <h3>3.4 判断/求 2 的幂: <code>n &amp; (n-1)</code></h3>
+    <p><code>n &amp; (n-1)</code> 的作用是<strong>去掉 n 的最低位的 1</strong>。若结果为 0，则 n 是 2 的幂（只有一个 1）。</p>
+
+    <div class="diagram">
+      <pre>
+n     = 16 = 10000
+n - 1 = 15 = 01111
+n &amp; (n-1) = 00000  --> 是 2 的幂!
+
+n     = 12 = 1100
+n - 1 = 11 = 1011
+n &amp; (n-1) = 1000  --> 不是 2 的幂
+       </pre>
+    </div>
+
+    <pre><code><span class="cm">// 判断 n 是否是 2 的幂</span>
+<span class="ty">bool</span> <span class="fn">isPowerOfTwo</span>(<span class="ty">int</span> n) {
+    <span class="kw">return</span> n &gt; <span class="num">0</span> &amp;&amp; (n &amp; (n - <span class="num">1</span>)) == <span class="num">0</span>;
+}
+
+<span class="cm">// 计算 n 的二进制中有多少个 1（逐个去掉最低位的 1）</span>
+<span class="ty">int</span> <span class="fn">popcount_loop</span>(<span class="ty">int</span> n) {
+    <span class="ty">int</span> cnt = <span class="num">0</span>;
+    <span class="kw">while</span> (n) {
+        n &amp;= n - <span class="num">1</span>;  <span class="cm">// 去掉最低位的 1</span>
+        cnt++;
+    }
+    <span class="kw">return</span> cnt;
+}
+
+<span class="cm">// 求 2^n</span>
+<span class="ty">int</span> pow2 = <span class="num">1</span> &lt;&lt; n;       <span class="cm">// n &lt; 31</span>
+<span class="ty">long long</span> pow2 = <span class="num">1LL</span> &lt;&lt; n; <span class="cm">// n &lt; 63</span></code></pre>
+
+    <h3>3.5 判断 n 是否是 2 的幂减 1</h3>
+    <p><code>n &amp; (n+1) == 0</code> 则 n 是 2 的幂减 1（即二进制全为 1），如 1, 3, 7, 15, 31...</p>
+
+    <pre><code><span class="ty">bool</span> <span class="fn">isAllOnes</span>(<span class="ty">int</span> n) {
+    <span class="kw">return</span> n &gt;= <span class="num">0</span> &amp;&amp; (n &amp; (n + <span class="num">1</span>)) == <span class="num">0</span>;
+}</code></pre>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 4: lowbit -->
+  <!-- ============================== -->
+  <div class="section" id="sec-lowbit">
+    <h2>4. lowbit 操作</h2>
+
+    <p><code>lowbit(n)</code> 取出 n 的二进制表示中<strong>最低位的 1 所对应的值</strong>。公式为 <code>n &amp; (-n)</code>。</p>
+
+    <div class="diagram">
+      <pre>
+原理: -n 在补码中等于 ~n + 1
+
+n     = ...1011000
+~n    = ...0100111
+~n +1 = ...0101000  (即 -n)
+
+n &amp; (-n) = ...0001000  --> 最低位的 1
+
+示例:
+n = 12 = 1100   --> lowbit = 100 = 4
+n = 10 = 1010   --> lowbit = 0010 = 2
+n =  7 = 0111   --> lowbit = 0001 = 1
+n =  8 = 1000   --> lowbit = 1000 = 8
+       </pre>
+    </div>
+
+    <pre><code><span class="cm">// lowbit: 取出最低位的 1</span>
+<span class="ty">int</span> <span class="fn">lowbit</span>(<span class="ty">int</span> x) {
+    <span class="kw">return</span> x &amp; (-x);
+}
+
+<span class="cm">// 应用: 树状数组的核心操作</span>
+<span class="cm">// 利用 lowbit 可以快速跳转到父节点/子节点</span></code></pre>
+
+    <div class="box box-info">
+      <div class="box-title">lowbit 在树状数组中的应用</div>
+      <p>树状数组 (Fenwick Tree) 中，<code>lowbit(i)</code> 决定了节点 i 管辖的区间长度。修改操作 <code>i += lowbit(i)</code> 向上跳转，查询操作 <code>i -= lowbit(i)</code> 向前跳转。详见 <a href="../06-ds/bit-fenwick.html">树状数组</a> 笔记。</p>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 5: 统计 1 的个数 -->
+  <!-- ============================== -->
+  <div class="section" id="sec-count">
+    <h2>5. 统计二进制中 1 的个数</h2>
+
+    <h3>5.1 方法一: 循环移位</h3>
+    <pre><code><span class="ty">int</span> <span class="fn">popcount1</span>(<span class="ty">int</span> n) {
+    <span class="ty">int</span> cnt = <span class="num">0</span>;
+    <span class="kw">while</span> (n) {
+        cnt += n &amp; <span class="num">1</span>;
+        n &gt;&gt;= <span class="num">1</span>;
+    }
+    <span class="kw">return</span> cnt;
+}</code></pre>
+
+    <h3>5.2 方法二: Brian Kernighan 算法（去掉最低位的 1）</h3>
+    <p>每次 <code>n &amp;= (n-1)</code> 消去最低位的 1，循环次数等于 1 的个数。比方法一更快。</p>
+    <div class="complexity">
+      <span class="label">时间复杂度</span> <span class="value">O(k)</span>，k 为 1 的个数
+    </div>
+
+    <pre><code><span class="ty">int</span> <span class="fn">popcount2</span>(<span class="ty">int</span> n) {
+    <span class="ty">int</span> cnt = <span class="num">0</span>;
+    <span class="kw">while</span> (n) {
+        n &amp;= n - <span class="num">1</span>;
+        cnt++;
+    }
+    <span class="kw">return</span> cnt;
+}</code></pre>
+
+    <h3>5.3 方法三: 内建函数（推荐）</h3>
+    <p>GCC / Clang 提供的内建函数，编译为 CPU 的 POPCNT 指令，O(1) 时间。</p>
+
+    <pre><code><span class="cm">// 统计 int 中 1 的个数</span>
+<span class="ty">int</span> cnt = <span class="fn">__builtin_popcount</span>(n);
+
+<span class="cm">// 统计 long long 中 1 的个数</span>
+<span class="ty">int</span> cnt = <span class="fn">__builtin_popcountll</span>(n);
+
+<span class="cm">// 其他有用的内建函数:</span>
+<span class="fn">__builtin_clz</span>(n)     <span class="cm">// 前导零的个数 (count leading zeros)</span>
+<span class="fn">__builtin_ctz</span>(n)     <span class="cm">// 末尾零的个数 (count trailing zeros)</span>
+<span class="fn">__builtin_parity</span>(n)  <span class="cm">// 1 的个数的奇偶性</span>
+<span class="fn">__builtin_ffs</span>(n)     <span class="cm">// 最低为 1 的位是第几位 (从 1 开始)</span></code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">C++20 标准</div>
+      <p>C++20 引入了 <code>&lt;bit&gt;</code> 头文件，提供标准的位操作函数: <code>popcount()</code>, <code>countl_zero()</code>, <code>countr_zero()</code>, <code>has_single_bit()</code> 等。竞赛中优先使用 GCC 内建函数。</p>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 6: 枚举二进制位 -->
+  <!-- ============================== -->
+  <div class="section" id="sec-enumerate-bit">
+    <h2>6. 枚举二进制位</h2>
+
+    <h3>6.1 判断第 k 位是否为 1</h3>
+    <pre><code><span class="cm">// 方法 1: 右移后取最低位</span>
+<span class="ty">bool</span> bit = (n &gt;&gt; k) &amp; <span class="num">1</span>;
+
+<span class="cm">// 方法 2: 与掩码做 AND</span>
+<span class="ty">bool</span> bit = n &amp; (<span class="num">1</span> &lt;&lt; k);</code></pre>
+
+    <h3>6.2 设置/清除/翻转第 k 位</h3>
+    <pre><code><span class="cm">// 将第 k 位设为 1</span>
+n |= (<span class="num">1</span> &lt;&lt; k);
+
+<span class="cm">// 将第 k 位设为 0</span>
+n &amp;= ~(<span class="num">1</span> &lt;&lt; k);
+
+<span class="cm">// 翻转第 k 位</span>
+n ^= (<span class="num">1</span> &lt;&lt; k);</code></pre>
+
+    <h3>6.3 枚举所有位</h3>
+    <pre><code><span class="cm">// 枚举 n 的每一位（从低位到高位）</span>
+<span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; <span class="num">32</span>; i++) {
+    <span class="kw">if</span> ((n &gt;&gt; i) &amp; <span class="num">1</span>) {
+        <span class="cm">// 第 i 位是 1</span>
+    }
+}
+
+<span class="cm">// 枚举 n 的所有为 1 的位（更高效）</span>
+<span class="kw">while</span> (n) {
+    <span class="ty">int</span> low = n &amp; (-n);  <span class="cm">// 最低位的 1</span>
+    <span class="ty">int</span> pos = <span class="fn">__builtin_ctz</span>(n);  <span class="cm">// 该位的位置</span>
+    <span class="cm">// 处理 pos ...</span>
+    n -= low;  <span class="cm">// 或 n &amp;= n - 1</span>
+}</code></pre>
+
+    <h3>6.4 位运算可视化: 设置与清除</h3>
+    <div class="diagram">
+      <pre>
+n       = 10110100
+设第 2 位:  n |  (1 &lt;&lt; 2) = 10110100  (已经是 1, 不变)
+清第 5 位:  n &amp; ~(1 &lt;&lt; 5) = 10010100  (第 5 位变 0)
+翻第 0 位:  n ^  (1 &lt;&lt; 0) = 10110101  (第 0 位翻转)
+       </pre>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 7: 枚举子集 -->
+  <!-- ============================== -->
+  <div class="section" id="sec-subset">
+    <h2>7. 枚举子集</h2>
+
+    <p>用一个 <code>n</code> 位的二进制数 <code>mask</code> 表示集合: 第 i 位为 1 表示元素 i 在集合中。则 <code>mask</code> 的所有子集可以用位运算高效枚举。</p>
+
+    <h3>7.1 枚举所有子集（对单个 mask）</h3>
+    <p>利用 <code>sub = (sub - 1) &amp; mask</code> 可以按降序枚举 mask 的所有子集。</p>
+
+    <div class="diagram">
+      <pre>
+mask = 10110 (即 {1, 2, 4})
+
+枚举顺序（降序）:
+  sub = 10110  ({1, 2, 4})
+  sub = 10100  ({2, 4})
+  sub = 10010  ({1, 4})
+  sub = 10000  ({4})
+  sub = 00110  ({1, 2})
+  sub = 00100  ({2})
+  sub = 00010  ({1})
+  sub = 00000  ({})
+
+共 2^(popcount(mask)) = 2^3 = 8 个子集
+       </pre>
+    </div>
+
+    <pre><code><span class="cm">// 枚举 mask 的所有子集（降序）</span>
+<span class="kw">for</span> (<span class="ty">int</span> sub = mask; sub; sub = (sub - <span class="num">1</span>) &amp; mask) {
+    <span class="cm">// 处理子集 sub</span>
+}
+<span class="cm">// 别忘了空集: sub = 0 也是 mask 的子集</span>
+
+<span class="cm">// 完整示例: 枚举 {0, 1, 2} 的所有子集</span>
+<span class="ty">int</span> mask = (<span class="num">1</span> &lt;&lt; <span class="num">3</span>) - <span class="num">1</span>;  <span class="cm">// mask = 111 = 7</span>
+<span class="kw">for</span> (<span class="ty">int</span> sub = mask; ; sub = (sub - <span class="num">1</span>) &amp; mask) {
+    <span class="cm">// 处理子集 sub</span>
+    <span class="kw">if</span> (sub == <span class="num">0</span>) <span class="kw">break</span>;
+}</code></pre>
+
+    <h3>7.2 枚举所有掩码及其子集</h3>
+    <p>当需要对每个 mask 枚举其所有子集时，总复杂度为 O(3^n)（每个元素有"在 mask 但不在 sub"、"在 sub"、"不在 mask"三种状态）。</p>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span> <span class="value">O(3^n)</span>
+    </div>
+
+    <pre><code><span class="cm">// 枚举所有 mask 及其子集</span>
+<span class="ty">int</span> n = <span class="num">3</span>;
+<span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">0</span>; mask &lt; (<span class="num">1</span> &lt;&lt; n); mask++) {
+    <span class="kw">for</span> (<span class="ty">int</span> sub = mask; ; sub = (sub - <span class="num">1</span>) &amp; mask) {
+        <span class="cm">// 处理 (mask, sub) 对</span>
+        <span class="kw">if</span> (sub == <span class="num">0</span>) <span class="kw">break</span>;
+    }
+}</code></pre>
+
+    <h3>7.3 枚举超集</h3>
+    <p>对于给定的 mask，枚举所有包含 mask 的超集（即 sup 满足 <code>(sup &amp; mask) == mask</code>）。</p>
+
+    <pre><code><span class="cm">// 枚举 mask 的所有超集（在全集 full 下）</span>
+<span class="ty">int</span> full = (<span class="num">1</span> &lt;&lt; n) - <span class="num">1</span>;
+<span class="kw">for</span> (<span class="ty">int</span> sup = mask; sup &lt;= full; sup = (sup + <span class="num">1</span>) | mask) {
+    <span class="cm">// 处理超集 sup</span>
+}</code></pre>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 8: 状态压缩基础 -->
+  <!-- ============================== -->
+  <div class="section" id="sec-bitmask">
+    <h2>8. 状态压缩基础</h2>
+
+    <p>状态压缩（Bitmask DP）是用一个整数的二进制位来表示一个集合的状态。当集合大小 n 较小（通常 n &le; 20~25）时，可以用 <code>int</code> 或 <code>long long</code> 存储状态，配合 DP 或暴力枚举解决问题。</p>
+
+    <h3>8.1 用位掩码表示集合</h3>
+
+    <div class="diagram">
+      <pre>
+例: 集合 {0, 2, 3} 用位掩码表示
+
+元素:   3  2  1  0
+掩码:   1  1  0  1  = 13 (二进制 1101)
+
+第 i 位为 1  -->  元素 i 在集合中
+       </pre>
+    </div>
+
+    <pre><code><span class="cm">// 常用的集合操作</span>
+<span class="ty">int</span> S = <span class="num">0</span>;
+
+<span class="cm">// 添加元素 i</span>
+S |= (<span class="num">1</span> &lt;&lt; i);
+
+<span class="cm">// 删除元素 i</span>
+S &amp;= ~(<span class="num">1</span> &lt;&lt; i);
+
+<span class="cm">// 翻转元素 i</span>
+S ^= (<span class="num">1</span> &lt;&lt; i);
+
+<span class="cm">// 判断元素 i 是否在集合中</span>
+<span class="kw">if</span> (S &amp; (<span class="num">1</span> &lt;&lt; i)) { <span class="cm">/* i 在集合中 */</span> }
+
+<span class="cm">// 集合大小</span>
+<span class="ty">int</span> sz = <span class="fn">__builtin_popcount</span>(S);
+
+<span class="cm">// 并集</span>
+<span class="ty">int</span> U = A | B;
+
+<span class="cm">// 交集</span>
+<span class="ty">int</span> I = A &amp; B;
+
+<span class="cm">// 差集 (A - B)</span>
+<span class="ty">int</span> D = A &amp; ~B;
+
+<span class="cm">// 补集 (全集为 (1&lt;&lt;n)-1)</span>
+<span class="ty">int</span> full = (<span class="num">1</span> &lt;&lt; n) - <span class="num">1</span>;
+<span class="ty">int</span> comp = full ^ A;
+
+<span class="cm">// 判断是否是子集</span>
+<span class="ty">bool</span> isSub = ((A &amp; B) == A);  <span class="cm">// A 是否是 B 的子集</span></code></pre>
+
+    <h3>8.2 状态压缩 DP 的基本思路</h3>
+
+    <p>状压 DP 通常定义 <code>dp[mask]</code> 或 <code>dp[mask][i]</code>，其中 <code>mask</code> 表示已经处理的元素集合。</p>
+
+    <div class="box box-info">
+      <div class="box-title">典型模板</div>
+      <p>dp[mask] = 在已选集合为 mask 的情况下的最优解。转移时枚举下一个要加入集合的元素 j，从 dp[mask] 转移到 dp[mask | (1&lt;&lt;j)]。</p>
+    </div>
+
+    <pre><code><span class="cm">// 状态压缩 DP 通用框架</span>
+<span class="ty">int</span> n;
+<span class="ty">int</span> dp[<span class="num">1</span> &lt;&lt; MAXN];
+
+<span class="fn">memset</span>(dp, <span class="num">0x3f</span>, <span class="kw">sizeof</span>(dp));
+dp[<span class="num">0</span>] = <span class="num">0</span>;  <span class="cm">// 初始状态</span>
+
+<span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">0</span>; mask &lt; (<span class="num">1</span> &lt;&lt; n); mask++) {
+    <span class="kw">if</span> (dp[mask] == <span class="num">0x3f3f3f3f</span>) <span class="kw">continue</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; n; j++) {
+        <span class="kw">if</span> (!(mask &amp; (<span class="num">1</span> &lt;&lt; j))) {
+            <span class="cm">// 元素 j 还未被选</span>
+            <span class="ty">int</span> nmask = mask | (<span class="num">1</span> &lt;&lt; j);
+            dp[nmask] = <span class="fn">min</span>(dp[nmask], dp[mask] + cost(mask, j));
+        }
+    }
+}
+
+<span class="ty">int</span> ans = dp[(<span class="num">1</span> &lt;&lt; n) - <span class="num">1</span>];  <span class="cm">// 所有元素都被选中</span></code></pre>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 9: 位运算在算法中的应用 -->
+  <!-- ============================== -->
+  <div class="section" id="sec-application">
+    <h2>9. 位运算在算法中的应用</h2>
+
+    <h3>9.1 子集枚举求子集和问题</h3>
+    <p>给定 n 个数，枚举所有可能的子集和。n 较小时（n &le; 20），可以直接枚举所有 2^n 个子集。</p>
+
+    <pre><code><span class="cm">// 枚举所有子集和</span>
+<span class="ty">int</span> a[] = {<span class="num">3</span>, <span class="num">5</span>, <span class="num">7</span>, <span class="num">11</span>};
+<span class="ty">int</span> n = <span class="num">4</span>;
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; sums;
+
+<span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">0</span>; mask &lt; (<span class="num">1</span> &lt;&lt; n); mask++) {
+    <span class="ty">int</span> sum = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="kw">if</span> (mask &amp; (<span class="num">1</span> &lt;&lt; i)) sum += a[i];
+    }
+    sums.push_back(sum);
+}</code></pre>
+
+    <h3>9.2 枚举子集用于 Meet in the Middle</h3>
+    <p>当 n 较大（如 n=40）时，可以将数组分成两半，分别枚举子集和，然后合并（折半搜索 / Meet in the Middle）。</p>
+
+    <pre><code><span class="cm">// Meet in the Middle: 统计子集和等于 target 的方案数</span>
+<span class="ty">int</span> n, target;
+<span class="ty">int</span> a[<span class="num">40</span>];
+
+<span class="ty">vector</span>&lt;<span class="ty">long long</span>&gt; <span class="fn">get_sums</span>(<span class="ty">int</span> l, <span class="ty">int</span> r) {
+    <span class="ty">int</span> len = r - l;
+    <span class="ty">vector</span>&lt;<span class="ty">long long</span>&gt; res;
+    <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">0</span>; mask &lt; (<span class="num">1</span> &lt;&lt; len); mask++) {
+        <span class="ty">long long</span> sum = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; len; i++)
+            <span class="kw">if</span> (mask &amp; (<span class="num">1</span> &lt;&lt; i)) sum += a[l + i];
+        res.push_back(sum);
+    }
+    <span class="kw">return</span> res;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="cm">// ... 读入 n, target, a[] ...</span>
+    <span class="ty">int</span> mid = n / <span class="num">2</span>;
+    <span class="ty">auto</span> left = <span class="fn">get_sums</span>(<span class="num">0</span>, mid);
+    <span class="ty">auto</span> right = <span class="fn">get_sums</span>(mid, n);
+    <span class="fn">sort</span>(right.begin(), right.end());
+
+    <span class="ty">long long</span> ans = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">long long</span> x : left) {
+        ans += <span class="fn">upper_bound</span>(right.begin(), right.end(), target - x)
+             - <span class="fn">lower_bound</span>(right.begin(), right.end(), target - x);
+    }
+    cout &lt;&lt; ans &lt;&lt; endl;
+}</code></pre>
+    <div class="complexity">
+      <span class="label">时间复杂度</span> <span class="value">O(2^(n/2) * n)</span>
+    </div>
+
+    <h3>9.3 TSP 旅行商问题（状压 DP 入门）</h3>
+    <p>经典的状态压缩 DP 问题。n 个城市，从城市 0 出发，经过所有城市恰好一次后回到城市 0，求最短路径。</p>
+
+    <pre><code><span class="cm">// TSP: 状压 DP</span>
+<span class="cm">// dp[mask][i] = 已访问集合为 mask，当前在城市 i 的最短路径</span>
+<span class="ty">int</span> n;
+<span class="ty">int</span> dist[MAXN][MAXN];  <span class="cm">// 城市间距离</span>
+<span class="ty">int</span> dp[<span class="num">1</span> &lt;&lt; MAXN][MAXN];
+
+<span class="ty">int</span> <span class="fn">tsp</span>() {
+    <span class="fn">memset</span>(dp, <span class="num">0x3f</span>, <span class="kw">sizeof</span>(dp));
+    dp[<span class="num">1</span>][<span class="num">0</span>] = <span class="num">0</span>;  <span class="cm">// 从城市 0 出发</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">1</span>; mask &lt; (<span class="num">1</span> &lt;&lt; n); mask++) {
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+            <span class="kw">if</span> (!(mask &amp; (<span class="num">1</span> &lt;&lt; i))) <span class="kw">continue</span>;
+            <span class="kw">if</span> (dp[mask][i] &gt;= <span class="num">0x3f3f3f3f</span>) <span class="kw">continue</span>;
+            <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; n; j++) {
+                <span class="kw">if</span> (mask &amp; (<span class="num">1</span> &lt;&lt; j)) <span class="kw">continue</span>;
+                <span class="ty">int</span> nmask = mask | (<span class="num">1</span> &lt;&lt; j);
+                dp[nmask][j] = <span class="fn">min</span>(dp[nmask][j], dp[mask][i] + dist[i][j]);
+            }
+        }
+    }
+
+    <span class="cm">// 回到城市 0</span>
+    <span class="ty">int</span> full = (<span class="num">1</span> &lt;&lt; n) - <span class="num">1</span>;
+    <span class="ty">int</span> ans = <span class="num">0x3f3f3f3f</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        ans = <span class="fn">min</span>(ans, dp[full][i] + dist[i][<span class="num">0</span>]);
+    <span class="kw">return</span> ans;
+}</code></pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span> <span class="value">O(n^2 * 2^n)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span> <span class="value">O(n * 2^n)</span>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">规模限制</div>
+      <p>状压 DP 的状态数为 2^n，因此 n 通常不能超过 20~25。n=20 时状态数约 10^6，n=25 时约 3.3 * 10^7。</p>
+    </div>
+
+    <h3>9.4 集合覆盖与枚举技巧总结</h3>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>操作</th><th>代码</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>判断是否是 2 的幂</td><td><code>n &amp;&amp; !(n &amp; (n-1))</code></td><td>只有一个 1</td></tr>
+          <tr><td>最低位的 1</td><td><code>n &amp; (-n)</code></td><td>lowbit</td></tr>
+          <tr><td>去掉最低位的 1</td><td><code>n &amp; (n-1)</code></td><td>Kernighan 方法</td></tr>
+          <tr><td>枚举子集</td><td><code>sub = (sub-1) &amp; mask</code></td><td>降序枚举</td></tr>
+          <tr><td>枚举超集</td><td><code>sup = (sup+1) | mask</code></td><td>升序枚举</td></tr>
+          <tr><td>取第 k 位</td><td><code>(n &gt;&gt; k) &amp; 1</code></td><td>0 或 1</td></tr>
+          <tr><td>置第 k 位为 1</td><td><code>n |= (1 &lt;&lt; k)</code></td><td></td></tr>
+          <tr><td>清第 k 位为 0</td><td><code>n &amp;= ~(1 &lt;&lt; k)</code></td><td></td></tr>
+          <tr><td>翻转第 k 位</td><td><code>n ^= (1 &lt;&lt; k)</code></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 10: 经典例题 -->
+  <!-- ============================== -->
+  <div class="section" id="sec-problems">
+    <h2>10. 经典例题</h2>
+
+    <!-- Problem 1 -->
+    <h3>10.1 只出现一次的数字</h3>
+    <div class="problem">
+      <div class="problem-title">LeetCode 136. <a href="https://leetcode.cn/problems/single-number/" target="_blank">Single Number</a></div>
+      <p>给定一个非空整数数组，除了某个元素只出现一次以外，其余每个元素均出现两次。找出那个只出现了一次的元素。要求线性时间复杂度，不使用额外空间。</p>
+    </div>
+
+    <p><strong>思路:</strong> 利用 XOR 的自反性 (<code>a ^ a = 0</code>) 和恒等性 (<code>a ^ 0 = a</code>)，所有数异或一遍，出现两次的数相互抵消，剩下的是只出现一次的数。</p>
+
+    <pre><code><span class="ty">int</span> <span class="fn">singleNumber</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; nums) {
+    <span class="ty">int</span> ans = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> x : nums) ans ^= x;
+    <span class="kw">return</span> ans;
+}</code></pre>
+    <div class="complexity">
+      <span class="label">时间复杂度</span> <span class="value">O(n)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span> <span class="value">O(1)</span>
+    </div>
+
+    <!-- Problem 2 -->
+    <h3>10.2 只出现一次的数字 II</h3>
+    <div class="problem">
+      <div class="problem-title">LeetCode 137. <a href="https://leetcode.cn/problems/single-number-ii/" target="_blank">Single Number II</a></div>
+      <p>除了某个元素只出现一次以外，其余每个元素均出现三次。找出只出现一次的元素。</p>
+    </div>
+
+    <p><strong>思路:</strong> 统计所有数每一位上 1 的个数，对 3 取余即为答案的对应位。</p>
+
+    <pre><code><span class="ty">int</span> <span class="fn">singleNumber</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; nums) {
+    <span class="ty">int</span> ans = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> bit = <span class="num">0</span>; bit &lt; <span class="num">32</span>; bit++) {
+        <span class="ty">int</span> cnt = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> x : nums) cnt += (x &gt;&gt; bit) &amp; <span class="num">1</span>;
+        <span class="kw">if</span> (cnt % <span class="num">3</span>) ans |= (<span class="num">1</span> &lt;&lt; bit);
+    }
+    <span class="kw">return</span> ans;
+}</code></pre>
+    <div class="complexity">
+      <span class="label">时间复杂度</span> <span class="value">O(32n)</span>
+    </div>
+
+    <!-- Problem 3 -->
+    <h3>10.3 两个只出现一次的数字</h3>
+    <div class="problem">
+      <div class="problem-title">LeetCode 260. <a href="https://leetcode.cn/problems/single-number-iii/" target="_blank">Single Number III</a></div>
+      <p>给定一个整数数组 nums，其中恰好有两个元素只出现一次，其余所有元素均出现两次。找出只出现一次的那两个元素。</p>
+    </div>
+
+    <p><strong>思路:</strong> 所有数异或得到 <code>xor_all = a ^ b</code>。找到 <code>xor_all</code> 中任意一个为 1 的位（如最低位的 1），该位为 1 说明 a 和 b 在该位不同，以此将所有数分成两组，分别异或即可得到 a 和 b。</p>
+
+    <pre><code><span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">singleNumber</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; nums) {
+    <span class="ty">long long</span> xor_all = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> x : nums) xor_all ^= x;
+
+    <span class="cm">// 取最低位的 1，a 和 b 在该位不同</span>
+    <span class="ty">long long</span> diff = xor_all &amp; (-xor_all);
+
+    <span class="ty">int</span> a = <span class="num">0</span>, b = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> x : nums) {
+        <span class="kw">if</span> (x &amp; diff)
+            a ^= x;
+        <span class="kw">else</span>
+            b ^= x;
+    }
+    <span class="kw">return</span> {a, b};
+}</code></pre>
+
+    <!-- Problem 4 -->
+    <h3>10.4 枚举子集求子集和问题</h3>
+    <div class="problem">
+      <div class="problem-title">经典问题: 给定 n 个正整数和一个目标值 target，判断是否存在一个子集使得子集和等于 target。</div>
+    </div>
+
+    <p><strong>思路:</strong> n 较小时（n &le; 20），直接枚举 2^n 个子集，检查每个子集的和。</p>
+
+    <pre><code><span class="ty">bool</span> <span class="fn">subsetSum</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; a, <span class="ty">int</span> target) {
+    <span class="ty">int</span> n = a.size();
+    <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">0</span>; mask &lt; (<span class="num">1</span> &lt;&lt; n); mask++) {
+        <span class="ty">int</span> sum = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+            <span class="kw">if</span> (mask &amp; (<span class="num">1</span> &lt;&lt; i)) sum += a[i];
+        <span class="kw">if</span> (sum == target) <span class="kw">return true</span>;
+    }
+    <span class="kw">return false</span>;
+}</code></pre>
+    <div class="complexity">
+      <span class="label">时间复杂度</span> <span class="value">O(2^n * n)</span>
+    </div>
+
+    <!-- Problem 5 -->
+    <h3>10.5 最大异或对</h3>
+    <div class="problem">
+      <div class="problem-title">AcWing 143. <a href="https://www.acwing.com/problem/content/145/" target="_blank">最大异或对</a></div>
+      <p>给定 n 个整数，求其中两个数的最大异或值。</p>
+    </div>
+
+    <p><strong>思路 1 (暴力):</strong> O(n^2) 枚举所有数对。思路 2 (01-Trie): 利用字典树，对每个数在 Trie 上贪心查找使异或值最大的配对数，O(32n)。思路 3 (枚举高位): 从高位到低位贪心，利用集合判断。</p>
+
+    <pre><code><span class="cm">// 方法: 从高位到低位贪心（集合法）</span>
+<span class="ty">int</span> <span class="fn">maxXor</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; a) {
+    <span class="ty">int</span> ans = <span class="num">0</span>;
+    <span class="ty">unordered_set</span>&lt;<span class="ty">int</span>&gt; s;
+    <span class="kw">for</span> (<span class="ty">int</span> bit = <span class="num">30</span>; bit &gt;= <span class="num">0</span>; bit--) {
+        <span class="ty">int</span> cur = ans | (<span class="num">1</span> &lt;&lt; bit);
+        s.clear();
+        <span class="kw">for</span> (<span class="ty">int</span> x : a) {
+            s.insert(x &gt;&gt; bit);
+        }
+        <span class="ty">bool</span> found = <span class="kw">false</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> x : a) {
+            <span class="kw">if</span> (s.count((x &gt;&gt; bit) ^ (cur &gt;&gt; bit))) {
+                found = <span class="kw">true</span>;
+                <span class="kw">break</span>;
+            }
+        }
+        <span class="kw">if</span> (found) ans = cur;
+    }
+    <span class="kw">return</span> ans;
+}</code></pre>
+
+    <!-- Problem 6 -->
+    <h3>10.6 汉明距离</h3>
+    <div class="problem">
+      <div class="problem-title">LeetCode 461. <a href="https://leetcode.cn/problems/hamming-distance/" target="_blank">Hamming Distance</a></div>
+      <p>两个整数之间的汉明距离是两个数字对应二进制位不同的位数。给定两个整数 x 和 y，计算它们之间的汉明距离。</p>
+    </div>
+
+    <pre><code><span class="ty">int</span> <span class="fn">hammingDistance</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="kw">return</span> <span class="fn">__builtin_popcount</span>(x ^ y);
+}</code></pre>
+
+    <!-- Problem 7 -->
+    <h3>10.7 颠倒二进制位</h3>
+    <div class="problem">
+      <div class="problem-title">LeetCode 190. <a href="https://leetcode.cn/problems/reverse-bits/" target="_blank">Reverse Bits</a></div>
+      <p>颠倒给定的 32 位无符号整数的二进制位。</p>
+    </div>
+
+    <pre><code><span class="ty">uint32_t</span> <span class="fn">reverseBits</span>(<span class="ty">uint32_t</span> n) {
+    <span class="ty">uint32_t</span> ans = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; <span class="num">32</span>; i++) {
+        ans = (ans &lt;&lt; <span class="num">1</span>) | (n &amp; <span class="num">1</span>);
+        n &gt;&gt;= <span class="num">1</span>;
+    }
+    <span class="kw">return</span> ans;
+}</code></pre>
+
+    <!-- Problem 8 -->
+    <h3>10.8 交替位二进制数</h3>
+    <div class="problem">
+      <div class="problem-title">LeetCode 693. <a href="https://leetcode.cn/problems/binary-number-with-alternating-bits/" target="_blank">Binary Number with Alternating Bits</a></div>
+      <p>给定一个正整数，检查它的二进制表示是否总是 0、1 交替出现。</p>
+    </div>
+
+    <pre><code><span class="ty">bool</span> <span class="fn">hasAlternatingBits</span>(<span class="ty">int</span> n) {
+    <span class="cm">// n 和 n 右移一位异或，如果是交替位则结果全为 1</span>
+    <span class="ty">int</span> x = n ^ (n &gt;&gt; <span class="num">1</span>);
+    <span class="cm">// 检查 x 是否全为 1 (即 x &amp; (x+1) == 0)</span>
+    <span class="kw">return</span> (x &amp; (x + <span class="num">1</span>)) == <span class="num">0</span>;
+}</code></pre>
+
+    <!-- Problem 9 -->
+    <h3>10.9 2 的幂相关</h3>
+    <div class="problem">
+      <div class="problem-title">LeetCode 231. <a href="https://leetcode.cn/problems/power-of-two/" target="_blank">Power of Two</a></div>
+      <p>给定一个整数 n，判断是否是 2 的幂。</p>
+    </div>
+
+    <pre><code><span class="ty">bool</span> <span class="fn">isPowerOfTwo</span>(<span class="ty">int</span> n) {
+    <span class="kw">return</span> n &gt; <span class="num">0</span> &amp;&amp; (n &amp; (n - <span class="num">1</span>)) == <span class="num">0</span>;
+}
+
+<span class="cm">// 变体: 判断是否是 4 的幂</span>
+<span class="ty">bool</span> <span class="fn">isPowerOfFour</span>(<span class="ty">int</span> n) {
+    <span class="cm">// 是 2 的幂，且 1 在偶数位上</span>
+    <span class="kw">return</span> n &gt; <span class="num">0</span> &amp;&amp; (n &amp; (n - <span class="num">1</span>)) == <span class="num">0</span> &amp;&amp; (n &amp; <span class="num">0x55555555</span>) != <span class="num">0</span>;
+}</code></pre>
+
+    <!-- Problem 10 -->
+    <h3>10.10 位运算实现加法</h3>
+    <div class="problem">
+      <div class="problem-title">不用加号求两数之和</div>
+      <p>LeetCode 371. 不使用 + 和 - 运算符，计算两个整数的和。</p>
+    </div>
+
+    <p><strong>思路:</strong> XOR 得到无进位加法结果，AND 左移一位得到进位，迭代直到没有进位。</p>
+
+    <pre><code><span class="ty">int</span> <span class="fn">getSum</span>(<span class="ty">int</span> a, <span class="ty">int</span> b) {
+    <span class="kw">while</span> (b != <span class="num">0</span>) {
+        <span class="ty">unsigned</span> <span class="ty">int</span> carry = (<span class="ty">unsigned</span> <span class="ty">int</span>)(a &amp; b) &lt;&lt; <span class="num">1</span>;
+        a = a ^ b;
+        b = carry;
+    }
+    <span class="kw">return</span> a;
+}</code></pre>
+
+    <div class="diagram">
+      <pre>
+计算 5 + 3 (0101 + 0011):
+
+第 1 轮:
+  XOR:  0101 ^ 0011 = 0110 (无进位和 = 6)
+  AND:  0101 & 0011 = 0001, 左移 = 0010 (进位 = 2)
+
+第 2 轮:
+  XOR:  0110 ^ 0010 = 0100 (无进位和 = 4)
+  AND:  0110 & 0010 = 0010, 左移 = 0100 (进位 = 4)
+
+第 3 轮:
+  XOR:  0100 ^ 0100 = 0000 (无进位和 = 0)
+  AND:  0100 & 0100 = 0100, 左移 = 1000 (进位 = 8)
+
+第 4 轮:
+  XOR:  0000 ^ 1000 = 1000 (= 8)
+  AND:  0000 & 1000 = 0000, 左移 = 0 (进位 = 0)
+
+b = 0, 结束。结果 = 8 = 5 + 3
+       </pre>
+    </div>
+
+    <!-- Problem 11 -->
+    <h3>10.11 比特位计数</h3>
+    <div class="problem">
+      <div class="problem-title">LeetCode 338. <a href="https://leetcode.cn/problems/counting-bits/" target="_blank">Counting Bits</a></div>
+      <p>给定整数 n，返回 [0, n] 范围内每个数的二进制表示中 1 的个数。</p>
+    </div>
+
+    <pre><code><span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">countBits</span>(<span class="ty">int</span> n) {
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; ans(n + <span class="num">1</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="cm">// i 的 1 的个数 = (i 去掉最低位 1) 的 1 的个数 + 1</span>
+        ans[i] = ans[i &amp; (i - <span class="num">1</span>)] + <span class="num">1</span>;
+    }
+    <span class="kw">return</span> ans;
+}</code></pre>
+    <div class="complexity">
+      <span class="label">时间复杂度</span> <span class="value">O(n)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span> <span class="value">O(n)</span>
+    </div>
+
+    <!-- Problem 12 -->
+    <h3>10.12 不使用额外变量交换数组元素使分组成功</h3>
+    <div class="problem">
+      <div class="problem-title">状压 DP 例题: 分配问题</div>
+      <p>有 n 个任务和 n 个人，第 i 个人完成第 j 个任务的代价为 cost[i][j]。每人恰好分配一个任务，求最小总代价。</p>
+    </div>
+
+    <pre><code><span class="cm">// 经典状压 DP: 分配问题</span>
+<span class="ty">int</span> n;
+<span class="ty">int</span> cost[MAXN][MAXN];
+<span class="ty">int</span> dp[<span class="num">1</span> &lt;&lt; MAXN];
+
+<span class="ty">int</span> <span class="fn">assignment</span>() {
+    <span class="fn">memset</span>(dp, <span class="num">0x3f</span>, <span class="kw">sizeof</span>(dp));
+    dp[<span class="num">0</span>] = <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> mask = <span class="num">0</span>; mask &lt; (<span class="num">1</span> &lt;&lt; n); mask++) {
+        <span class="ty">int</span> p = <span class="fn">__builtin_popcount</span>(mask);  <span class="cm">// 已分配的任务数 = 当前处理到第 p 个人</span>
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; n; j++) {
+            <span class="kw">if</span> (!(mask &amp; (<span class="num">1</span> &lt;&lt; j))) {
+                <span class="cm">// 第 p 个人去做第 j 个任务</span>
+                <span class="ty">int</span> nmask = mask | (<span class="num">1</span> &lt;&lt; j);
+                dp[nmask] = <span class="fn">min</span>(dp[nmask], dp[mask] + cost[p][j]);
+            }
+        }
+    }
+    <span class="kw">return</span> dp[(<span class="num">1</span> &lt;&lt; n) - <span class="num">1</span>];
+}</code></pre>
+    <div class="complexity">
+      <span class="label">时间复杂度</span> <span class="value">O(n * 2^n)</span>
+    </div>
+  </div>
+
+  <!-- ===== Summary Box ===== -->
+  <div class="section">
+    <h2>总结与速查</h2>
+
+    <div class="box box-tip">
+      <div class="box-title">位运算竞赛技巧速查</div>
+      <ul>
+        <li><code>n &amp; 1</code> 判断奇偶</li>
+        <li><code>n &amp; (n-1)</code> 去掉最低位 1</li>
+        <li><code>n &amp; (-n)</code> 取最低位 1 (lowbit)</li>
+        <li><code>n ^ n = 0</code>, <code>n ^ 0 = n</code> XOR 自反性</li>
+        <li><code>1 &lt;&lt; n</code> 等价于 2^n</li>
+        <li><code>__builtin_popcount(n)</code> 统计 1 的个数</li>
+        <li><code>__builtin_ctz(n)</code> 末尾 0 的个数</li>
+        <li><code>__builtin_clz(n)</code> 前导 0 的个数</li>
+        <li>枚举子集: <code>for(int s=m; s; s=(s-1)&amp;m)</code></li>
+        <li>状压 DP: <code>dp[mask]</code> 表示已选集合为 mask 时的最优解</li>
+      </ul>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">常见陷阱</div>
+      <ul>
+        <li>运算符优先级: <code>&amp;</code> 低于 <code>==</code>，写条件时要加括号: <code>if ((n &amp; 1) == 0)</code></li>
+        <li><code>1 &lt;&lt; 31</code> 对 <code>int</code> 是未定义行为（溢出），用 <code>1LL &lt;&lt; n</code></li>
+        <li><code>~n</code> 不等于 <code>-n</code>，而是 <code>-n-1</code></li>
+        <li>算术右移补符号位，逻辑右移补 0。C++ 对有符号数右移是实现定义的（通常算术右移）</li>
+        <li>XOR 交换在两个变量地址相同时失效</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

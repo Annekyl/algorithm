@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trie树 - ACM算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#05-string">字符串篇</a> &gt;
+    Trie树
+  </div>
+
+  <div class="page-header">
+    <h1>Trie树</h1>
+    <p class="subtitle">前缀树 / 字典树 &mdash; 高效存储和检索字符串集合</p>
+    <div class="tags">
+      <span class="tag tag-str">字符串</span>
+      <span class="tag tag-base">基础数据结构</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#overview">1. Trie概述</a></li>
+      <li><a href="#basic-ops">2. 基本操作</a></li>
+      <li><a href="#01-trie">3. 01-Trie</a></li>
+      <li><a href="#max-xor">4. 最大异或对</a></li>
+      <li><a href="#template">5. 完整C++模板</a></li>
+      <li><a href="#problems">6. 经典题目</a></li>
+    </ul>
+  </div>
+
+  <!-- Section 1: Trie概述 -->
+  <div class="section" id="overview">
+    <h2>1. Trie概述</h2>
+
+    <h3>1.1 什么是Trie</h3>
+    <p>Trie（发音同 "try"），又称<strong>前缀树</strong>或<strong>字典树</strong>，是一种树形数据结构，用于高效地存储和检索字符串集合中的键。它利用字符串的公共前缀来减少存储空间和查询时间。</p>
+
+    <h3>1.2 结构特点</h3>
+    <ul>
+      <li>根节点不包含字符（为空）</li>
+      <li>每条边代表一个字符</li>
+      <li>从根到某个节点的路径上所有字符拼接起来，形成一个字符串前缀</li>
+      <li>通常用 <code>flag</code> 标记某个节点是否是一个完整字符串的结尾</li>
+    </ul>
+
+    <div class="diagram">
+<pre>
+插入 "abc", "abd", "acd", "b" 后的 Trie 结构:
+
+            (root)
+           /     \
+          a       b*  <- "b" 在此结束
+         / \
+        c   c
+       /     \
+      b*      d*
+      |       |
+      d*     (end)
+
+"abc" -> root -> a -> c -> b (flag=true)
+"abd" -> root -> a -> c -> b -> d (flag=true)
+"acd" -> root -> a -> c -> d (flag=true)
+"b"   -> root -> b (flag=true)
+
+* 表示该节点是某个字符串的结尾
+</pre>
+    </div>
+
+    <h3>1.3 复杂度分析</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>操作</th><th>时间复杂度</th><th>空间复杂度</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>插入</td><td>O(L)</td><td>O(L)</td></tr>
+          <tr><td>查找</td><td>O(L)</td><td>O(1)</td></tr>
+          <tr><td>前缀查询</td><td>O(L)</td><td>O(1)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>其中 L 为字符串长度。与哈希表相比，Trie 的优势在于：<strong>前缀查询天然支持</strong>，且不会产生哈希冲突。</p>
+
+    <div class="box box-info">
+      <div class="box-title">Trie vs 哈希表</div>
+      <ul>
+        <li>Trie 支持按前缀查找所有匹配项，哈希表无法做到</li>
+        <li>Trie 的查找时间与字符串长度有关，哈希表与集合大小无关</li>
+        <li>Trie 通常比哈希表占用更多空间（每个节点需要子节点指针数组）</li>
+        <li>Trie 没有哈希冲突问题</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Section 2: 基本操作 -->
+  <div class="section" id="basic-ops">
+    <h2>2. 基本操作</h2>
+
+    <h3>2.1 插入（Insert）</h3>
+    <p>将字符串插入 Trie。从根节点开始，逐个字符沿对应边前进；如果某条边不存在，则创建新节点。到达最后一个字符时，标记该节点为字符串结尾。</p>
+
+    <div class="steps">
+      <div class="step">
+        <strong>初始化：</strong>从根节点 <code>p = root</code> 开始
+      </div>
+      <div class="step">
+        <strong>遍历字符串：</strong>对于每个字符 <code>c</code>，检查 <code>p</code> 是否有指向 <code>c</code> 的子节点
+      </div>
+      <div class="step">
+        <strong>创建节点：</strong>如果子节点不存在，创建一个新节点
+      </div>
+      <div class="step">
+        <strong>移动指针：</strong><code>p = p->child[c]</code>
+      </div>
+      <div class="step">
+        <strong>标记结尾：</strong>遍历结束后，<code>p->flag = true</code>
+      </div>
+    </div>
+
+    <h3>2.2 查找（Search）</h3>
+    <p>查找字符串是否存在于 Trie 中。从根节点开始，逐个字符沿对应边前进。如果某条边不存在，返回 false。到达最后一个字符时，检查该节点是否被标记为字符串结尾。</p>
+
+    <h3>2.3 前缀查询（StartsWith）</h3>
+    <p>判断是否存在以给定前缀开头的字符串。与查找类似，但不需要检查结尾标记 -- 只要能沿着前缀走完所有字符，就说明存在。</p>
+
+    <h3>2.4 数组实现（推荐竞赛使用）</h3>
+    <p>竞赛中通常使用<strong>静态数组</strong>实现 Trie，避免动态内存分配的开销：</p>
+
+    <pre><span class="cm">// 字符串 Trie - 数组实现（推荐竞赛使用）</span>
+<span class="kw">struct</span> <span class="ty">Trie</span> {
+    <span class="ty">int</span> nxt[<span class="num">N</span>][<span class="num">26</span>];  <span class="cm">// N = 最大节点数, 26 = 字符集大小</span>
+    <span class="ty">bool</span> flag[<span class="num">N</span>];      <span class="cm">// flag[i] = true 表示节点 i 是某个串的结尾</span>
+    <span class="ty">int</span> cnt;            <span class="cm">// 节点计数</span>
+
+    <span class="ty">void</span> <span class="fn">init</span>() {
+        cnt = <span class="num">0</span>;
+        <span class="fn">newNode</span>();
+    }
+
+    <span class="ty">int</span> <span class="fn">newNode</span>() {
+        cnt++;
+        <span class="fn">memset</span>(nxt[cnt], <span class="num">0</span>, <span class="kw">sizeof</span>(nxt[cnt]));
+        flag[cnt] = <span class="kw">false</span>;
+        <span class="kw">return</span> cnt;
+    }
+
+    <span class="ty">void</span> <span class="fn">insert</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; s) {
+        <span class="ty">int</span> p = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">char</span> c : s) {
+            <span class="ty">int</span> d = c - <span class="str">'a'</span>;
+            <span class="kw">if</span> (!nxt[p][d])
+                nxt[p][d] = <span class="fn">newNode</span>();
+            p = nxt[p][d];
+        }
+        flag[p] = <span class="kw">true</span>;
+    }
+
+    <span class="ty">bool</span> <span class="fn">search</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; s) {
+        <span class="ty">int</span> p = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">char</span> c : s) {
+            <span class="ty">int</span> d = c - <span class="str">'a'</span>;
+            <span class="kw">if</span> (!nxt[p][d]) <span class="kw">return</span> <span class="kw">false</span>;
+            p = nxt[p][d];
+        }
+        <span class="kw">return</span> flag[p];
+    }
+
+    <span class="ty">bool</span> <span class="fn">startsWith</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; prefix) {
+        <span class="ty">int</span> p = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">char</span> c : prefix) {
+            <span class="ty">int</span> d = c - <span class="str">'a'</span>;
+            <span class="kw">if</span> (!nxt[p][d]) <span class="kw">return</span> <span class="kw">false</span>;
+            p = nxt[p][d];
+        }
+        <span class="kw">return</span> <span class="kw">true</span>;
+    }
+};</pre>
+
+    <div class="box box-warn">
+      <div class="box-title">数组大小计算</div>
+      <p>最大节点数 <code>N</code> = 所有字符串的总长度之和 + 1（根节点）。例如，如果有 n 个字符串，每个长度最多 L，则 <code>N = n * L + 1</code>。</p>
+    </div>
+  </div>
+
+  <!-- Section 3: 01-Trie -->
+  <div class="section" id="01-trie">
+    <h2>3. 01-Trie</h2>
+
+    <h3>3.1 什么是01-Trie</h3>
+    <p>01-Trie 是 Trie 的一种特殊形式，用于处理<strong>整数的二进制表示</strong>。它将每个整数看作一个由 0 和 1 组成的字符串，从高位到低位依次插入 Trie 中。每个节点只有两个子节点：0 和 1。</p>
+
+    <div class="diagram">
+<pre>
+插入 5 (101), 3 (011), 7 (111), 1 (001) 后的 01-Trie:
+(假设用 3 位二进制表示)
+
+              root
+             /    \
+            0      1
+           / \    / \
+          0   1  0   1
+          |   |  |   |
+          1   1  1   1
+          |   |  |   |
+         (1) (3)(5) (7)
+
+路径 root->0->0->1 = 001 = 1
+路径 root->0->1->1 = 011 = 3
+路径 root->1->0->1 = 101 = 5
+路径 root->1->1->1 = 111 = 7
+</pre>
+    </div>
+
+    <h3>3.2 01-Trie的用途</h3>
+    <p>01-Trie 最核心的应用是处理<strong>异或（XOR）</strong>相关的问题：</p>
+    <ul>
+      <li><strong>最大异或对：</strong>给定 n 个数，找到两个数使得它们的异或值最大</li>
+      <li><strong>最大异或子数组：</strong>找到一个子数组使得子数组的异或和最大</li>
+      <li><strong>与已知数的最大异或：</strong>在集合中找到与给定数异或值最大的数</li>
+      <li><strong>异或第 k 小：</strong>求所有数对异或值中的第 k 小值</li>
+    </ul>
+
+    <h3>3.3 01-Trie 的插入</h3>
+    <p>将整数的二进制位从<strong>高位到低位</strong>（通常从第 30 位或第 60 位开始）依次插入：</p>
+
+    <pre><span class="cm">// 01-Trie 插入（32位整数）</span>
+<span class="ty">void</span> <span class="fn">insert</span>(<span class="ty">int</span> x) {
+    <span class="ty">int</span> p = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">30</span>; i &gt;= <span class="num">0</span>; i--) {  <span class="cm">// 从高位到低位</span>
+        <span class="ty">int</span> b = (x &gt;&gt; i) &amp; <span class="num">1</span>;      <span class="cm">// 取第 i 位</span>
+        <span class="kw">if</span> (!nxt[p][b])
+            nxt[p][b] = <span class="fn">newNode</span>();
+        p = nxt[p][b];
+    }
+}</pre>
+
+    <h3>3.4 01-Trie 的查询</h3>
+    <p>查询与给定数异或值最大的数时，贪心地选择与当前位<strong>相反</strong>的分支（这样异或结果为 1）：</p>
+
+    <pre><span class="cm">// 查询与 x 异或值最大的数</span>
+<span class="ty">int</span> <span class="fn">query</span>(<span class="ty">int</span> x) {
+    <span class="ty">int</span> p = <span class="num">0</span>, res = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">30</span>; i &gt;= <span class="num">0</span>; i--) {
+        <span class="ty">int</span> b = (x &gt;&gt; i) &amp; <span class="num">1</span>;
+        <span class="kw">if</span> (nxt[p][b ^ <span class="num">1</span>]) {       <span class="cm">// 优先走相反的分支</span>
+            res |= (<span class="num">1</span> &lt;&lt; i);        <span class="cm">// 这一位异或结果为 1</span>
+            p = nxt[p][b ^ <span class="num">1</span>];
+        } <span class="kw">else</span> {
+            p = nxt[p][b];           <span class="cm">// 只能走相同的分支</span>
+        }
+    }
+    <span class="kw">return</span> res;
+}</pre>
+
+    <div class="box box-tip">
+      <div class="box-title">贪心策略</div>
+      <p>异或的性质是：相同为 0，不同为 1。要让异或值最大，就应该让高位尽可能为 1。因此从高位开始，每次优先选择与当前位不同的分支，这就是 01-Trie 的贪心核心。</p>
+    </div>
+  </div>
+
+  <!-- Section 4: 最大异或对 -->
+  <div class="section" id="max-xor">
+    <h2>4. 最大异或对</h2>
+
+    <h3>4.1 问题描述</h3>
+    <p>给定 n 个非负整数 <code>a[0], a[1], ..., a[n-1]</code>，找到两个下标 <code>i, j (i != j)</code> 使得 <code>a[i] XOR a[j]</code> 的值最大。</p>
+
+    <h3>4.2 解题思路</h3>
+    <div class="steps">
+      <div class="step">
+        <strong>建 Trie：</strong>将所有数依次插入 01-Trie
+      </div>
+      <div class="step">
+        <strong>逐个查询：</strong>对于每个数 <code>a[i]</code>，在 Trie 中查找与它异或值最大的数
+      </div>
+      <div class="step">
+        <strong>贪心匹配：</strong>从高位到低位，优先走相反方向的分支
+      </div>
+      <div class="step">
+        <strong>取最大值：</strong>所有查询结果中的最大值即为答案
+      </div>
+    </div>
+
+    <h3>4.3 完整实现</h3>
+    <pre><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">const</span> <span class="ty">int</span> MAXN = <span class="num">100005</span>;     <span class="cm">// 最大元素个数</span>
+<span class="kw">const</span> <span class="ty">int</span> MAXB = <span class="num">31</span>;         <span class="cm">// 二进制位数 (32位整数用31)</span>
+<span class="kw">const</span> <span class="ty">int</span> MAXNODES = MAXN * MAXB;
+
+<span class="ty">int</span> nxt[MAXNODES][<span class="num">2</span>];
+<span class="ty">int</span> cnt;
+
+<span class="ty">void</span> <span class="fn">init</span>() {
+    cnt = <span class="num">0</span>;
+    <span class="fn">memset</span>(nxt[<span class="num">0</span>], <span class="num">0</span>, <span class="kw">sizeof</span>(nxt[<span class="num">0</span>]));
+}
+
+<span class="ty">int</span> <span class="fn">newNode</span>() {
+    cnt++;
+    <span class="fn">memset</span>(nxt[cnt], <span class="num">0</span>, <span class="kw">sizeof</span>(nxt[cnt]));
+    <span class="kw">return</span> cnt;
+}
+
+<span class="ty">void</span> <span class="fn">insert</span>(<span class="ty">int</span> x) {
+    <span class="ty">int</span> p = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = MAXB - <span class="num">1</span>; i &gt;= <span class="num">0</span>; i--) {
+        <span class="ty">int</span> b = (x &gt;&gt; i) &amp; <span class="num">1</span>;
+        <span class="kw">if</span> (!nxt[p][b])
+            nxt[p][b] = <span class="fn">newNode</span>();
+        p = nxt[p][b];
+    }
+}
+
+<span class="ty">int</span> <span class="fn">query</span>(<span class="ty">int</span> x) {
+    <span class="ty">int</span> p = <span class="num">0</span>, res = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = MAXB - <span class="num">1</span>; i &gt;= <span class="num">0</span>; i--) {
+        <span class="ty">int</span> b = (x &gt;&gt; i) &amp; <span class="num">1</span>;
+        <span class="kw">if</span> (nxt[p][b ^ <span class="num">1</span>]) {
+            res |= (<span class="num">1</span> &lt;&lt; i);
+            p = nxt[p][b ^ <span class="num">1</span>];
+        } <span class="kw">else</span> {
+            p = nxt[p][b];
+        }
+    }
+    <span class="kw">return</span> res;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">ios</span>::<span class="fn">sync_with_stdio</span>(<span class="kw">false</span>);
+    cin.<span class="fn">tie</span>(<span class="kw">nullptr</span>);
+
+    <span class="ty">int</span> n;
+    cin &gt;&gt; n;
+
+    <span class="fn">init</span>();
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; a(n);
+    <span class="ty">int</span> ans = <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        cin &gt;&gt; a[i];
+        <span class="kw">if</span> (i &gt; <span class="num">0</span>)
+            ans = <span class="fn">max</span>(ans, <span class="fn">query</span>(a[i]));
+        <span class="fn">insert</span>(a[i]);
+    }
+
+    cout &lt;&lt; ans &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+
+    <h3>4.4 复杂度分析</h3>
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n * B)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间复杂度</span>
+      <span class="value">O(n * B)</span>
+    </div>
+    <p>其中 B 为二进制位数（通常为 31 或 63），n 为元素个数。</p>
+
+    <h3>4.5 边插入边查询优化</h3>
+    <p>实际上不需要先把所有数都插入 Trie 再查询。可以在插入第 i 个数之前，先查询它与前 i-1 个数的最大异或值，然后将第 i 个数插入 Trie。这样只需遍历一次数组。</p>
+
+    <div class="box box-tip">
+      <div class="box-title">关键观察</div>
+      <p>最大异或对问题中，如果 A XOR B 最大，那么 B XOR A 也最大。所以只需要考虑每个数与它<strong>之前插入</strong>的数的异或值，不需要考虑之后的数。这就是边插入边查询的正确性保证。</p>
+    </div>
+  </div>
+
+  <!-- Section 5: 完整C++模板 -->
+  <div class="section" id="template">
+    <h2>5. 完整C++模板</h2>
+
+    <h3>5.1 字符串Trie模板</h3>
+    <pre><span class="cm">// 字符串 Trie 完整模板</span>
+<span class="kw">struct</span> <span class="ty">StringTrie</span> {
+    <span class="kw">static</span> <span class="kw">const</span> <span class="ty">int</span> MAXN = <span class="num">200005</span>;  <span class="cm">// 根据题目调整</span>
+    <span class="kw">static</span> <span class="kw">const</span> <span class="ty">int</span> SIGMA = <span class="num">26</span>;     <span class="cm">// 字符集大小</span>
+
+    <span class="ty">int</span> nxt[MAXN][SIGMA];
+    <span class="ty">bool</span> flag[MAXN];     <span class="cm">// 是否为单词结尾</span>
+    <span class="ty">int</span> cnt;
+
+    <span class="ty">void</span> <span class="fn">init</span>() {
+        cnt = <span class="num">0</span>;
+        <span class="fn">memset</span>(nxt[<span class="num">0</span>], <span class="num">0</span>, <span class="kw">sizeof</span>(nxt[<span class="num">0</span>]));
+    }
+
+    <span class="ty">int</span> <span class="fn">newNode</span>() {
+        cnt++;
+        <span class="fn">memset</span>(nxt[cnt], <span class="num">0</span>, <span class="kw">sizeof</span>(nxt[cnt]));
+        flag[cnt] = <span class="kw">false</span>;
+        <span class="kw">return</span> cnt;
+    }
+
+    <span class="ty">void</span> <span class="fn">insert</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; s) {
+        <span class="ty">int</span> p = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">char</span> ch : s) {
+            <span class="ty">int</span> c = ch - <span class="str">'a'</span>;
+            <span class="kw">if</span> (!nxt[p][c]) nxt[p][c] = <span class="fn">newNode</span>();
+            p = nxt[p][c];
+        }
+        flag[p] = <span class="kw">true</span>;
+    }
+
+    <span class="ty">bool</span> <span class="fn">search</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; s) {
+        <span class="ty">int</span> p = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">char</span> ch : s) {
+            <span class="ty">int</span> c = ch - <span class="str">'a'</span>;
+            <span class="kw">if</span> (!nxt[p][c]) <span class="kw">return</span> <span class="kw">false</span>;
+            p = nxt[p][c];
+        }
+        <span class="kw">return</span> flag[p];
+    }
+
+    <span class="ty">bool</span> <span class="fn">startsWith</span>(<span class="kw">const</span> <span class="ty">string</span>&amp; prefix) {
+        <span class="ty">int</span> p = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">char</span> ch : prefix) {
+            <span class="ty">int</span> c = ch - <span class="str">'a'</span>;
+            <span class="kw">if</span> (!nxt[p][c]) <span class="kw">return</span> <span class="kw">false</span>;
+            p = nxt[p][c];
+        }
+        <span class="kw">return</span> <span class="kw">true</span>;
+    }
+};</pre>
+
+    <h3>5.2 01-Trie模板</h3>
+    <pre><span class="cm">// 01-Trie 完整模板（支持插入、查询最大异或）</span>
+<span class="kw">struct</span> <span class="ty">BitTrie</span> {
+    <span class="kw">static</span> <span class="kw">const</span> <span class="ty">int</span> MAXN = <span class="num">100005</span>;
+    <span class="kw">static</span> <span class="kw">const</span> <span class="ty">int</span> MAXB = <span class="num">31</span>;    <span class="cm">// 32位整数</span>
+
+    <span class="ty">int</span> nxt[MAXN * MAXB][<span class="num">2</span>];
+    <span class="ty">int</span> cnt;
+
+    <span class="ty">void</span> <span class="fn">init</span>() {
+        cnt = <span class="num">0</span>;
+        <span class="fn">memset</span>(nxt[<span class="num">0</span>], <span class="num">0</span>, <span class="kw">sizeof</span>(nxt[<span class="num">0</span>]));
+    }
+
+    <span class="ty">int</span> <span class="fn">newNode</span>() {
+        cnt++;
+        <span class="fn">memset</span>(nxt[cnt], <span class="num">0</span>, <span class="kw">sizeof</span>(nxt[cnt]));
+        <span class="kw">return</span> cnt;
+    }
+
+    <span class="ty">void</span> <span class="fn">insert</span>(<span class="ty">int</span> x) {
+        <span class="ty">int</span> p = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = MAXB - <span class="num">1</span>; i &gt;= <span class="num">0</span>; i--) {
+            <span class="ty">int</span> b = (x &gt;&gt; i) &amp; <span class="num">1</span>;
+            <span class="kw">if</span> (!nxt[p][b]) nxt[p][b] = <span class="fn">newNode</span>();
+            p = nxt[p][b];
+        }
+    }
+
+    <span class="cm">// 查询与 x 异或值最大的结果</span>
+    <span class="ty">int</span> <span class="fn">queryMax</span>(<span class="ty">int</span> x) {
+        <span class="ty">int</span> p = <span class="num">0</span>, res = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = MAXB - <span class="num">1</span>; i &gt;= <span class="num">0</span>; i--) {
+            <span class="ty">int</span> b = (x &gt;&gt; i) &amp; <span class="num">1</span>;
+            <span class="kw">if</span> (nxt[p][b ^ <span class="num">1</span>]) {
+                res |= (<span class="num">1</span> &lt;&lt; i);
+                p = nxt[p][b ^ <span class="num">1</span>];
+            } <span class="kw">else</span> {
+                p = nxt[p][b];
+            }
+        }
+        <span class="kw">return</span> res;
+    }
+
+    <span class="cm">// 查询与 x 异或值最小的结果</span>
+    <span class="ty">int</span> <span class="fn">queryMin</span>(<span class="ty">int</span> x) {
+        <span class="ty">int</span> p = <span class="num">0</span>, res = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = MAXB - <span class="num">1</span>; i &gt;= <span class="num">0</span>; i--) {
+            <span class="ty">int</span> b = (x &gt;&gt; i) &amp; <span class="num">1</span>;
+            <span class="kw">if</span> (nxt[p][b]) {
+                p = nxt[p][b];
+            } <span class="kw">else</span> {
+                res |= (<span class="num">1</span> &lt;&lt; i);
+                p = nxt[p][b ^ <span class="num">1</span>];
+            }
+        }
+        <span class="kw">return</span> res;
+    }
+};</pre>
+
+    <div class="box box-info">
+      <div class="box-title">使用示例</div>
+      <pre><span class="ty">BitTrie</span> trie;
+trie.<span class="fn">init</span>();
+
+<span class="cm">// 求最大异或对</span>
+<span class="ty">int</span> ans = <span class="num">0</span>;
+<span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+    <span class="kw">if</span> (i &gt; <span class="num">0</span>)
+        ans = <span class="fn">max</span>(ans, trie.<span class="fn">queryMax</span>(a[i]));
+    trie.<span class="fn">insert</span>(a[i]);
+}
+cout &lt;&lt; ans &lt;&lt; endl;</pre>
+    </div>
+
+    <h3>5.3 可持久化01-Trie</h3>
+    <p>在某些问题中，需要维护多个版本的 01-Trie（例如，查询某个区间内的最大异或值）。这时可以使用可持久化 01-Trie，利用版本之间的共享节点来节省空间。</p>
+
+    <pre><span class="cm">// 可持久化 01-Trie（简化版框架）</span>
+<span class="kw">struct</span> <span class="ty">PersistentBitTrie</span> {
+    <span class="kw">static</span> <span class="kw">const</span> <span class="ty">int</span> MAXN = <span class="num">6000005</span>;
+    <span class="kw">static</span> <span class="kw">const</span> <span class="ty">int</span> MAXB = <span class="num">31</span>;
+
+    <span class="ty">int</span> nxt[MAXN][<span class="num">2</span>];
+    <span class="ty">int</span> cnt;
+
+    <span class="ty">void</span> <span class="fn">init</span>() { cnt = <span class="num">0</span>; }
+
+    <span class="cm">// 从旧版本 root 复制，插入 x 的第 d 位</span>
+    <span class="ty">int</span> <span class="fn">insert</span>(<span class="ty">int</span> prev, <span class="ty">int</span> x, <span class="ty">int</span> d = MAXB - <span class="num">1</span>) {
+        <span class="ty">int</span> cur = ++cnt;
+        <span class="kw">if</span> (d &lt; <span class="num">0</span>) <span class="kw">return</span> cur;
+        <span class="ty">int</span> b = (x &gt;&gt; d) &amp; <span class="num">1</span>;
+        nxt[cur][b ^ <span class="num">1</span>] = nxt[prev][b ^ <span class="num">1</span>];  <span class="cm">// 复制另一分支</span>
+        nxt[cur][b] = <span class="fn">insert</span>(nxt[prev][b], x, d - <span class="num">1</span>);
+        <span class="kw">return</span> cur;
+    }
+
+    <span class="cm">// 在版本 root 中查询与 x 的最大异或</span>
+    <span class="ty">int</span> <span class="fn">query</span>(<span class="ty">int</span> root, <span class="ty">int</span> x) {
+        <span class="ty">int</span> p = root, res = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = MAXB - <span class="num">1</span>; i &gt;= <span class="num">0</span>; i--) {
+            <span class="ty">int</span> b = (x &gt;&gt; i) &amp; <span class="num">1</span>;
+            <span class="kw">if</span> (nxt[p][b ^ <span class="num">1</span>]) {
+                res |= (<span class="num">1</span> &lt;&lt; i);
+                p = nxt[p][b ^ <span class="num">1</span>];
+            } <span class="kw">else</span> {
+                p = nxt[p][b];
+            }
+        }
+        <span class="kw">return</span> res;
+    }
+};</pre>
+  </div>
+
+  <!-- Section 6: 经典题目 -->
+  <div class="section" id="problems">
+    <h2>6. 经典题目</h2>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P2580" target="_blank">P2580 于是他错误的点名开始了</a>
+      </div>
+      <p>标准 Trie 模板题。插入所有学生姓名，然后处理点名查询，判断是否正确、重复或不存在。</p>
+      <span class="tag tag-easy">简单</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P4551" target="_blank">P4551 最长异或路径</a>
+      </div>
+      <p>树上异或路径问题。先 DFS 预处理每个节点到根的异或路径值，然后在 01-Trie 中求最大异或对。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P3812" target="_blank">P3812 [模板] 线性基</a>
+      </div>
+      <p>虽然主要是线性基模板题，但 01-Trie 也可以用于求解最大异或和子集问题。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P4735" target="_blank">P4735 最大异或和</a>
+      </div>
+      <p>可持久化 01-Trie 的经典应用。维护前缀异或和数组，支持在某个区间内查询与给定数的最大异或值。</p>
+      <span class="tag tag-hard">困难</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://www.luogu.com.cn/problem/P4097" target="_blank">P4097 [HEOI2013] Segment</a>
+      </div>
+      <p>李超线段树 + 01-Trie 的综合应用。</p>
+      <span class="tag tag-hard">困难</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://codeforces.com/contest/706/problem/D" target="_blank">CF 706D Vasiliy's Multiset</a>
+      </div>
+      <p>动态维护一个多重集，支持插入、删除和查询与给定数的最大异或值。使用 01-Trie 维护。</p>
+      <span class="tag tag-mid">中等</span>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">
+        <a href="https://codeforces.com/contest/282/problem/E" target="_blank">CF 282E Sausage Maximization</a>
+      </div>
+      <p>在数组的前缀和后缀中各选一个不相交的子数组，使异或和最大。01-Trie + 前后缀分解。</p>
+      <span class="tag tag-hard">困难</span>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

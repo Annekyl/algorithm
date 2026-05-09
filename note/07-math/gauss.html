@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>高斯消元 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#07-math">数学</a> &gt;
+    高斯消元
+  </div>
+
+  <div class="page-header">
+    <h1>高斯消元</h1>
+    <p class="subtitle">Gaussian Elimination &mdash; 线性方程组的通用求解方法</p>
+    <div class="tags">
+      <span class="tag tag-math">数学</span>
+      <span class="tag tag-mid">中等</span>
+      <span class="tag tag-base">基础算法</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#overview">高斯消元概述</a></li>
+      <li><a href="#float-gauss">浮点高斯消元</a></li>
+      <li><a href="#xor-gauss">异或方程组 (GF(2))</a></li>
+      <li><a href="#applications">应用</a></li>
+      <li><a href="#template">C++ 完整模板</a></li>
+      <li><a href="#problems">经典问题</a></li>
+    </ul>
+  </div>
+
+  <!-- ===== 高斯消元概述 ===== -->
+  <div class="section" id="overview">
+    <h2>高斯消元概述</h2>
+
+    <h3>什么是高斯消元</h3>
+    <p>高斯消元 (Gaussian Elimination) 是求解线性方程组的经典算法。对于 n 个未知数、n 个方程的线性方程组：</p>
+    <div class="diagram">
+      <pre>
+  a11*x1 + a12*x2 + ... + a1n*xn = b1
+  a21*x1 + a22*x2 + ... + a2n*xn = b2
+  ...
+  an1*x1 + an2*x2 + ... + ann*xn = bn
+
+  增广矩阵形式:
+  | a11 a12 ... a1n | b1 |
+  | a21 a22 ... a2n | b2 |
+  | ...              | .. |
+  | an1 an2 ... ann | bn |
+      </pre>
+    </div>
+
+    <h3>核心思想</h3>
+    <p>通过初等行变换，将增广矩阵化为<strong>上三角矩阵</strong>（行阶梯形），然后<strong>回代</strong>求解。</p>
+
+    <div class="steps">
+      <div class="step">选取当前列绝对值最大的元素作为主元（Partial Pivoting）</div>
+      <div class="step">交换行，将主元移到对角线位置</div>
+      <div class="step">用主元行消去下方所有行的当前列元素</div>
+      <div class="step">重复以上步骤直到化为上三角矩阵</div>
+      <div class="step">从最后一行开始回代，依次求出每个未知数</div>
+    </div>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n^3)</span>
+    </div>
+
+    <h3>解的判断</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>情况</th><th>特征</th><th>解</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>唯一解</td><td>系数矩阵满秩，无自由变量</td><td>精确解</td></tr>
+          <tr><td>无穷多解</td><td>存在自由变量（某列无主元）</td><td>参数化解</td></tr>
+          <tr><td>无解</td><td>出现 0 = 非零 的矛盾方程</td><td>-</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== 浮点高斯消元 ===== -->
+  <div class="section" id="float-gauss">
+    <h2>浮点高斯消元</h2>
+
+    <h3>选主元（Partial Pivoting）</h3>
+    <p>为避免除以接近 0 的数导致精度问题，每次选取当前列中<strong>绝对值最大</strong>的元素作为主元，并将其所在行交换到当前位置。</p>
+
+    <div class="box box-warn">
+      <div class="box-title">精度问题</div>
+      <ul>
+        <li>浮点高斯消元存在精度误差，竞赛中常用 <code>1e-8</code> 或 <code>1e-10</code> 作为零的判断阈值</li>
+        <li>若主元绝对值小于阈值，认为该列无主元（自由变量）</li>
+        <li>如果需要精确解，考虑使用整数或分数运算</li>
+      </ul>
+    </div>
+
+    <h3>算法流程</h3>
+    <div class="diagram">
+      <pre>
+  初始增广矩阵:
+  2  1 -1 |  8       (2x + y - z = 8)
+  -3 -1  2 | -11      (-3x - y + 2z = -11)
+  -2  1  2 | -3       (-2x + y + 2z = -3)
+
+  第1列消元 (选主元: |-3| 最大，交换行1和行2):
+  -3 -1  2 | -11
+   0  1/3 -1/3 | 10/3
+   0  5/3 -2/3 | 13/3
+
+  第2列消元:
+  -3 -1  2 | -11
+   0  5/3 -2/3 | 13/3
+   0  0  -1/5 | -1/5
+
+  回代:
+  z = (-1/5) / (-1/5) = 1
+  y = (13/3 + 2/3 * 1) / (5/3) = (13/3 + 2/3) / (5/3) = 15/3 / 5/3 = 3
+  x = (-11 - (-1)*3 - 2*1) / (-3) = (-11+3-2) / (-3) = -10 / -3 = 2
+
+  解: x=2, y=3, z=1 ✓
+      </pre>
+    </div>
+  </div>
+
+  <!-- ===== 异或方程组 ===== -->
+  <div class="section" id="xor-gauss">
+    <h2>异或方程组 (GF(2))</h2>
+
+    <h3>定义</h3>
+    <p>异或方程组是系数和未知数都在 GF(2) = {0, 1} 上的线性方程组。运算是异或（XOR，即模 2 加法）和与（AND，即模 2 乘法）。</p>
+
+    <div class="diagram">
+      <pre>
+  异或方程组示例:
+  x1 ^ x2 ^ x4 = 1
+  x1 ^ x3 ^ x4 = 0
+  x2 ^ x3       = 1
+
+  增广矩阵 (GF(2)):
+  1 1 0 1 | 1
+  1 0 1 1 | 0
+  0 1 1 0 | 1
+      </pre>
+    </div>
+
+    <h3>特点</h3>
+    <ul>
+      <li>没有浮点精度问题</li>
+      <li>不需要选主元时考虑"绝对值最大"，只需找到非零元素即可</li>
+      <li>消元操作简化为异或运算</li>
+      <li>可以使用 <strong>bitset</strong> 优化，将复杂度从 O(n^3) 降为 O(n^3 / 64)</li>
+    </ul>
+
+    <h3>bitset 优化</h3>
+    <p>将每一行用 bitset 存储，消元时整行异或。bitset 的每个操作都利用了 CPU 的位运算并行性，常数缩小约 64 倍。</p>
+
+    <div class="complexity">
+      <span class="label">朴素实现</span>
+      <span class="value">O(n^3)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">bitset 优化</span>
+      <span class="value">O(n^3 / 64)</span>
+    </div>
+
+    <h3>自由变量与解的个数</h3>
+    <p>若方程组有 k 个自由变量（即有 k 列没有主元），则解的个数为 2^k。</p>
+
+    <div class="box box-tip">
+      <div class="box-title">常见应用</div>
+      <ul>
+        <li><strong>开关灯问题</strong>：每盏灯的最终状态由若干开关的异或决定</li>
+        <li><strong>图上的奇偶问题</strong>：边的选取与否构成异或方程</li>
+        <li><strong>求线性基</strong>：异或方程组消元的过程就是构建线性基</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===== 应用 ===== -->
+  <div class="section" id="applications">
+    <h2>应用</h2>
+
+    <h3>1. 期望值问题</h3>
+    <p>很多概率/期望 DP 问题可以转化为线性方程组。例如：从状态 i 转移到状态 j 的概率为 p[i][j]，求到达某终态的期望步数。</p>
+
+    <div class="diagram">
+      <pre>
+  例：随机游走
+  设 E[i] = 从节点 i 出发到达终点的期望步数
+  E[i] = 1 + sum(p[i][j] * E[j])  (对所有邻居 j)
+  E[终点] = 0
+
+  这是一个关于 E[0], E[1], ..., E[n-1] 的线性方程组！
+  用高斯消元求解即可。
+      </pre>
+    </div>
+
+    <h3>2. 开关灯问题 (Lights Out)</h3>
+    <p>给定一个 n x m 的灯阵，每次翻转一盏灯及其相邻灯的状态。问最少操作多少次可以使所有灯关闭。</p>
+    <p>每盏灯对应一个 0/1 变量（是否操作），每盏灯的最终状态是其自身及邻居操作变量的异或。转化为 GF(2) 上的线性方程组。</p>
+
+    <h3>3. 异或空间与线性基</h3>
+    <p>高斯消元在 GF(2) 上的操作本质上是在求一组向量的线性基。线性基可用于：</p>
+    <ul>
+      <li>求一组数的最大/最小异或和</li>
+      <li>判断某个数是否能被若干数异或得到</li>
+      <li>求异或和的第 k 小值</li>
+    </ul>
+
+    <h3>4. 矩阵求逆</h3>
+    <p>对增广矩阵 [A | I] 做高斯消元，化为 [I | A^(-1)]，即可得到 A 的逆矩阵。复杂度 O(n^3)。</p>
+  </div>
+
+  <!-- ===== C++ 完整模板 ===== -->
+  <div class="section" id="template">
+    <h2>C++ 完整模板</h2>
+
+    <h3>浮点高斯消元</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+<span class="kw">const</span> <span class="ty">double</span> EPS = <span class="num">1e-8</span>;
+
+<span class="cm">// 浮点高斯消元，返回解的个数: 0(无解) / 1(唯一解) / -1(无穷多解)</span>
+<span class="cm">// 结果存在 x[] 中</span>
+<span class="ty">int</span> <span class="fn">gauss</span>(<span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">double</span>&gt;&gt;&amp; a, <span class="ty">vector</span>&lt;<span class="ty">double</span>&gt;&amp; x) {
+    <span class="ty">int</span> n = a.<span class="fn">size</span>(), m = a[<span class="num">0</span>].<span class="fn">size</span>() - <span class="num">1</span>; <span class="cm">// n个方程，m个未知数</span>
+    <span class="ty">int</span> rank = <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> col = <span class="num">0</span>, row = <span class="num">0</span>; col < m &amp;&amp; row < n; col++) {
+        <span class="cm">// 选主元：找当前列绝对值最大的行</span>
+        <span class="ty">int</span> pivot = row;
+        <span class="kw">for</span> (<span class="ty">int</span> i = row + <span class="num">1</span>; i < n; i++)
+            <span class="kw">if</span> (<span class="fn">fabs</span>(a[i][col]) > <span class="fn">fabs</span>(a[pivot][col]))
+                pivot = i;
+        <span class="kw">if</span> (<span class="fn">fabs</span>(a[pivot][col]) < EPS) <span class="kw">continue</span>; <span class="cm">// 跳过自由变量</span>
+
+        <span class="cm">// 交换行</span>
+        <span class="fn">swap</span>(a[row], a[pivot]);
+
+        <span class="cm">// 消元</span>
+        <span class="kw">for</span> (<span class="ty">int</span> i = row + <span class="num">1</span>; i < n; i++) {
+            <span class="ty">double</span> factor = a[i][col] / a[row][col];
+            <span class="kw">for</span> (<span class="ty">int</span> j = col; j <= m; j++)
+                a[i][j] -= factor * a[row][j];
+        }
+        row++;
+        rank++;
+    }
+
+    <span class="cm">// 检查是否有矛盾方程 (0 = 非零)</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = rank; i < n; i++)
+        <span class="kw">if</span> (<span class="fn">fabs</span>(a[i][m]) > EPS) <span class="kw">return</span> <span class="num">0</span>; <span class="cm">// 无解</span>
+
+    <span class="kw">if</span> (rank < m) <span class="kw">return</span> -<span class="num">1</span>; <span class="cm">// 无穷多解</span>
+
+    <span class="cm">// 回代</span>
+    x.<span class="fn">resize</span>(m);
+    <span class="kw">for</span> (<span class="ty">int</span> i = m - <span class="num">1</span>; i >= <span class="num">0</span>; i--) {
+        x[i] = a[i][m];
+        <span class="kw">for</span> (<span class="ty">int</span> j = i + <span class="num">1</span>; j < m; j++)
+            x[i] -= a[i][j] * x[j];
+        x[i] /= a[i][i];
+    }
+    <span class="kw">return</span> <span class="num">1</span>; <span class="cm">// 唯一解</span>
+}</code></pre>
+
+    <h3>异或方程组 (bitset 优化)</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="cm">// GF(2) 上的高斯消元 (bitset 优化)</span>
+<span class="cm">// a[i]: 第 i 个方程，长度为 n+1 (最后一位是常数项)</span>
+<span class="cm">// 返回: 自由变量个数, 无解返回 -1</span>
+<span class="ty">int</span> <span class="fn">gauss_xor</span>(<span class="ty">vector</span>&lt;bitset&lt;<span class="num">1005</span>&gt;&gt;&amp; a, <span class="ty">int</span> n, <span class="ty">int</span> m) {
+    <span class="ty">int</span> rank = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> col = <span class="num">0</span>, row = <span class="num">0</span>; col < m &amp;&amp; row < n; col++) {
+        <span class="cm">// 找主元</span>
+        <span class="ty">int</span> pivot = -<span class="num">1</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = row; i < n; i++) {
+            <span class="kw">if</span> (a[i][col]) { pivot = i; <span class="kw">break</span>; }
+        }
+        <span class="kw">if</span> (pivot == -<span class="num">1</span>) <span class="kw">continue</span>; <span class="cm">// 自由变量</span>
+        <span class="fn">swap</span>(a[row], a[pivot]);
+
+        <span class="cm">// 消元（整行异或）</span>
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i < n; i++) {
+            <span class="kw">if</span> (i != row &amp;&amp; a[i][col])
+                a[i] ^= a[row];
+        }
+        row++;
+        rank++;
+    }
+
+    <span class="cm">// 检查矛盾</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = rank; i < n; i++)
+        <span class="kw">if</span> (a[i][m]) <span class="kw">return</span> -<span class="num">1</span>; <span class="cm">// 无解</span>
+
+    <span class="kw">return</span> m - rank; <span class="cm">// 自由变量个数</span>
+}</code></pre>
+
+    <h3>高斯消元求行列式</h3>
+    <pre><code><span class="cm">// 高斯消元求行列式（模意义下）</span>
+<span class="kw">const</span> <span class="ty">int</span> MOD = <span class="num">1e9</span> + <span class="num">7</span>;
+
+<span class="ty">long long</span> <span class="fn">qpow</span>(<span class="ty">long long</span> a, <span class="ty">long long</span> b) {
+    <span class="ty">long long</span> res = <span class="num">1</span>;
+    a %= MOD;
+    <span class="kw">while</span> (b > <span class="num">0</span>) {
+        <span class="kw">if</span> (b &amp; <span class="num">1</span>) res = res * a % MOD;
+        a = a * a % MOD;
+        b >>= <span class="num">1</span>;
+    }
+    <span class="kw">return</span> res;
+}
+
+<span class="ty">int</span> <span class="fn">determinant</span>(<span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; a, <span class="ty">int</span> n) {
+    <span class="ty">long long</span> det = <span class="num">1</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> col = <span class="num">0</span>, row = <span class="num">0</span>; col < n; col++) {
+        <span class="ty">int</span> pivot = -<span class="num">1</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = row; i < n; i++)
+            <span class="kw">if</span> (a[i][col]) { pivot = i; <span class="kw">break</span>; }
+        <span class="kw">if</span> (pivot == -<span class="num">1</span>) <span class="kw">return</span> <span class="num">0</span>; <span class="cm">// 行列式为0</span>
+        <span class="kw">if</span> (pivot != row) {
+            <span class="fn">swap</span>(a[row], a[pivot]);
+            det = (MOD - det) % MOD; <span class="cm">// 换行变号</span>
+        }
+        det = det * a[row][col] % MOD;
+        <span class="ty">long long</span> inv = <span class="fn">qpow</span>(a[row][col], MOD - <span class="num">2</span>);
+        <span class="kw">for</span> (<span class="ty">int</span> i = row + <span class="num">1</span>; i < n; i++) {
+            <span class="ty">long long</span> factor = a[i][col] * inv % MOD;
+            <span class="kw">for</span> (<span class="ty">int</span> j = col; j < n; j++)
+                a[i][j] = (a[i][j] - factor * a[row][j] % MOD + MOD) % MOD;
+        }
+        row++;
+    }
+    <span class="kw">return</span> det;
+}</code></pre>
+  </div>
+
+  <!-- ===== 经典问题 ===== -->
+  <div class="section" id="problems">
+    <h2>经典问题</h2>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P3389 - 高斯消元</div>
+      <p>模板题：给定 n 元线性方程组，求解或判断无解。</p>
+      <p><strong>思路</strong>：浮点高斯消元 + 部分主元选取。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P2455 - 高斯消元</div>
+      <p>模板题：需要处理无穷多解和无解的情况。</p>
+      <p><strong>思路</strong>：消元后检查矛盾行和自由变量。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P4035 - 球形空间产生器</div>
+      <p>给定 n+1 个 n 维空间中的点，它们在同一个 n 维球面上，求球心坐标。</p>
+      <p><strong>思路</strong>：设球心为 (x1, ..., xn)，利用 |P - O|^2 = R^2 建立方程，相邻两式相减消去 R^2，得到线性方程组。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P2962 - Lights</div>
+      <p>开关灯问题：n 盏灯和 n 个开关，每个开关控制若干盏灯，求最少操作次数使所有灯关闭。</p>
+      <p><strong>思路</strong>：GF(2) 上的高斯消元 + 枚举自由变量取最优解。bitset 优化。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">POJ 1222 - EXTENDED LIGHTS OUT</div>
+      <p>5x6 的灯阵，翻转一盏灯会影响上下左右和自身。求使所有灯关闭的操作方案。</p>
+      <p><strong>思路</strong>：30 个 0/1 变量，30 个方程，GF(2) 高斯消元。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P4111 - 小 Y 的方格纸</div>
+      <p>期望值 + 高斯消元。</p>
+      <p><strong>思路</strong>：建立期望方程组，高斯消元求解。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P4783 - 矩阵求逆</div>
+      <p>给定 n x n 矩阵，求逆矩阵（模 10^9+7）。</p>
+      <p><strong>思路</strong>：对增广矩阵 [A | I] 做高斯约当消元，化为 [I | A^(-1)]。</p>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">高斯消元解题技巧</div>
+      <ul>
+        <li>看到"线性方程组"或"多个约束条件的线性关系"，考虑高斯消元</li>
+        <li>期望/概率 DP 中，如果状态转移形成环，需要高斯消元</li>
+        <li>GF(2) 上的问题考虑 bitset 优化</li>
+        <li>浮点消元注意精度，模意义下消元注意逆元</li>
+        <li>n 较大时 (n > 500) 考虑复杂度是否可接受</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

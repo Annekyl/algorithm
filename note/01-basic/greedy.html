@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>贪心 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt; <a href="../index.html">01 基础篇</a> &gt; 贪心
+  </div>
+
+  <div class="page-header">
+    <h1>贪心算法</h1>
+    <p class="subtitle">Greedy Algorithm &mdash; 每一步都做出局部最优选择，期望最终达到全局最优</p>
+    <div class="tags">
+      <span class="tag tag-base">基础算法</span>
+      <span class="tag tag-mid">中等</span>
+    </div>
+  </div>
+
+  <!-- ===== 目录 ===== -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#greedy-overview">贪心概述</a></li>
+      <li><a href="#greedy-proof">贪心策略证明</a></li>
+      <li><a href="#interval-scheduling">区间调度问题</a></li>
+      <li><a href="#interval-covering">区间覆盖</a></li>
+      <li><a href="#job-scheduling">任务调度</a></li>
+      <li><a href="#huffman">哈夫曼编码</a></li>
+      <li><a href="#fractional-knapsack">分数背包</a></li>
+      <li><a href="#optimal-merge">最优合并</a></li>
+      <li><a href="#summary">总结与对比</a></li>
+    </ul>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- 1. 贪心概述 -->
+  <!-- ================================================================ -->
+  <div class="section" id="greedy-overview">
+    <h2>一、贪心概述</h2>
+
+    <h3>1.1 什么是贪心算法</h3>
+    <p>贪心算法（Greedy Algorithm）是一种在每一步选择中都采取<strong>当前状态下最优</strong>（即局部最优）的决策，希望最终导致全局最优解的算法策略。贪心算法不从整体最优考虑，而是每一步都做出看似最好的选择。</p>
+
+    <div class="box box-info">
+      <div class="box-title">核心思想</div>
+      <p>将问题分解为若干子问题，对每个子问题做出当前看起来最好的选择，即<strong>局部最优选择</strong>，然后将所有局部最优解合并为原问题的解。</p>
+    </div>
+
+    <h3>1.2 贪心的两个关键性质</h3>
+
+    <h4>贪心选择性质（Greedy Choice Property）</h4>
+    <p>所求问题的整体最优解可以通过一系列<strong>局部最优</strong>的选择来达到。即通过做贪心选择，问题可以简化为一个规模更小的子问题，且该贪心选择是安全的（不会导致丢失最优解）。</p>
+
+    <h4>最优子结构（Optimal Substructure）</h4>
+    <p>一个问题的最优解包含其子问题的最优解。这意味着我们在做出贪心选择后，剩余子问题的最优解与之前的贪心选择组合在一起，构成原问题的最优解。</p>
+
+    <div class="box box-warn">
+      <div class="box-title">注意</div>
+      <p>并非所有问题都适合使用贪心策略。贪心算法能否得到全局最优解，严格依赖于问题是否满足上述两个性质。如果不满足，贪心可能只得到近似最优解甚至错误解。例如 0-1 背包问题就不能用贪心求最优解，但分数背包可以。</p>
+    </div>
+
+    <h3>1.3 贪心与动态规划的区别</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>特征</th><th>贪心算法</th><th>动态规划</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>决策方式</td><td>自顶向下，每步做出局部最优选择，不回头</td><td>自底向上，枚举所有可能选择，取最优</td></tr>
+          <tr><td>子问题</td><td>每步只解决一个子问题</td><td>需要解决所有重叠子问题</td></tr>
+          <tr><td>最优性</td><td>需要严格证明</td><td>一定得到最优解</td></tr>
+          <tr><td>时间效率</td><td>通常更快，因为不需要枚举</td><td>通常更慢，需要填充 DP 表</td></tr>
+          <tr><td>适用条件</td><td>贪心选择性质 + 最优子结构</td><td>最优子结构 + 重叠子问题</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>1.4 贪心算法的一般框架</h3>
+    <pre><span class="cm">// 贪心算法通用框架</span>
+<span class="ty">void</span> <span class="fn">greedy</span>(Problem &amp;prob) {
+    <span class="cm">// 1. 将问题按某种标准排序（贪心策略的关键）</span>
+    <span class="fn">sort</span>(prob.items, comparator);
+
+    <span class="cm">// 2. 依次做出贪心选择</span>
+    <span class="kw">for</span> (<span class="kw">auto</span> &amp;item : prob.items) {
+        <span class="kw">if</span> (<span class="fn">isValid</span>(item, currentState)) {
+            <span class="cm">// 做出贪心选择</span>
+            <span class="fn">makeChoice</span>(item);
+            <span class="fn">updateState</span>(currentState);
+        }
+    }
+
+    <span class="cm">// 3. 返回结果</span>
+    <span class="kw">return</span> result;
+}</pre>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- 2. 贪心策略证明 -->
+  <!-- ================================================================ -->
+  <div class="section" id="greedy-proof">
+    <h2>二、贪心策略证明</h2>
+
+    <p>贪心算法的核心难点不在于代码实现，而在于<strong>证明贪心策略的正确性</strong>。下面介绍两种常用的证明方法。</p>
+
+    <h3>2.1 交换论证（Exchange Argument）</h3>
+    <p>交换论证是最常用的贪心正确性证明方法，其基本思路为：</p>
+
+    <div class="steps">
+      <div class="step">假设存在一个最优解 OPT 与贪心解 GREEDY 不同</div>
+      <div class="step">找到 OPT 与 GREEDY 的第一个不同之处</div>
+      <div class="step">将 OPT 中的选择"交换"为 GREEDY 的选择，证明交换后解不会变差</div>
+      <div class="step">通过有限次交换，将 OPT 转化为 GREEDY，且始终保持最优性</div>
+      <div class="step">由此得出 GREEDY 也是最优解</div>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">示例：活动选择问题的交换论证</div>
+      <p>假设 OPT 选择了活动 a（不是最早结束的），而 GREEDY 选择了最早结束的活动 e。将 OPT 中的 a 替换为 e：因为 e 结束时间 &le; a 结束时间，所以 e 不会与 OPT 中其他活动冲突，且替换后剩余可用时间更多或相等。因此替换后的解不差于 OPT。</p>
+    </div>
+
+    <h3>2.2 领先论证（Staying Ahead Argument）</h3>
+    <p>领先论证用于证明贪心解在每一步都不差于其他任何解，其思路为：</p>
+
+    <div class="steps">
+      <div class="step">将贪心算法的解和任意其他解分别记为序列 G = (g1, g2, ..., gk) 和 S = (s1, s2, ..., sk)</div>
+      <div class="step">通过归纳法证明：对于所有 i，贪心的第 i 步选择 gi 不差于其他解的第 i 步选择 si</div>
+      <div class="step">即始终保持 "领先"：贪心解在每一步的状态都不比其他解差</div>
+      <div class="step">最终得出贪心解的总体目标函数值不差于任何其他解</div>
+    </div>
+
+    <h3>2.3 反证法</h3>
+    <p>假设贪心解不是最优解，存在一个更优解。通过分析贪心选择的性质，推导出矛盾，从而证明贪心解就是最优解。</p>
+
+    <div class="box box-info">
+      <div class="box-title">证明策略选择指南</div>
+      <ul>
+        <li><strong>交换论证</strong>：适用于排序后贪心选取类问题（如区间调度、任务调度）</li>
+        <li><strong>领先论证</strong>：适用于逐步构造解的问题（如活动选择）</li>
+        <li><strong>反证法</strong>：适用于结构性质明显的问题</li>
+        <li><strong>数学归纳</strong>：适用于递归结构的问题（如哈夫曼编码）</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- 3. 区间调度问题 -->
+  <!-- ================================================================ -->
+  <div class="section" id="interval-scheduling">
+    <h2>三、区间调度问题</h2>
+
+    <h3>3.1 问题描述</h3>
+    <div class="problem">
+      <div class="problem-title">活动选择问题（Activity Selection Problem）</div>
+      <p>给定 n 个活动，每个活动有开始时间 si 和结束时间 fi。选出最多的互不重叠活动（两个活动 [si, fi) 和 [sj, fj) 不重叠当且仅当 fi &le; sj 或 fj &le; si）。</p>
+    </div>
+
+    <h3>3.2 贪心策略</h3>
+    <p><strong>按结束时间排序，每次选择结束最早且不与已选活动冲突的活动。</strong></p>
+
+    <div class="box box-tip">
+      <div class="box-title">直觉理解</div>
+      <p>选择结束最早的活动，可以为后续活动留下尽可能多的时间空间。这就像在有限时间内安排尽可能多的会议——每次选最短的会议先开。</p>
+    </div>
+
+    <h3>3.3 图解示例</h3>
+    <p>输入活动：A[1,4), B[3,5), C[0,6), D[5,7), E[3,9), F[5,9), G[6,10), H[8,11)</p>
+
+    <div class="diagram">
+<pre>
+时间轴:  0   1   2   3   4   5   6   7   8   9  10  11
+         |---|---|---|---|---|---|---|---|---|---|---|---|
+A [1,4):     |===============|
+B [3,5):             |===============|
+C [0,6): |=================================|
+D [5,7):                     |===============|
+E [3,9):             |===========================================|
+F [5,9):                     |===========================|
+G [6,10):                            |==========================|
+H [8,11):                                    |====================|
+
+按结束时间排序: A(4) < B(5) < C(6) < D(7) < F(9) < E(9) < G(10) < H(11)
+
+贪心过程:
+  选 A [1,4)  -- 结束时间 4, 最早
+  跳 B [3,5)  -- 与 A 冲突 (3 < 4)
+  跳 C [0,6)  -- 与 A 冲突 (0 < 4)
+  选 D [5,7)  -- 5 >= 4, 不冲突
+  跳 F [5,9)  -- 与 D 冲突 (5 < 7)
+  跳 E [3,9)  -- 与 D 冲突 (3 < 7)
+  跳 G [6,10) -- 与 D 冲突 (6 < 7)
+  选 H [8,11) -- 8 >= 7, 不冲突
+
+结果: 选择 {A, D, H}, 共 3 个活动 (最优解)
+</pre>
+    </div>
+
+    <h3>3.4 C++ 代码</h3>
+    <pre><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">struct</span> <span class="ty">Activity</span> {
+    <span class="ty">int</span> start, finish;
+};
+
+<span class="cm">// 按结束时间升序排序</span>
+<span class="ty">bool</span> <span class="fn">cmp</span>(<span class="kw">const</span> <span class="ty">Activity</span> &amp;a, <span class="kw">const</span> <span class="ty">Activity</span> &amp;b) {
+    <span class="kw">return</span> a.finish <span class="op">&lt;</span> b.finish;
+}
+
+<span class="cm">// 贪心求最大不相交区间数</span>
+<span class="ty">int</span> <span class="fn">activitySelection</span>(<span class="ty">vector</span>&lt;<span class="ty">Activity</span>&gt; &amp;acts) {
+    <span class="fn">sort</span>(acts.begin(), acts.end(), cmp);
+
+    <span class="ty">int</span> cnt <span class="op">=</span> <span class="num">0</span>;           <span class="cm">// 已选活动数</span>
+    <span class="ty">int</span> lastEnd <span class="op">=</span> <span class="op">-</span><span class="num">1</span>;      <span class="cm">// 上一个已选活动的结束时间</span>
+
+    <span class="kw">for</span> (<span class="kw">auto</span> &amp;act : acts) {
+        <span class="kw">if</span> (act.start <span class="op">&gt;=</span> lastEnd) {  <span class="cm">// 不重叠</span>
+            cnt<span class="op">++</span>;
+            lastEnd <span class="op">=</span> act.finish;
+        }
+    }
+    <span class="kw">return</span> cnt;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n;
+    cin <span class="op">&gt;&gt;</span> n;
+    <span class="ty">vector</span>&lt;<span class="ty">Activity</span>&gt; acts(n);
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">0</span>; i <span class="op">&lt;</span> n; i<span class="op">++</span>)
+        cin <span class="op">&gt;&gt;</span> acts[i].start <span class="op">&gt;&gt;</span> acts[i].finish;
+    cout <span class="op">&lt;&lt;</span> <span class="fn">activitySelection</span>(acts) <span class="op">&lt;&lt;</span> endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度:</span> <span class="value">O(n log n)</span>
+      <span style="margin-left:16px;"></span>
+      <span class="label">空间复杂度:</span> <span class="value">O(1)</span>
+    </div>
+
+    <h3>3.5 相关变体</h3>
+    <div class="problem">
+      <div class="problem-title">POJ 1089 / AcWing 905 - 区间合并</div>
+      <p>给定若干区间，将所有有重叠的区间合并为连续区间，输出合并后的区间集合。</p>
+    </div>
+    <pre><span class="cm">// 区间合并模板</span>
+<span class="kw">typedef</span> <span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt; <span class="ty">PII</span>;
+<span class="ty">vector</span>&lt;<span class="ty">PII</span>&gt; <span class="fn">mergeIntervals</span>(<span class="ty">vector</span>&lt;<span class="ty">PII</span>&gt; &amp;segs) {
+    <span class="ty">vector</span>&lt;<span class="ty">PII</span>&gt; res;
+    <span class="fn">sort</span>(segs.begin(), segs.end());  <span class="cm">// 按左端点排序</span>
+
+    <span class="ty">int</span> st <span class="op">=</span> <span class="op">-</span><span class="num">2e9</span>, ed <span class="op">=</span> <span class="op">-</span><span class="num">2e9</span>;
+    <span class="kw">for</span> (<span class="kw">auto</span> &amp;seg : segs) {
+        <span class="kw">if</span> (seg.first <span class="op">&gt;</span> ed) {       <span class="cm">// 无交集，开新区间</span>
+            <span class="kw">if</span> (ed <span class="op">!=</span> <span class="op">-</span><span class="num">2e9</span>) res.push_back({st, ed});
+            st <span class="op">=</span> seg.first;
+            ed <span class="op">=</span> seg.second;
+        } <span class="kw">else</span> {
+            ed <span class="op">=</span> <span class="fn">max</span>(ed, seg.second); <span class="cm">// 合并</span>
+        }
+    }
+    <span class="kw">if</span> (ed <span class="op">!=</span> <span class="op">-</span><span class="num">2e9</span>) res.push_back({st, ed});
+    <span class="kw">return</span> res;
+}</pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度:</span> <span class="value">O(n log n)</span>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- 4. 区间覆盖 -->
+  <!-- ================================================================ -->
+  <div class="section" id="interval-covering">
+    <h2>四、区间覆盖</h2>
+
+    <h3>4.1 问题描述</h3>
+    <div class="problem">
+      <div class="problem-title">区间覆盖问题（Interval Covering）</div>
+      <p>给定一个目标区间 [L, R] 和 n 个小区间 [li, ri]，选择最少数量的小区间，使得它们的并集完全覆盖 [L, R]。</p>
+    </div>
+
+    <h3>4.2 贪心策略</h3>
+    <p><strong>按左端点排序，在所有左端点 &le; 当前覆盖位置的区间中，选择右端点最大的那个。</strong></p>
+
+    <div class="steps">
+      <div class="step">将所有小区间按左端点从小到大排序</div>
+      <div class="step">令当前覆盖到的位置 cur = L，答案计数 cnt = 0</div>
+      <div class="step">在所有左端点 &le; cur 的区间中，找到右端点最大的区间，记其右端点为 maxR</div>
+      <div class="step">选择该区间，令 cur = maxR，cnt++</div>
+      <div class="step">如果 cur &ge; R 则成功；如果在某轮中无法找到任何左端点 &le; cur 的区间（即 maxR 未更新），则无解</div>
+    </div>
+
+    <h3>4.3 图解示例</h3>
+    <p>目标覆盖 [1, 10]，可选区间: [-2,2], [1,4], [3,6], [5,8], [7,10], [9,12]</p>
+
+    <div class="diagram">
+<pre>
+目标: [========1=========10]
+       1   2   3   4   5   6   7   8   9  10
+
+可选区间 (按左端点排序):
+  [-2, 2]:  |========|
+  [1, 4]:     |============|
+  [3, 6]:         |===============|
+  [5, 8]:             |===============|
+  [7, 10]:                |===============|
+  [9, 12]:                    |===============|
+
+贪心过程:
+  cur = 1: 左端点 <= 1 的有 [-2,2](r=2), [1,4](r=4)
+           选 [1,4], cur = 4, cnt = 1
+  cur = 4: 左端点 <= 4 的有 [3,6](r=6)
+           选 [3,6], cur = 6, cnt = 2
+  cur = 6: 左端点 <= 6 的有 [5,8](r=8)
+           选 [5,8], cur = 8, cnt = 3
+  cur = 8: 左端点 <= 8 的有 [7,10](r=10)
+           选 [7,10], cur = 10, cnt = 4
+  cur = 10 >= 10, 完成!
+
+结果: 选择 4 个区间 [1,4], [3,6], [5,8], [7,10]
+</pre>
+    </div>
+
+    <h3>4.4 C++ 代码</h3>
+    <pre><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">typedef</span> <span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt; <span class="ty">PII</span>;
+
+<span class="cm">/**
+ * 区间覆盖: 用最少的区间覆盖 [start, end]
+ * @param segs 可选区间列表
+ * @param start 目标左端点
+ * @param end   目标右端点
+ * @return 最少需要的区间数, 无解返回 -1
+ */</span>
+<span class="ty">int</span> <span class="fn">intervalCovering</span>(<span class="ty">vector</span>&lt;<span class="ty">PII</span>&gt; &amp;segs, <span class="ty">int</span> start, <span class="ty">int</span> end) {
+    <span class="fn">sort</span>(segs.begin(), segs.end());  <span class="cm">// 按左端点排序</span>
+
+    <span class="ty">int</span> cnt <span class="op">=</span> <span class="num">0</span>;
+    <span class="ty">int</span> cur <span class="op">=</span> start;  <span class="cm">// 当前需要覆盖到的位置</span>
+    <span class="ty">int</span> i <span class="op">=</span> <span class="num">0</span>, n <span class="op">=</span> segs.size();
+
+    <span class="kw">while</span> (cur <span class="op">&lt;</span> end) {
+        <span class="ty">int</span> maxR <span class="op">=</span> cur;  <span class="cm">// 能延伸到的最远右端点</span>
+
+        <span class="cm">// 在所有左端点 <= cur 的区间中, 找右端点最大的</span>
+        <span class="kw">while</span> (i <span class="op">&lt;</span> n <span class="op">&amp;&amp;</span> segs[i].first <span class="op">&lt;=</span> cur) {
+            maxR <span class="op">=</span> <span class="fn">max</span>(maxR, segs[i].second);
+            i<span class="op">++</span>;
+        }
+
+        <span class="kw">if</span> (maxR <span class="op">==</span> cur) <span class="kw">return</span> <span class="op">-</span><span class="num">1</span>;  <span class="cm">// 无法延伸, 无解</span>
+
+        cur <span class="op">=</span> maxR;
+        cnt<span class="op">++</span>;
+    }
+    <span class="kw">return</span> cnt;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> L, R, n;
+    cin <span class="op">&gt;&gt;</span> L <span class="op">&gt;&gt;</span> R <span class="op">&gt;&gt;</span> n;
+    <span class="ty">vector</span>&lt;<span class="ty">PII</span>&gt; segs(n);
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">0</span>; i <span class="op">&lt;</span> n; i<span class="op">++</span>)
+        cin <span class="op">&gt;&gt;</span> segs[i].first <span class="op">&gt;&gt;</span> segs[i].second;
+    cout <span class="op">&lt;&lt;</span> <span class="fn">intervalCovering</span>(segs, L, R) <span class="op">&lt;&lt;</span> endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度:</span> <span class="value">O(n log n)</span>
+      <span style="margin-left:16px;"></span>
+      <span class="label">空间复杂度:</span> <span class="value">O(1)</span>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">经典问题</div>
+      <p>AcWing 907 - 区间覆盖、POJ 2376 - Cleaning Shifts 都是该模型的直接应用。</p>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- 5. 任务调度 -->
+  <!-- ================================================================ -->
+  <div class="section" id="job-scheduling">
+    <h2>五、任务调度</h2>
+
+    <h3>5.1 问题描述</h3>
+    <div class="problem">
+      <div class="problem-title">带截止时间的任务调度（Weighted Job Scheduling）</div>
+      <p>有 n 个任务，每个任务有截止时间 di 和利润 pi。完成一个任务需要 1 个单位时间，每个时间单位最多做一个任务。求最大总利润及任务安排方案。</p>
+    </div>
+
+    <h3>5.2 贪心策略</h3>
+    <p><strong>按利润从大到小排序，对每个任务，尽量安排在它的截止时间或之前最晚的空闲时间槽。</strong></p>
+
+    <div class="steps">
+      <div class="step">将所有任务按利润从大到小排序</div>
+      <div class="step">初始化一个时间槽数组（或并查集），记录每个时间点是否已被占用</div>
+      <div class="step">对于每个任务，在截止时间 di 之前（含 di）寻找最晚的空闲时间槽</div>
+      <div class="step">如果找到空闲槽，安排该任务，累加利润</div>
+      <div class="step">如果没找到，跳过该任务</div>
+    </div>
+
+    <h3>5.3 图解示例</h3>
+    <div class="diagram">
+<pre>
+任务:  (利润, 截止时间)
+  A(100,2), B(50,1), C(27,2), D(25,1), E(10,3)
+
+按利润排序: A(100,2) > B(50,1) > C(27,2) > D(25,1) > E(10,3)
+
+时间槽: [1] [2] [3]
+初始:    _   _   _
+
+A(100,2): 在 <= 2 中最晚空闲 -> 安排在 [2]
+          [1] [2] [3]
+           _  [A]  _
+
+B(50,1):  在 <= 1 中最晚空闲 -> 安排在 [1]
+          [1] [2] [3]
+          [B] [A]  _
+
+C(27,2):  在 <= 2 中最晚空闲 -> [1],[2] 都满了, 跳过
+
+D(25,1):  在 <= 1 中最晚空闲 -> [1] 满了, 跳过
+
+E(10,3):  在 <= 3 中最晚空闲 -> 安排在 [3]
+          [1] [2] [3]
+          [B] [A] [E]
+
+结果: 选择 {A, B, E}, 总利润 = 100 + 50 + 10 = 160
+</pre>
+    </div>
+
+    <h3>5.4 C++ 代码（并查集优化）</h3>
+    <pre><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">struct</span> <span class="ty">Job</span> {
+    <span class="ty">int</span> profit, deadline, id;
+};
+
+<span class="cm">// 并查集: 找到 <= t 的最大空闲时间槽</span>
+<span class="ty">int</span> parent[<span class="num">100010</span>];
+
+<span class="ty">int</span> <span class="fn">find</span>(<span class="ty">int</span> x) {
+    <span class="kw">if</span> (parent[x] <span class="op">!=</span> x) parent[x] <span class="op">=</span> <span class="fn">find</span>(parent[x]);
+    <span class="kw">return</span> parent[x];
+}
+
+<span class="ty">void</span> <span class="fn">merge</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="ty">int</span> fx <span class="op">=</span> <span class="fn">find</span>(x), fy <span class="op">=</span> <span class="fn">find</span>(y);
+    <span class="kw">if</span> (fx <span class="op">!=</span> fy) parent[fx] <span class="op">=</span> fy;
+}
+
+<span class="ty">bool</span> <span class="fn">cmp</span>(<span class="kw">const</span> <span class="ty">Job</span> &amp;a, <span class="kw">const</span> <span class="ty">Job</span> &amp;b) {
+    <span class="kw">return</span> a.profit <span class="op">&gt;</span> b.profit;  <span class="cm">// 利润降序</span>
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n;
+    cin <span class="op">&gt;&gt;</span> n;
+    <span class="ty">vector</span>&lt;<span class="ty">Job</span>&gt; jobs(n);
+    <span class="ty">int</span> maxD <span class="op">=</span> <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">0</span>; i <span class="op">&lt;</span> n; i<span class="op">++</span>) {
+        cin <span class="op">&gt;&gt;</span> jobs[i].profit <span class="op">&gt;&gt;</span> jobs[i].deadline;
+        maxD <span class="op">=</span> <span class="fn">max</span>(maxD, jobs[i].deadline);
+    }
+
+    <span class="cm">// 初始化并查集, parent[i] = i 表示时间槽 i 空闲</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">0</span>; i <span class="op">&lt;=</span> maxD; i<span class="op">++</span>) parent[i] <span class="op">=</span> i;
+
+    <span class="fn">sort</span>(jobs.begin(), jobs.end(), cmp);
+
+    <span class="ty">long long</span> total <span class="op">=</span> <span class="num">0</span>;
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; chosen;
+
+    <span class="kw">for</span> (<span class="kw">auto</span> &amp;j : jobs) {
+        <span class="ty">int</span> slot <span class="op">=</span> <span class="fn">find</span>(j.deadline);  <span class="cm">// 截止时间前最晚空闲槽</span>
+        <span class="kw">if</span> (slot <span class="op">&gt;</span> <span class="num">0</span>) {               <span class="cm">// 有空闲槽</span>
+            total <span class="op">+=</span> j.profit;
+            chosen.push_back(j.id);
+            <span class="fn">merge</span>(slot, slot <span class="op">-</span> <span class="num">1</span>);   <span class="cm">// 标记 slot 已用</span>
+        }
+    }
+
+    cout <span class="op">&lt;&lt;</span> total <span class="op">&lt;&lt;</span> endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度:</span> <span class="value">O(n log n)</span>
+      <span style="margin-left:16px;"></span>
+      <span class="label">空间复杂度:</span> <span class="value">O(n)</span>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">并查集优化说明</div>
+      <p>朴素做法对每个任务遍历截止时间前的时间槽，复杂度 O(nD)。使用并查集维护"当前时间点之前的最近空闲时间"，可以在接近 O(1) 时间内找到空闲槽，总复杂度降为 O(n log n)（主要是排序的开销）。</p>
+    </div>
+
+    <h3>5.5 经典问题: 最大化利润的任务安排</h3>
+    <div class="problem">
+      <div class="problem-title">LeetCode 1235 / AcWing 1113 - 规划兼职工作</div>
+      <p>给定 startTime, endTime, profit 三个数组表示 n 份工作的开始时间、结束时间和利润。选择若干份互不重叠的工作使得总利润最大。此题需要结合 DP + 二分（非纯贪心），但贪心排序是基础。</p>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- 6. 哈夫曼编码 -->
+  <!-- ================================================================ -->
+  <div class="section" id="huffman">
+    <h2>六、哈夫曼编码</h2>
+
+    <h3>6.1 问题描述</h3>
+    <div class="problem">
+      <div class="problem-title">哈夫曼编码（Huffman Coding）</div>
+      <p>给定 n 个字符及其出现频率，构造一个最优前缀编码方案，使得编码后的总长度最短。即构建一棵带权路径长度 (WPL) 最小的二叉树。</p>
+    </div>
+
+    <h3>6.2 贪心策略</h3>
+    <p><strong>每次选择频率最低的两个节点合并为一个新节点，新节点的频率为两者之和。重复此过程直到只剩一个根节点。</strong></p>
+
+    <div class="steps">
+      <div class="step">将每个字符作为一个叶子节点，权值为其出现频率，全部放入最小堆</div>
+      <div class="step">从堆中取出频率最小的两个节点 u 和 v</div>
+      <div class="step">创建新节点 w，频率 = u.freq + v.freq，将 u 和 v 作为 w 的左右孩子</div>
+      <div class="step">将 w 放回堆中</div>
+      <div class="step">重复步骤 2-4 直到堆中只剩一个节点，即为哈夫曼树的根</div>
+      <div class="step">从根到叶子的路径即为编码：左走为 0，右走为 1</div>
+    </div>
+
+    <h3>6.3 图解示例</h3>
+    <p>字符: A(5), B(9), C(12), D(13), E(16), F(45)</p>
+
+    <div class="diagram">
+<pre>
+步骤 1: 取最小两个 A(5), B(9) -> 合并为 AB(14)
+        堆: C(12), D(13), AB(14), E(16), F(45)
+
+步骤 2: 取最小两个 C(12), D(13) -> 合并为 CD(25)
+        堆: AB(14), E(16), CD(25), F(45)
+
+步骤 3: 取最小两个 AB(14), E(16) -> 合并为 ABE(30)
+        堆: CD(25), ABE(30), F(45)
+
+步骤 4: 取最小两个 CD(25), ABE(30) -> 合并为 CDEAB(55)
+        堆: F(45), CDEAB(55)
+
+步骤 5: 取最小两个 F(45), CDEAB(55) -> 合并为根(100)
+
+最终哈夫曼树:
+                  (100)
+                 /     \
+              (45)     (55)
+              /       /    \
+             F(45) (25)   (30)
+                   / \    /  \
+                 C(12) D(13) (14)  E(16)
+                             / \
+                           A(5) B(9)
+
+编码:
+  F: 0       (1 bit)
+  C: 100     (3 bits)
+  D: 101     (3 bits)
+  A: 1100    (4 bits)
+  B: 1101    (4 bits)
+  E: 111     (3 bits)
+
+WPL = 45*1 + 12*3 + 13*3 + 5*4 + 9*4 + 16*3
+    = 45 + 36 + 39 + 20 + 36 + 48 = 224
+</pre>
+    </div>
+
+    <h3>6.4 C++ 代码</h3>
+    <pre><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">struct</span> <span class="ty">Node</span> {
+    <span class="ty">char</span> ch;          <span class="cm">// 字符 (叶子节点有效)</span>
+    <span class="ty">int</span> freq;         <span class="cm">// 频率</span>
+    <span class="ty">Node</span> <span class="op">*</span>left, <span class="op">*</span>right;
+    <span class="ty">Node</span>(<span class="ty">char</span> c, <span class="ty">int</span> f) : ch(c), freq(f), left(<span class="num">nullptr</span>), right(<span class="num">nullptr</span>) {}
+    <span class="ty">Node</span>(<span class="ty">int</span> f, <span class="ty">Node</span> <span class="op">*</span>l, <span class="ty">Node</span> <span class="op">*</span>r) : ch(<span class="num">0</span>), freq(f), left(l), right(r) {}
+};
+
+<span class="cm">// 最小堆比较器</span>
+<span class="kw">struct</span> <span class="ty">Compare</span> {
+    <span class="ty">bool</span> <span class="kw">operator</span>()(<span class="ty">Node</span> <span class="op">*</span>a, <span class="ty">Node</span> <span class="op">*</span>b) {
+        <span class="kw">return</span> a<span class="op">-&gt;</span>freq <span class="op">&gt;</span> b<span class="op">-&gt;</span>freq;
+    }
+};
+
+<span class="cm">// 递归生成编码</span>
+<span class="ty">void</span> <span class="fn">buildCodes</span>(<span class="ty">Node</span> <span class="op">*</span>root, <span class="ty">string</span> code,
+                <span class="ty">map</span>&lt;<span class="ty">char</span>, <span class="ty">string</span>&gt; &amp;codes) {
+    <span class="kw">if</span> (<span class="op">!</span>root) <span class="kw">return</span>;
+    <span class="kw">if</span> (<span class="op">!</span>root<span class="op">-&gt;</span>left <span class="op">&amp;&amp;</span> <span class="op">!</span>root<span class="op">-&gt;</span>right) {
+        codes[root<span class="op">-&gt;</span>ch] <span class="op">=</span> code;
+        <span class="kw">return</span>;
+    }
+    <span class="fn">buildCodes</span>(root<span class="op">-&gt;</span>left, code <span class="op">+</span> <span class="str">"0"</span>, codes);
+    <span class="fn">buildCodes</span>(root<span class="op">-&gt;</span>right, code <span class="op">+</span> <span class="str">"1"</span>, codes);
+}
+
+<span class="ty">Node</span><span class="op">*</span> <span class="fn">buildHuffman</span>(<span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">char</span>,<span class="ty">int</span>&gt;&gt; &amp;freqs) {
+    priority_queue&lt;<span class="ty">Node</span><span class="op">*</span>, <span class="ty">vector</span>&lt;<span class="ty">Node</span><span class="op">*&gt;</span>, <span class="ty">Compare</span>&gt; pq;
+
+    <span class="cm">// 所有字符入堆</span>
+    <span class="kw">for</span> (<span class="kw">auto</span> &amp;[c, f] : freqs)
+        pq.push(<span class="kw">new</span> <span class="ty">Node</span>(c, f));
+
+    <span class="cm">// 每次取最小的两个合并</span>
+    <span class="kw">while</span> (pq.size() <span class="op">&gt;</span> <span class="num">1</span>) {
+        <span class="ty">Node</span> <span class="op">*</span>left <span class="op">=</span> pq.top(); pq.pop();
+        <span class="ty">Node</span> <span class="op">*</span>right <span class="op">=</span> pq.top(); pq.pop();
+        <span class="ty">Node</span> <span class="op">*</span>parent <span class="op">=</span> <span class="kw">new</span> <span class="ty">Node</span>(left<span class="op">-&gt;</span>freq <span class="op">+</span> right<span class="op">-&gt;</span>freq, left, right);
+        pq.push(parent);
+    }
+    <span class="kw">return</span> pq.top();
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">char</span>,<span class="ty">int</span>&gt;&gt; freqs <span class="op">=</span> {
+        {<span class="str">'A'</span>,<span class="num">5</span>}, {<span class="str">'B'</span>,<span class="num">9</span>}, {<span class="str">'C'</span>,<span class="num">12</span>}, {<span class="str">'D'</span>,<span class="num">13</span>}, {<span class="str">'E'</span>,<span class="num">16</span>}, {<span class="str">'F'</span>,<span class="num">45</span>}
+    };
+
+    <span class="ty">Node</span> <span class="op">*</span>root <span class="op">=</span> <span class="fn">buildHuffman</span>(freqs);
+
+    <span class="ty">map</span>&lt;<span class="ty">char</span>, <span class="ty">string</span>&gt; codes;
+    <span class="fn">buildCodes</span>(root, <span class="str">""</span>, codes);
+
+    <span class="ty">int</span> wpl <span class="op">=</span> <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">auto</span> &amp;[c, code] : codes) {
+        cout <span class="op">&lt;&lt;</span> c <span class="op">&lt;&lt;</span> <span class="str">": "</span> <span class="op">&lt;&lt;</span> code <span class="op">&lt;&lt;</span> endl;
+        <span class="cm">// 在 freqs 中找 c 的频率计算 WPL</span>
+        <span class="kw">for</span> (<span class="kw">auto</span> &amp;[ch, f] : freqs)
+            <span class="kw">if</span> (ch <span class="op">==</span> c) wpl <span class="op">+=</span> f <span class="op">*</span> code.size();
+    }
+    cout <span class="op">&lt;&lt;</span> <span class="str">"WPL = "</span> <span class="op">&lt;&lt;</span> wpl <span class="op">&lt;&lt;</span> endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度:</span> <span class="value">O(n log n)</span>
+      <span style="margin-left:16px;"></span>
+      <span class="label">空间复杂度:</span> <span class="value">O(n)</span>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">哈夫曼编码的性质</div>
+      <ul>
+        <li>频率越高的字符编码越短，频率越低的编码越长</li>
+        <li>哈夫曼编码是<strong>前缀编码</strong>（没有任何一个编码是另一个编码的前缀），因此可以唯一解码</li>
+        <li>哈夫曼编码是所有前缀编码中最优的（平均编码长度最短）</li>
+        <li>时间复杂度 O(n log n)，瓶颈在于优先队列（最小堆）操作</li>
+      </ul>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">POJ 1521 / HDU 2527 - Entropy</div>
+      <p>给定一个字符串，求其哈夫曼编码后的总比特数，并与定长编码（每字符 8 bit ASCII）和朴素哈夫曼编码（单字符时 1 bit）进行比较。</p>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- 7. 分数背包 -->
+  <!-- ================================================================ -->
+  <div class="section" id="fractional-knapsack">
+    <h2>七、分数背包</h2>
+
+    <h3>7.1 问题描述</h3>
+    <div class="problem">
+      <div class="problem-title">分数背包问题（Fractional Knapsack）</div>
+      <p>有 n 种物品和一个容量为 W 的背包。第 i 种物品重量为 wi，价值为 vi。每种物品可以取一部分（即可以取 xi &isin; [0, 1]），目标是使总价值最大。</p>
+    </div>
+
+    <h3>7.2 与 0-1 背包的区别</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>特征</th><th>分数背包</th><th>0-1 背包</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>物品可分割</td><td>是，可以取一部分</td><td>否，只能整取或不取</td></tr>
+          <tr><td>最优策略</td><td>贪心：按性价比排序</td><td>动态规划</td></tr>
+          <tr><td>时间复杂度</td><td>O(n log n)</td><td>O(nW)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>7.3 贪心策略</h3>
+    <p><strong>按单位重量价值（性价比 vi/wi）从大到小排序，依次贪心选取。能取整取，不能整取则取剩余容量对应的部分。</strong></p>
+
+    <div class="steps">
+      <div class="step">计算每种物品的性价比 ratio = vi / wi</div>
+      <div class="step">按 ratio 从大到小排序</div>
+      <div class="step">依次遍历物品：如果当前剩余容量 &ge; wi，取整件，总价值 += vi，容量 -= wi</div>
+      <div class="step">否则取部分 xi = 剩余容量 / wi，总价值 += vi * xi，容量归零，结束</div>
+    </div>
+
+    <h3>7.4 图解示例</h3>
+    <div class="diagram">
+<pre>
+物品:   重量(w)  价值(v)  性价比(v/w)
+  A:      10       60       6.0
+  B:      20       100      5.0
+  C:      30       120      4.0
+背包容量 W = 50
+
+按性价比排序: A(6.0) > B(5.0) > C(4.0)
+
+贪心过程:
+  取 A: 剩余容量 50 - 10 = 40, 总价值 = 60
+  取 B: 剩余容量 40 - 20 = 20, 总价值 = 160
+  取 C: 容量 20 < 30, 取 20/30 = 2/3
+        总价值 = 160 + 120 * (20/30) = 160 + 80 = 240
+
+最大总价值: 240
+</pre>
+    </div>
+
+    <h3>7.5 C++ 代码</h3>
+    <pre><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">struct</span> <span class="ty">Item</span> {
+    <span class="ty">double</span> weight, value, ratio;
+};
+
+<span class="ty">bool</span> <span class="fn">cmp</span>(<span class="kw">const</span> <span class="ty">Item</span> &amp;a, <span class="kw">const</span> <span class="ty">Item</span> &amp;b) {
+    <span class="kw">return</span> a.ratio <span class="op">&gt;</span> b.ratio;  <span class="cm">// 性价比降序</span>
+}
+
+<span class="ty">double</span> <span class="fn">fractionalKnapsack</span>(<span class="ty">vector</span>&lt;<span class="ty">Item</span>&gt; &amp;items, <span class="ty">double</span> W) {
+    <span class="kw">for</span> (<span class="kw">auto</span> &amp;it : items)
+        it.ratio <span class="op">=</span> it.value <span class="op">/</span> it.weight;
+
+    <span class="fn">sort</span>(items.begin(), items.end(), cmp);
+
+    <span class="ty">double</span> totalValue <span class="op">=</span> <span class="num">0.0</span>, remain <span class="op">=</span> W;
+
+    <span class="kw">for</span> (<span class="kw">auto</span> &amp;it : items) {
+        <span class="kw">if</span> (remain <span class="op">&gt;=</span> it.weight) {
+            <span class="cm">// 取整件</span>
+            totalValue <span class="op">+=</span> it.value;
+            remain <span class="op">-=</span> it.weight;
+        } <span class="kw">else</span> {
+            <span class="cm">// 取部分</span>
+            totalValue <span class="op">+=</span> it.value <span class="op">*</span> (remain <span class="op">/</span> it.weight);
+            remain <span class="op">=</span> <span class="num">0</span>;
+            <span class="kw">break</span>;
+        }
+    }
+    <span class="kw">return</span> totalValue;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n;
+    <span class="ty">double</span> W;
+    cin <span class="op">&gt;&gt;</span> n <span class="op">&gt;&gt;</span> W;
+    <span class="ty">vector</span>&lt;<span class="ty">Item</span>&gt; items(n);
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">0</span>; i <span class="op">&lt;</span> n; i<span class="op">++</span>)
+        cin <span class="op">&gt;&gt;</span> items[i].weight <span class="op">&gt;&gt;</span> items[i].value;
+
+    <span class="ty">double</span> ans <span class="op">=</span> <span class="fn">fractionalKnapsack</span>(items, W);
+    cout <span class="op">&lt;&lt;</span> fixed <span class="op">&lt;&lt;</span> setprecision(<span class="num">2</span>) <span class="op">&lt;&lt;</span> ans <span class="op">&lt;&lt;</span> endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度:</span> <span class="value">O(n log n)</span>
+      <span style="margin-left:16px;"></span>
+      <span class="label">空间复杂度:</span> <span class="value">O(1)</span>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">为什么 0-1 背包不能用贪心？</div>
+      <p>考虑反例：背包容量 50，物品 A(w=10,v=60), B(w=20,v=100), C(w=30,v=120)。贪心按性价比选 A+B = 160，但选 A+C = 180 更优（A 性价比最高但 B 和 C 不能同时选时，贪心选了 B 而非更优的 C）。因为 0-1 背包不可分割，贪心选择可能排除更优组合。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">经典例题: AcWing 102 - Best Cow Line</div>
+      <p>（分数背包的变体应用：按性价比分配资源）给定 N 个农场，每个农场需要 Ti 时间生产 F_i 单位产品。在总时间 T 内如何分配各农场的时间使得总产量最大？将每个农场的"单位时间产量"视为性价比，按贪心策略分配即可。</p>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- 8. 最优合并 -->
+  <!-- ================================================================ -->
+  <div class="section" id="optimal-merge">
+    <h2>八、最优合并</h2>
+
+    <h3>8.1 问题描述</h3>
+    <div class="problem">
+      <div class="problem-title">最优合并问题（Optimal Merge Pattern）</div>
+      <p>给定 n 个文件，每个文件的大小为 si。每次可以合并两个文件，合并代价为两个文件大小之和。求将所有文件合并为一个文件的最小总代价。</p>
+    </div>
+
+    <h3>8.2 贪心策略</h3>
+    <p><strong>每次选择当前最小的两个文件合并，合并后的新文件大小为两者之和，放回文件集合中继续此过程。</strong></p>
+    <p>这与哈夫曼树的构建过程完全一致！最优合并问题本质上就是求哈夫曼树的 WPL。</p>
+
+    <div class="box box-tip">
+      <div class="box-title">直觉理解</div>
+      <p>小文件合并越早，参与后续合并的次数越少，产生的额外代价越小。所以每次都优先合并最小的两个，让大的文件尽量少参与合并。</p>
+    </div>
+
+    <h3>8.3 图解示例</h3>
+    <p>文件大小: [20, 10, 30, 5, 15]</p>
+
+    <div class="diagram">
+<pre>
+初始文件: {5, 10, 15, 20, 30}
+
+步骤 1: 取最小两个 5 和 10, 合并代价 = 15
+        新文件: {15, 15, 20, 30}    累计代价: 15
+
+步骤 2: 取最小两个 15 和 15, 合并代价 = 30
+        新文件: {20, 30, 30}        累计代价: 45
+
+步骤 3: 取最小两个 20 和 30, 合并代价 = 50
+        新文件: {30, 50}            累计代价: 95
+
+步骤 4: 取最后两个 30 和 50, 合并代价 = 80
+        新文件: {80}                累计代价: 175
+
+总最小代价: 175
+
+对应的合并树 (类似哈夫曼树):
+            (80)
+           /    \
+        (30)    (50)
+        / \     / \
+      30   -  20  (30)
+                / \
+              15   15
+              / \
+             5   10
+</pre>
+    </div>
+
+    <h3>8.4 C++ 代码</h3>
+    <pre><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="cm">/**
+ * 最优合并: 使用最小堆, 每次取最小两个合并
+ * 返回最小总合并代价
+ */</span>
+<span class="ty">long long</span> <span class="fn">optimalMerge</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; &amp;sizes) {
+    priority_queue&lt;<span class="ty">long long</span>, <span class="ty">vector</span>&lt;<span class="ty">long long</span>&gt;, greater&lt;<span class="ty">long long</span>&gt;&gt; pq;
+
+    <span class="cm">// 所有文件大小入堆</span>
+    <span class="kw">for</span> (<span class="ty">int</span> s : sizes) pq.push(s);
+
+    <span class="ty">long long</span> totalCost <span class="op">=</span> <span class="num">0</span>;
+
+    <span class="kw">while</span> (pq.size() <span class="op">&gt;</span> <span class="num">1</span>) {
+        <span class="ty">long long</span> a <span class="op">=</span> pq.top(); pq.pop();
+        <span class="ty">long long</span> b <span class="op">=</span> pq.top(); pq.pop();
+
+        <span class="ty">long long</span> merged <span class="op">=</span> a <span class="op">+</span> b;
+        totalCost <span class="op">+=</span> merged;
+        pq.push(merged);
+    }
+    <span class="kw">return</span> totalCost;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n;
+    cin <span class="op">&gt;&gt;</span> n;
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; sizes(n);
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">0</span>; i <span class="op">&lt;</span> n; i<span class="op">++</span>)
+        cin <span class="op">&gt;&gt;</span> sizes[i];
+
+    cout <span class="op">&lt;&lt;</span> <span class="fn">optimalMerge</span>(sizes) <span class="op">&lt;&lt;</span> endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+
+    <div class="complexity">
+      <span class="label">时间复杂度:</span> <span class="value">O(n log n)</span>
+      <span style="margin-left:16px;"></span>
+      <span class="label">空间复杂度:</span> <span class="value">O(n)</span>
+    </div>
+
+    <h3>8.5 最优合并的应用</h3>
+    <div class="box box-info">
+      <div class="box-title">常见应用场景</div>
+      <ul>
+        <li><strong>多路归并排序</strong>：将多个有序文件归并为一个有序文件，选择最小的两个先合并效率最高</li>
+        <li><strong>数据库查询优化</strong>：多个有序结果集的合并</li>
+        <li><strong>石子合并问题</strong>（环形版本需要用区间 DP）</li>
+        <li><strong>构建哈夫曼树</strong>：最优合并本质就是哈夫曼树构建</li>
+      </ul>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">经典例题: POJ 3253 - Fence Repair</div>
+      <p>农夫 John 需要将一块木板切成 N 块特定长度的短木板。每次切割的代价等于被切木板的当前长度。求最小总切割代价。这等价于最优合并问题的逆过程——从目标短木板合并为原木板。</p>
+    </div>
+
+    <pre><span class="cm">// POJ 3253 Fence Repair - 最优合并直接应用</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n;
+    cin <span class="op">&gt;&gt;</span> n;
+    priority_queue&lt;<span class="ty">long long</span>, <span class="ty">vector</span>&lt;<span class="ty">long long</span>&gt;, greater&lt;<span class="ty">long long</span>&gt;&gt; pq;
+    <span class="kw">for</span> (<span class="ty">int</span> i <span class="op">=</span> <span class="num">0</span>; i <span class="op">&lt;</span> n; i<span class="op">++</span>) {
+        <span class="ty">long long</span> x;
+        cin <span class="op">&gt;&gt;</span> x;
+        pq.push(x);
+    }
+    <span class="ty">long long</span> ans <span class="op">=</span> <span class="num">0</span>;
+    <span class="kw">while</span> (pq.size() <span class="op">&gt;</span> <span class="num">1</span>) {
+        <span class="ty">long long</span> a <span class="op">=</span> pq.top(); pq.pop();
+        <span class="ty">long long</span> b <span class="op">=</span> pq.top(); pq.pop();
+        ans <span class="op">+=</span> a <span class="op">+</span> b;
+        pq.push(a <span class="op">+</span> b);
+    }
+    cout <span class="op">&lt;&lt;</span> ans <span class="op">&lt;&lt;</span> endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- 9. 总结与对比 -->
+  <!-- ================================================================ -->
+  <div class="section" id="summary">
+    <h2>九、总结与对比</h2>
+
+    <h3>9.1 贪心模型对比</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>模型</th>
+            <th>排序策略</th>
+            <th>贪心选择</th>
+            <th>时间复杂度</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>活动选择</td>
+            <td>按结束时间升序</td>
+            <td>选最早结束的不冲突活动</td>
+            <td>O(n log n)</td>
+          </tr>
+          <tr>
+            <td>区间覆盖</td>
+            <td>按左端点升序</td>
+            <td>选左端点 &le; cur 中右端点最大的</td>
+            <td>O(n log n)</td>
+          </tr>
+          <tr>
+            <td>任务调度</td>
+            <td>按利润降序</td>
+            <td>选利润最大的，安排在最晚空闲槽</td>
+            <td>O(n log n)</td>
+          </tr>
+          <tr>
+            <td>哈夫曼编码</td>
+            <td>最小堆</td>
+            <td>每次合并最小的两个</td>
+            <td>O(n log n)</td>
+          </tr>
+          <tr>
+            <td>分数背包</td>
+            <td>按性价比降序</td>
+            <td>依次取性价比最高的</td>
+            <td>O(n log n)</td>
+          </tr>
+          <tr>
+            <td>最优合并</td>
+            <td>最小堆</td>
+            <td>每次合并最小的两个</td>
+            <td>O(n log n)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>9.2 贪心解题的一般步骤</h3>
+    <div class="steps">
+      <div class="step"><strong>分析问题</strong>：判断问题是否具有贪心选择性质和最优子结构</div>
+      <div class="step"><strong>设计策略</strong>：确定贪心选择的标准（按什么排序/选什么）</div>
+      <div class="step"><strong>证明正确</strong>：使用交换论证、领先论证或反证法证明策略正确</div>
+      <div class="step"><strong>编写代码</strong>：排序 + 贪心选取，通常 O(n log n)</div>
+      <div class="step"><strong>验证测试</strong>：用小数据手动验证，用大数据检验效率</div>
+    </div>
+
+    <h3>9.3 常见贪心技巧</h3>
+    <div class="box box-tip">
+      <div class="box-title">贪心判断技巧</div>
+      <ul>
+        <li><strong>排序是关键</strong>：大多数贪心问题的核心在于找到正确的排序方式</li>
+        <li><strong>微扰法</strong>：如果交换两个相邻元素不会使结果更优，那么当前排序就是对的</li>
+        <li><strong>考虑反例</strong>：尝试构造小规模反例来验证贪心策略</li>
+        <li><strong>从极端情况入手</strong>：考虑最优解中包含最大/最小元素的情况</li>
+        <li><strong>区间类问题</strong>：按端点排序通常是第一步</li>
+        <li><strong>价值类问题</strong>：按性价比排序通常是第一步</li>
+      </ul>
+    </div>
+
+    <h3>9.4 贪心的局限性</h3>
+    <div class="box box-warn">
+      <div class="box-title">什么时候贪心不适用？</div>
+      <ul>
+        <li><strong>局部最优不等于全局最优</strong>：如 0-1 背包、最长路径问题</li>
+        <li><strong>需要回溯</strong>：贪心做出选择后不可更改，如果问题需要"后悔"则不适合</li>
+        <li><strong>选择相互影响</strong>：当前选择会影响后续所有选择的可行域，且无法预测最优走向</li>
+        <li><strong>常见误导</strong>：看起来可以贪心但实际不行的问题——需要严格证明或找反例</li>
+      </ul>
+    </div>
+
+    <h3>9.5 进阶贪心问题</h3>
+    <div class="problem">
+      <div class="problem-title">进阶练习推荐</div>
+      <ul>
+        <li><strong>AcWing 905</strong> - 区间选点（排序 + 贪心选择右端点）</li>
+        <li><strong>AcWing 907</strong> - 区间覆盖（经典区间覆盖模型）</li>
+        <li><strong>AcWing 908</strong> - 最大不相交区间数（活动选择模型）</li>
+        <li><strong>POJ 2376</strong> - Cleaning Shifts（区间覆盖变体）</li>
+        <li><strong>POJ 3253</strong> - Fence Repair（最优合并）</li>
+        <li><strong>POJ 1521</strong> - Entropy（哈夫曼编码）</li>
+        <li><strong>LeetCode 435</strong> - Non-overlapping Intervals</li>
+        <li><strong>LeetCode 452</strong> - Minimum Number of Arrows to Burst Balloons</li>
+        <li><strong>LeetCode 763</strong> - Partition Labels（区间贪心）</li>
+        <li><strong>LeetCode 1024</strong> - Video Stitching（区间覆盖变体）</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

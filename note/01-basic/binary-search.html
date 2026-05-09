@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>二分查找 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt; 基础篇 &gt; 二分查找
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>二分查找</h1>
+    <p class="subtitle">Binary Search &mdash; 在有序空间中高效定位目标</p>
+    <div class="tags">
+      <span class="tag tag-base">基础算法</span>
+      <span class="tag tag-easy">入门</span>
+      <span class="tag tag-mid">进阶变体</span>
+    </div>
+  </div>
+
+  <!-- Table of Contents -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#intro">概述与核心思想</a></li>
+      <li><a href="#integer-bs">整数二分</a></li>
+      <li><a href="#float-bs">浮点二分</a></li>
+      <li><a href="#bs-answer">二分答案</a></li>
+      <li><a href="#variants">常见变体</a></li>
+      <li><a href="#complexity">复杂度总结</a></li>
+      <li><a href="#problems">经典例题</a></li>
+      <li><a href="#tips">易错点与技巧</a></li>
+    </ul>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 1: Overview -->
+  <!-- ============================== -->
+  <div class="section" id="intro">
+    <h2>概述与核心思想</h2>
+    <p>二分查找（Binary Search）是一种在<strong>有序</strong>或<strong>满足单调性</strong>的搜索空间中，每次将搜索范围缩小一半，从而以对数时间复杂度找到目标值或满足条件的边界值的算法。</p>
+
+    <div class="box box-info">
+      <div class="box-title">核心思想</div>
+      <p>每次取搜索区间的中点，根据中点处的值与目标的关系，决定保留左半部分还是右半部分，从而将搜索空间减半。</p>
+    </div>
+
+    <h3>适用条件</h3>
+    <ul>
+      <li>搜索空间具有<strong>单调性</strong>（如有序数组），或答案空间可以被划分为「不满足条件」和「满足条件」两段</li>
+      <li>可以通过某个条件 <code>check(mid)</code> 判断当前中点是否满足要求</li>
+      <li>搜索空间是<strong>离散整数</strong>或<strong>连续实数</strong></li>
+    </ul>
+
+    <h3>基本流程图</h3>
+    <div class="diagram">
+      <pre>
+  ┌──────────────────────────────────────────────┐
+  │            初始化搜索区间 [l, r]              │
+  └──────────────────┬───────────────────────────┘
+                     ▼
+            ┌────────────────┐
+            │   l <= r ?     │──── 否 ──→ 结束，返回结果
+            └───────┬────────┘
+                    │ 是
+                    ▼
+            ┌────────────────┐
+            │ mid = (l+r)/2  │
+            └───────┬────────┘
+                    ▼
+            ┌────────────────┐
+            │  check(mid) ?  │
+            └───┬────────┬───┘
+            是  │        │ 否
+                ▼        ▼
+        ┌──────────┐ ┌──────────┐
+        │ r = mid  │ │ l = mid  │
+        │  - 1     │ │  + 1     │
+        └────┬─────┘ └────┬─────┘
+             └──────┬──────┘
+                    ▼
+              返回循环顶部
+      </pre>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">注意</div>
+      <p>二分查找的前提是搜索空间具有单调性或可以被二分划分。盲目对无序数据使用二分查找是错误的。</p>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 2: Integer Binary Search -->
+  <!-- ============================== -->
+  <div class="section" id="integer-bs">
+    <h2>整数二分</h2>
+    <p>整数二分是最基础的二分形式，搜索空间为离散的整数区间 <code>[l, r]</code>。根据查找目标的不同，分为两种经典模式：<strong>lower_bound</strong>（找第一个满足条件的位置）和 <strong>upper_bound</strong>（找最后一个满足条件的位置）。</p>
+
+    <!-- lower_bound -->
+    <h3>模式一：lower_bound &mdash; 找第一个 &ge; target 的位置</h3>
+    <p>在有序数组中，找到第一个<strong>大于等于</strong> <code>target</code> 的元素的位置。如果不存在，返回数组长度。</p>
+
+    <h4>图解过程</h4>
+    <p>假设数组为 <code>[1, 3, 3, 3, 5, 7, 9]</code>，查找第一个 &ge; 3 的位置：</p>
+    <div class="array-vis">
+      <div class="cell">1<span class="idx">0</span></div>
+      <div class="cell hi">3<span class="idx">1</span></div>
+      <div class="cell">3<span class="idx">2</span></div>
+      <div class="cell">3<span class="idx">3</span></div>
+      <div class="cell">5<span class="idx">4</span></div>
+      <div class="cell">7<span class="idx">5</span></div>
+      <div class="cell">9<span class="idx">6</span></div>
+    </div>
+    <p>结果为下标 <strong>1</strong>，即第一个 3 出现的位置。</p>
+
+    <h4>逐步演示</h4>
+    <div class="steps">
+      <div class="step">初始化 <code>l = 0, r = 6</code>，搜索区间为整个数组</div>
+      <div class="step"><code>mid = 3</code>，<code>a[3] = 3 &ge; 3</code>，满足条件，<code>r = mid = 3</code>（继续往左找更早的）</div>
+      <div class="step"><code>mid = 1</code>，<code>a[1] = 3 &ge; 3</code>，满足条件，<code>r = mid = 1</code></div>
+      <div class="step"><code>mid = 0</code>，<code>a[0] = 1 &lt; 3</code>，不满足条件，<code>l = mid + 1 = 1</code></div>
+      <div class="step"><code>l = 1, r = 1</code>，循环结束，返回 <code>l = 1</code></div>
+    </div>
+
+    <h4>代码模板</h4>
+    <pre><code><span class="cm">// lower_bound: 找第一个 &gt;= target 的位置</span>
+<span class="cm">// 返回值范围: [0, n]，n 表示未找到</span>
+<span class="ty">int</span> <span class="fn">lower_bound</span>(<span class="ty">int</span> a[], <span class="ty">int</span> n, <span class="ty">int</span> target) {
+    <span class="ty">int</span> l = <span class="num">0</span>, r = n; <span class="cm">// 注意: r = n，左闭右开 [0, n)</span>
+    <span class="kw">while</span> (l &lt; r) {
+        <span class="ty">int</span> mid = l + (r - l) / <span class="num">2</span>; <span class="cm">// 防溢出写法</span>
+        <span class="kw">if</span> (a[mid] &gt;= target)
+            r = mid;     <span class="cm">// mid 可能是答案，保留</span>
+        <span class="kw">else</span>
+            l = mid + <span class="num">1</span>; <span class="cm">// mid 不满足，排除</span>
+    }
+    <span class="kw">return</span> l; <span class="cm">// l == r，即为答案</span>
+}
+<span class="cm">// STL 等价函数: std::lower_bound(a, a+n, target) - a</span></code><span class="lang-label">C++</span></pre>
+
+    <!-- upper_bound -->
+    <h3>模式二：upper_bound &mdash; 找第一个 &gt; target 的位置</h3>
+    <p>在有序数组中，找到第一个<strong>严格大于</strong> <code>target</code> 的元素的位置。等价于找最后一个 &le; target 的位置的下一个。</p>
+
+    <h4>图解过程</h4>
+    <p>同样数组 <code>[1, 3, 3, 3, 5, 7, 9]</code>，查找第一个 &gt; 3 的位置：</p>
+    <div class="array-vis">
+      <div class="cell">1<span class="idx">0</span></div>
+      <div class="cell">3<span class="idx">1</span></div>
+      <div class="cell">3<span class="idx">2</span></div>
+      <div class="cell">3<span class="idx">3</span></div>
+      <div class="cell active">5<span class="idx">4</span></div>
+      <div class="cell">7<span class="idx">5</span></div>
+      <div class="cell">9<span class="idx">6</span></div>
+    </div>
+    <p>结果为下标 <strong>4</strong>，即值为 5 的位置。</p>
+
+    <h4>代码模板</h4>
+    <pre><code><span class="cm">// upper_bound: 找第一个 &gt; target 的位置</span>
+<span class="ty">int</span> <span class="fn">upper_bound</span>(<span class="ty">int</span> a[], <span class="ty">int</span> n, <span class="ty">int</span> target) {
+    <span class="ty">int</span> l = <span class="num">0</span>, r = n;
+    <span class="kw">while</span> (l &lt; r) {
+        <span class="ty">int</span> mid = l + (r - l) / <span class="num">2</span>;
+        <span class="kw">if</span> (a[mid] &gt; target)
+            r = mid;     <span class="cm">// mid 可能是答案</span>
+        <span class="kw">else</span>
+            l = mid + <span class="num">1</span>; <span class="cm">// a[mid] &lt;= target，排除</span>
+    }
+    <span class="kw">return</span> l;
+}
+<span class="cm">// STL 等价函数: std::upper_bound(a, a+n, target) - a</span></code><span class="lang-label">C++</span></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">记忆技巧</div>
+      <p><strong>lower_bound</strong> 用 <code>&gt;=</code> 判断，找到的是「第一个满足 &ge; target」的位置；<strong>upper_bound</strong> 用 <code>&gt;</code> 判断，找到的是「第一个满足 &gt; target」的位置。两者唯一的区别就在于 <code>check</code> 函数中是否包含等号。</p>
+    </div>
+
+    <h4>另一种写法：左闭右闭区间</h4>
+    <pre><code><span class="cm">// 左闭右闭 [l, r] 写法的 lower_bound</span>
+<span class="ty">int</span> <span class="fn">lower_bound_closed</span>(<span class="ty">int</span> a[], <span class="ty">int</span> n, <span class="ty">int</span> target) {
+    <span class="ty">int</span> l = <span class="num">0</span>, r = n - <span class="num">1</span>, ans = n; <span class="cm">// ans 记录答案，默认 n 表示未找到</span>
+    <span class="kw">while</span> (l &lt;= r) {
+        <span class="ty">int</span> mid = l + (r - l) / <span class="num">2</span>;
+        <span class="kw">if</span> (a[mid] &gt;= target) {
+            ans = mid;
+            r = mid - <span class="num">1</span>;  <span class="cm">// 继续往左找</span>
+        } <span class="kw">else</span> {
+            l = mid + <span class="num">1</span>;
+        }
+    }
+    <span class="kw">return</span> ans;
+}</code><span class="lang-label">C++</span></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">两种写法对比</div>
+      <p><strong>左闭右开 [l, r)</strong>：循环条件 <code>l &lt; r</code>，更新为 <code>r = mid</code> 或 <code>l = mid + 1</code>，返回 <code>l</code>。推荐使用此写法，与 STL 一致。<br>
+      <strong>左闭右闭 [l, r]</strong>：循环条件 <code>l &lt;= r</code>，更新为 <code>r = mid - 1</code> 或 <code>l = mid + 1</code>，需要额外变量记录答案。<br>
+      两种写法等价，选一种熟练掌握即可。比赛中推荐<strong>左闭右开</strong>写法。</p>
+    </div>
+
+    <h3>经典例题：查找元素位置</h3>
+    <div class="problem">
+      <div class="problem-title">给定有序数组和目标值，求目标值的起始位置和结束位置</div>
+      <p>等价于求 <code>lower_bound</code> 和 <code>upper_bound - 1</code>。</p>
+    </div>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> a[] = {<span class="num">1</span>, <span class="num">3</span>, <span class="num">3</span>, <span class="num">3</span>, <span class="num">5</span>, <span class="num">7</span>, <span class="num">9</span>};
+    <span class="ty">int</span> n = <span class="num">7</span>, target = <span class="num">3</span>;
+
+    <span class="cm">// 方法一: 手写二分</span>
+    <span class="ty">int</span> first = <span class="fn">lower_bound</span>(a, n, target);
+    <span class="ty">int</span> last  = <span class="fn">upper_bound</span>(a, n, target) - <span class="num">1</span>;
+
+    <span class="kw">if</span> (first &lt; n &amp;&amp; a[first] == target) {
+        cout &lt;&lt; <span class="str">"起始位置: "</span> &lt;&lt; first &lt;&lt; endl;
+        cout &lt;&lt; <span class="str">"结束位置: "</span> &lt;&lt; last &lt;&lt; endl;
+        cout &lt;&lt; <span class="str">"出现次数: "</span> &lt;&lt; last - first + <span class="num">1</span> &lt;&lt; endl;
+    } <span class="kw">else</span> {
+        cout &lt;&lt; <span class="str">"未找到"</span> &lt;&lt; endl;
+    }
+
+    <span class="cm">// 方法二: 使用 STL</span>
+    <span class="kw">auto</span> lo = <span class="fn">lower_bound</span>(a, a + n, target);
+    <span class="kw">auto</span> hi = <span class="fn">upper_bound</span>(a, a + n, target);
+    cout &lt;&lt; <span class="str">"STL 出现次数: "</span> &lt;&lt; hi - lo &lt;&lt; endl;
+
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code><span class="lang-label">C++</span></pre>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 3: Floating-point Binary Search -->
+  <!-- ============================== -->
+  <div class="section" id="float-bs">
+    <h2>浮点二分</h2>
+    <p>当搜索空间是连续实数时（例如求平方根、求方程的解），使用浮点二分。与整数二分不同，浮点二分的循环终止条件是<strong>区间长度足够小</strong>（小于精度要求），而非 <code>l == r</code>。</p>
+
+    <h3>核心区别</h3>
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>对比项</th>
+          <th>整数二分</th>
+          <th>浮点二分</th>
+        </tr>
+        <tr>
+          <td>搜索空间</td>
+          <td>离散整数 [l, r]</td>
+          <td>连续实数 [l, r]</td>
+        </tr>
+        <tr>
+          <td>终止条件</td>
+          <td><code>l &lt; r</code>（左闭右开）</td>
+          <td><code>r - l &gt; eps</code></td>
+        </tr>
+        <tr>
+          <td>中点计算</td>
+          <td><code>mid = l + (r-l)/2</code></td>
+          <td><code>mid = (l+r) / 2.0</code></td>
+        </tr>
+        <tr>
+          <td>精度控制</td>
+          <td>无需</td>
+          <td>需要设置 <code>eps</code>（通常 <code>1e-7</code> ~ <code>1e-9</code>）</td>
+        </tr>
+        <tr>
+          <td>循环次数</td>
+          <td>O(log n)</td>
+          <td>通常固定 100 次迭代更安全</td>
+        </tr>
+      </table>
+    </div>
+
+    <h3>经典问题：求平方根</h3>
+    <p>给定一个非负实数 <code>x</code>，求 <code>sqrt(x)</code> 的值，精确到小数点后 6 位。</p>
+
+    <div class="diagram">
+      <pre>
+  求 sqrt(10) 的过程:
+
+  搜索区间 [0, 10]
+  ┌────────────────────────────────────────────────────┐
+  │  Step 1: mid = 5.0,   5.0^2 = 25.0  &gt; 10  → r=5.0│
+  │  Step 2: mid = 2.5,   2.5^2 = 6.25  &lt; 10  → l=2.5│
+  │  Step 3: mid = 3.75,  3.75^2=14.06  &gt; 10  → r=3.75│
+  │  Step 4: mid = 3.125, 3.125^2=9.77  &lt; 10  → l=3.125│
+  │  ...                                                │
+  │  最终收敛到: 3.162277...                             │
+  └────────────────────────────────────────────────────┘
+      </pre>
+    </div>
+
+    <h4>代码模板</h4>
+    <pre><code><span class="cm">// 浮点二分求平方根</span>
+<span class="ty">double</span> <span class="fn">my_sqrt</span>(<span class="ty">double</span> x) {
+    <span class="kw">if</span> (x &lt; <span class="num">1.0</span>) {
+        <span class="cm">// x &lt; 1 时 sqrt(x) &gt; x，搜索区间为 [x, 1]</span>
+        <span class="ty">double</span> l = x, r = <span class="num">1.0</span>;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; <span class="num">100</span>; i++) { <span class="cm">// 固定迭代次数更安全</span>
+            <span class="ty">double</span> mid = (l + r) / <span class="num">2.0</span>;
+            <span class="kw">if</span> (mid * mid &gt; x) r = mid;
+            <span class="kw">else</span> l = mid;
+        }
+        <span class="kw">return</span> l;
+    }
+    <span class="ty">double</span> l = <span class="num">0.0</span>, r = x;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; <span class="num">100</span>; i++) {
+        <span class="ty">double</span> mid = (l + r) / <span class="num">2.0</span>;
+        <span class="kw">if</span> (mid * mid &gt; x) r = mid;
+        <span class="kw">else</span> l = mid;
+    }
+    <span class="kw">return</span> l;
+}
+
+<span class="cm">// 更通用的浮点二分模板</span>
+<span class="ty">double</span> <span class="fn">binary_search_real</span>(<span class="ty">double</span> lo, <span class="ty">double</span> hi) {
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; <span class="num">100</span>; i++) { <span class="cm">// 每次精度翻倍，100次足够</span>
+        <span class="ty">double</span> mid = (lo + hi) / <span class="num">2.0</span>;
+        <span class="kw">if</span> (<span class="fn">check</span>(mid))
+            hi = mid;
+        <span class="kw">else</span>
+            lo = mid;
+    }
+    <span class="kw">return</span> lo;
+}</code><span class="lang-label">C++</span></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">推荐做法</div>
+      <p>浮点二分推荐使用<strong>固定迭代次数</strong>（如 100 次）代替 <code>r - l &gt; eps</code> 的写法。固定迭代 100 次后精度可达 <code>2^{-100} ≈ 10^{-30}</code>，远超题目要求，且避免了 <code>eps</code> 选择不当导致的死循环风险。</p>
+    </div>
+
+    <h3>经典例题：求方程的根</h3>
+    <div class="problem">
+      <div class="problem-title">求方程 f(x) = x^3 - 5x^2 + 10x - 80 = 0 在 [0, 100] 上的实根</div>
+      <p>f(x) 是单调递增函数（在该区间上），f(0) &lt; 0, f(100) &gt; 0，由零点定理知必有解。</p>
+    </div>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="ty">double</span> <span class="fn">f</span>(<span class="ty">double</span> x) {
+    <span class="kw">return</span> x * x * x - <span class="num">5.0</span> * x * x + <span class="num">10.0</span> * x - <span class="num">80.0</span>;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">double</span> l = <span class="num">0.0</span>, r = <span class="num">100.0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; <span class="num">100</span>; i++) {
+        <span class="ty">double</span> mid = (l + r) / <span class="num">2.0</span>;
+        <span class="kw">if</span> (<span class="fn">f</span>(mid) &gt; <span class="num">0</span>)
+            r = mid;
+        <span class="kw">else</span>
+            l = mid;
+    }
+    printf(<span class="str">"%.6f\n"</span>, l);
+    <span class="kw">return</span> <span class="num">0</span>;
+}
+<span class="cm">// 输出: 6.103297</span></code><span class="lang-label">C++</span></pre>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 4: Binary Search on Answer -->
+  <!-- ============================== -->
+  <div class="section" id="bs-answer">
+    <h2>二分答案</h2>
+    <p>二分答案是二分查找最强大的应用之一。核心思想是：<strong>不直接在数组上二分，而是在「答案的取值范围」上二分</strong>，每次猜测一个答案 <code>mid</code>，然后验证这个答案是否可行。</p>
+
+    <div class="box box-info">
+      <div class="box-title">适用场景</div>
+      <p>当问题满足以下条件时可以考虑二分答案：</p>
+      <ul>
+        <li>答案具有<strong>单调性</strong>：如果 <code>x</code> 可行，则所有比 <code>x</code> 更优的答案也可行（或反之）</li>
+        <li>答案的取值范围可以确定（有上下界）</li>
+        <li>对于给定的一个候选答案，可以在合理时间内<strong>验证</strong>其可行性</li>
+      </ul>
+    </div>
+
+    <h3>模式一：求最小的满足条件的值</h3>
+    <p>当 <code>check(mid)</code> 为 true 时，说明 <code>mid</code> 可行，但可能存在更小的可行解，因此 <code>r = mid</code>；当 <code>check(mid)</code> 为 false 时，<code>mid</code> 不可行，需要更大的值，<code>l = mid + 1</code>。</p>
+
+    <div class="diagram">
+      <pre>
+  答案空间: [L, R]
+  check(x) 表示 "x 是否可行"
+
+      false   false   false   true    true    true
+  ────┼───────┼───────┼───────┼───────┼───────┼────
+      L                                   ↑     R
+                                    第一个 true
+                                    即为最小可行解
+
+  二分过程:
+  mid 可行? → r = mid  (往左找更小的可行解)
+  mid 不可行? → l = mid + 1  (往右找)
+      </pre>
+    </div>
+
+    <h4>代码模板</h4>
+    <pre><code><span class="cm">// 二分答案: 求最小的满足条件的值</span>
+<span class="ty">int</span> <span class="fn">bs_min_answer</span>(<span class="ty">int</span> L, <span class="ty">int</span> R) {
+    <span class="ty">int</span> l = L, r = R + <span class="num">1</span>; <span class="cm">// 注意 r 的取值</span>
+    <span class="kw">while</span> (l &lt; r) {
+        <span class="ty">int</span> mid = l + (r - l) / <span class="num">2</span>;
+        <span class="kw">if</span> (<span class="fn">check</span>(mid))  <span class="cm">// mid 可行</span>
+            r = mid;     <span class="cm">// 保留 mid，继续往左</span>
+        <span class="kw">else</span>
+            l = mid + <span class="num">1</span>; <span class="cm">// mid 不可行，往右</span>
+    }
+    <span class="kw">return</span> l; <span class="cm">// 最小的可行解</span>
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>模式二：求最大的满足条件的值</h3>
+    <p>当 <code>check(mid)</code> 为 true 时，<code>mid</code> 可行，可能存在更大的可行解，<code>l = mid</code>（注意: 此时中点计算需用 <code>l + (r - l + 1) / 2</code> 防死循环）；当 false 时，<code>r = mid - 1</code>。</p>
+
+    <h4>代码模板</h4>
+    <pre><code><span class="cm">// 二分答案: 求最大的满足条件的值</span>
+<span class="ty">int</span> <span class="fn">bs_max_answer</span>(<span class="ty">int</span> L, <span class="ty">int</span> R) {
+    <span class="ty">int</span> l = L - <span class="num">1</span>, r = R; <span class="cm">// 注意 l 的取值</span>
+    <span class="kw">while</span> (l &lt; r) {
+        <span class="ty">int</span> mid = l + (r - l + <span class="num">1</span>) / <span class="num">2</span>; <span class="cm">// 上取整，防死循环!</span>
+        <span class="kw">if</span> (<span class="fn">check</span>(mid))  <span class="cm">// mid 可行</span>
+            l = mid;     <span class="cm">// 保留 mid，继续往右</span>
+        <span class="kw">else</span>
+            r = mid - <span class="num">1</span>; <span class="cm">// mid 不可行，往左</span>
+    }
+    <span class="kw">return</span> l; <span class="cm">// 最大的可行解</span>
+}</code><span class="lang-label">C++</span></pre>
+
+    <div class="box box-hard">
+      <div class="box-title">重要: 防止死循环</div>
+      <p>在「求最大可行解」的模板中，当 <code>l = mid</code> 时，必须使用 <code>mid = l + (r - l + 1) / 2</code>（上取整）。否则当 <code>r = l + 1</code> 时，<code>mid = l</code>，执行 <code>l = mid</code> 后 <code>l</code> 不变，陷入死循环。</p>
+    </div>
+
+    <h3>经典例题：分巧克力（NOIP 2017 提高组）</h3>
+    <div class="problem">
+      <div class="problem-title">分巧克力</div>
+      <p>有 N 块巧克力，第 i 块是 H_i x W_i 的矩形。要分给 K 个小朋友，每人分到的必须是同样大小的正方形（边长为整数）。求正方形的最大边长。</p>
+    </div>
+
+    <h4>分析</h4>
+    <ul>
+      <li><strong>答案的单调性</strong>：如果边长 <code>x</code> 可以分给 K 个人，那么边长 <code>x-1</code> 也可以（每块巧克力能切出更多小块）</li>
+      <li><strong>check(mid)</strong>：对于边长 <code>mid</code>，计算每块巧克力能切出 <code>(H_i/mid) * (W_i/mid)</code> 块，求和后判断是否 &ge; K</li>
+      <li><strong>二分范围</strong>：[1, max(H_i, W_i)]</li>
+    </ul>
+
+    <h4>完整代码</h4>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="ty">int</span> n, k;
+<span class="ty">int</span> h[<span class="num">100005</span>], w[<span class="num">100005</span>];
+
+<span class="cm">// check: 边长为 x 时，能否切出 &gt;= k 块</span>
+<span class="ty">bool</span> <span class="fn">check</span>(<span class="ty">int</span> x) {
+    <span class="ty">long long</span> cnt = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        cnt += (<span class="ty">long long</span>)(h[i] / x) * (w[i] / x);
+        <span class="kw">if</span> (cnt &gt;= k) <span class="kw">return true</span>; <span class="cm">// 提前返回，防溢出</span>
+    }
+    <span class="kw">return</span> cnt &gt;= k;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    cin &gt;&gt; n &gt;&gt; k;
+    <span class="ty">int</span> maxSide = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        cin &gt;&gt; h[i] &gt;&gt; w[i];
+        maxSide = <span class="fn">max</span>(maxSide, <span class="fn">max</span>(h[i], w[i]));
+    }
+
+    <span class="cm">// 二分答案: 求最大可行边长</span>
+    <span class="ty">int</span> l = <span class="num">1</span>, r = maxSide, ans = <span class="num">1</span>;
+    <span class="kw">while</span> (l &lt;= r) {
+        <span class="ty">int</span> mid = l + (r - l) / <span class="num">2</span>;
+        <span class="kw">if</span> (<span class="fn">check</span>(mid)) {
+            ans = mid;
+            l = mid + <span class="num">1</span>;   <span class="cm">// 可行，尝试更大的</span>
+        } <span class="kw">else</span> {
+            r = mid - <span class="num">1</span>;  <span class="cm">// 不可行，缩小</span>
+        }
+    }
+    cout &lt;&lt; ans &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>经典例题：Aggressive Cows（POJ 2456）</h3>
+    <div class="problem">
+      <div class="problem-title">Aggressive Cows &mdash; 最大化最小距离</div>
+      <p>有 N 个牛栏排成一排，位置为 x[i]。要把 C 头牛放进去，使得任意两头牛之间的最小距离尽可能大。求这个最大的最小距离。</p>
+    </div>
+
+    <h4>分析</h4>
+    <ul>
+      <li><strong>单调性</strong>：如果最小距离 <code>d</code> 可行（能放下 C 头牛），那么 <code>d-1</code> 也可行</li>
+      <li><strong>check(d)</strong>：贪心放置，第一头牛放在第一个位置，之后每头牛放在距离前一头至少 <code>d</code> 的最近牛栏</li>
+      <li><strong>二分范围</strong>：[1, x[N-1] - x[0]]</li>
+    </ul>
+
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="ty">int</span> n, c;
+<span class="ty">int</span> x[<span class="num">100005</span>];
+
+<span class="cm">// check: 最小距离为 d 时，能否放下 c 头牛</span>
+<span class="ty">bool</span> <span class="fn">check</span>(<span class="ty">int</span> d) {
+    <span class="ty">int</span> cnt = <span class="num">1</span>;          <span class="cm">// 第一头牛放在 x[0]</span>
+    <span class="ty">int</span> last = x[<span class="num">0</span>];
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; n; i++) {
+        <span class="kw">if</span> (x[i] - last &gt;= d) {
+            cnt++;
+            last = x[i];
+            <span class="kw">if</span> (cnt &gt;= c) <span class="kw">return true</span>;
+        }
+    }
+    <span class="kw">return false</span>;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    cin &gt;&gt; n &gt;&gt; c;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) cin &gt;&gt; x[i];
+    <span class="fn">sort</span>(x, x + n);
+
+    <span class="ty">int</span> l = <span class="num">1</span>, r = x[n-<span class="num">1</span>] - x[<span class="num">0</span>], ans = <span class="num">0</span>;
+    <span class="kw">while</span> (l &lt;= r) {
+        <span class="ty">int</span> mid = l + (r - l) / <span class="num">2</span>;
+        <span class="kw">if</span> (<span class="fn">check</span>(mid)) {
+            ans = mid;
+            l = mid + <span class="num">1</span>;
+        } <span class="kw">else</span> {
+            r = mid - <span class="num">1</span>;
+        }
+    }
+    cout &lt;&lt; ans &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code><span class="lang-label">C++</span></pre>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 5: Common Variants -->
+  <!-- ============================== -->
+  <div class="section" id="variants">
+    <h2>常见变体</h2>
+
+    <!-- Variant 1: First/Last Occurrence -->
+    <h3>变体一：查找第一个/最后一个等于 target 的位置</h3>
+    <p>这本质上就是 <code>lower_bound</code> 和 <code>upper_bound - 1</code> 的组合，前面整数二分部分已经详细讲解。这里再给出一个简洁的对比写法：</p>
+
+    <pre><code><span class="cm">// 查找 target 在有序数组中第一次出现的位置</span>
+<span class="ty">int</span> <span class="fn">find_first</span>(<span class="ty">int</span> a[], <span class="ty">int</span> n, <span class="ty">int</span> target) {
+    <span class="ty">int</span> pos = <span class="fn">lower_bound</span>(a, a + n, target) - a;
+    <span class="kw">return</span> (pos &lt; n &amp;&amp; a[pos] == target) ? pos : -<span class="num">1</span>;
+}
+
+<span class="cm">// 查找 target 在有序数组中最后一次出现的位置</span>
+<span class="ty">int</span> <span class="fn">find_last</span>(<span class="ty">int</span> a[], <span class="ty">int</span> n, <span class="ty">int</span> target) {
+    <span class="ty">int</span> pos = <span class="fn">upper_bound</span>(a, a + n, target) - a - <span class="num">1</span>;
+    <span class="kw">return</span> (pos &gt;= <span class="num">0</span> &amp;&amp; a[pos] == target) ? pos : -<span class="num">1</span>;
+}</code><span class="lang-label">C++</span></pre>
+
+    <!-- Variant 2: Rotated Array -->
+    <h3>变体二：旋转数组查找</h3>
+    <p>将一个有序数组在某个位置旋转，例如 <code>[4, 5, 6, 7, 0, 1, 2]</code> 是 <code>[0, 1, 2, 4, 5, 6, 7]</code> 在位置 3 处旋转得到的。在旋转数组中查找目标值。</p>
+
+    <h4>图解</h4>
+    <div class="diagram">
+      <pre>
+  原数组:  [0, 1, 2, 4, 5, 6, 7]
+  旋转后:  [4, 5, 6, 7, 0, 1, 2]
+                   ↑
+               旋转点(最小值)
+
+  特点: 数组被分为两段有序子数组
+  左半段: [4, 5, 6, 7]  所有值 &gt;= nums[0]
+  右半段: [0, 1, 2]     所有值 &lt; nums[0]
+      </pre>
+    </div>
+
+    <h4>思路</h4>
+    <p>取中点 <code>mid</code> 后，<code>[l, mid]</code> 和 <code>[mid, r]</code> 中<strong>至少有一段是有序的</strong>。判断哪段有序，然后检查 target 是否在有序段内，决定搜索方向。</p>
+
+    <h4>代码模板</h4>
+    <pre><code><span class="cm">// 在旋转排序数组中查找 target (LeetCode 33)</span>
+<span class="ty">int</span> <span class="fn">search_rotated</span>(<span class="ty">int</span> nums[], <span class="ty">int</span> n, <span class="ty">int</span> target) {
+    <span class="ty">int</span> l = <span class="num">0</span>, r = n - <span class="num">1</span>;
+    <span class="kw">while</span> (l &lt;= r) {
+        <span class="ty">int</span> mid = l + (r - l) / <span class="num">2</span>;
+        <span class="kw">if</span> (nums[mid] == target) <span class="kw">return</span> mid;
+
+        <span class="kw">if</span> (nums[l] &lt;= nums[mid]) {
+            <span class="cm">// 左半段 [l, mid] 有序</span>
+            <span class="kw">if</span> (nums[l] &lt;= target &amp;&amp; target &lt; nums[mid])
+                r = mid - <span class="num">1</span>;  <span class="cm">// target 在左半段</span>
+            <span class="kw">else</span>
+                l = mid + <span class="num">1</span>;  <span class="cm">// target 在右半段</span>
+        } <span class="kw">else</span> {
+            <span class="cm">// 右半段 [mid, r] 有序</span>
+            <span class="kw">if</span> (nums[mid] &lt; target &amp;&amp; target &lt;= nums[r])
+                l = mid + <span class="num">1</span>;  <span class="cm">// target 在右半段</span>
+            <span class="kw">else</span>
+                r = mid - <span class="num">1</span>;  <span class="cm">// target 在左半段</span>
+        }
+    }
+    <span class="kw">return</span> -<span class="num">1</span>;
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>变体三：旋转数组找最小值</h3>
+    <div class="problem">
+      <div class="problem-title">Find Minimum in Rotated Sorted Array (LeetCode 153)</div>
+      <p>在旋转排序数组中找到最小元素。</p>
+    </div>
+
+    <div class="array-vis">
+      <div class="cell hi">4<span class="idx">0</span></div>
+      <div class="cell hi">5<span class="idx">1</span></div>
+      <div class="cell hi">6<span class="idx">2</span></div>
+      <div class="cell hi">7<span class="idx">3</span></div>
+      <div class="cell active">0<span class="idx">4</span></div>
+      <div class="cell active">1<span class="idx">5</span></div>
+      <div class="cell active">2<span class="idx">6</span></div>
+    </div>
+
+    <pre><code><span class="cm">// 旋转数组找最小值</span>
+<span class="ty">int</span> <span class="fn">find_min_rotated</span>(<span class="ty">int</span> nums[], <span class="ty">int</span> n) {
+    <span class="ty">int</span> l = <span class="num">0</span>, r = n - <span class="num">1</span>;
+    <span class="kw">while</span> (l &lt; r) {
+        <span class="ty">int</span> mid = l + (r - l) / <span class="num">2</span>;
+        <span class="kw">if</span> (nums[mid] &gt; nums[r])
+            l = mid + <span class="num">1</span>;  <span class="cm">// 最小值在 mid 右边</span>
+        <span class="kw">else</span>
+            r = mid;      <span class="cm">// 最小值在 [l, mid]</span>
+    }
+    <span class="kw">return</span> nums[l];
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>变体四：查找峰值</h3>
+    <div class="problem">
+      <div class="problem-title">Find Peak Element (LeetCode 162)</div>
+      <p>找到数组中的一个峰值元素（大于相邻元素），返回其下标。时间复杂度要求 O(log n)。</p>
+    </div>
+
+    <pre><code><span class="cm">// 查找峰值: 利用二分，往递增方向走必能找到峰值</span>
+<span class="ty">int</span> <span class="fn">find_peak</span>(<span class="ty">int</span> nums[], <span class="ty">int</span> n) {
+    <span class="ty">int</span> l = <span class="num">0</span>, r = n - <span class="num">1</span>;
+    <span class="kw">while</span> (l &lt; r) {
+        <span class="ty">int</span> mid = l + (r - l) / <span class="num">2</span>;
+        <span class="kw">if</span> (nums[mid] &gt; nums[mid + <span class="num">1</span>])
+            r = mid;      <span class="cm">// 峰值在 [l, mid]</span>
+        <span class="kw">else</span>
+            l = mid + <span class="num">1</span>;  <span class="cm">// 峰值在 [mid+1, r]</span>
+    }
+    <span class="kw">return</span> l;
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>变体五：二分 + 第 K 小/大</h3>
+    <p>在某些问题中，答案是第 K 小（或第 K 大）的值，可以在值域上二分，配合计数函数验证。</p>
+
+    <div class="problem">
+      <div class="problem-title">K-th Smallest Number in Multiplication Table (LeetCode 668)</div>
+      <p>给定 m x n 的乘法表，求其中第 k 小的数。</p>
+    </div>
+
+    <pre><code><span class="cm">// 乘法表中第 k 小的数</span>
+<span class="ty">int</span> m, n, k;
+<span class="cm">// 计算乘法表中有多少个数 &lt;= v</span>
+<span class="ty">int</span> <span class="fn">count_le</span>(<span class="ty">int</span> v) {
+    <span class="ty">int</span> cnt = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= m; i++)
+        cnt += <span class="fn">min</span>(v / i, n);
+    <span class="kw">return</span> cnt;
+}
+
+<span class="ty">int</span> <span class="fn">find_kth</span>() {
+    <span class="ty">int</span> l = <span class="num">1</span>, r = m * n;
+    <span class="kw">while</span> (l &lt; r) {
+        <span class="ty">int</span> mid = l + (r - l) / <span class="num">2</span>;
+        <span class="kw">if</span> (<span class="fn">count_le</span>(mid) &gt;= k)
+            r = mid;
+        <span class="kw">else</span>
+            l = mid + <span class="num">1</span>;
+    }
+    <span class="kw">return</span> l;
+}</code><span class="lang-label">C++</span></pre>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 6: Complexity Summary -->
+  <!-- ============================== -->
+  <div class="section" id="complexity">
+    <h2>复杂度总结</h2>
+
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>二分类型</th>
+          <th>时间复杂度</th>
+          <th>空间复杂度</th>
+          <th>说明</th>
+        </tr>
+        <tr>
+          <td>整数二分</td>
+          <td><code>O(log n)</code></td>
+          <td><code>O(1)</code></td>
+          <td>n 为搜索区间长度</td>
+        </tr>
+        <tr>
+          <td>浮点二分</td>
+          <td><code>O(log(R/eps))</code></td>
+          <td><code>O(1)</code></td>
+          <td>R 为区间长度，eps 为精度；或固定 O(100)</td>
+        </tr>
+        <tr>
+          <td>二分答案</td>
+          <td><code>O(log R * T_check)</code></td>
+          <td>取决于 check 函数</td>
+          <td>R 为答案范围，T_check 为验证函数复杂度</td>
+        </tr>
+        <tr>
+          <td>旋转数组查找</td>
+          <td><code>O(log n)</code></td>
+          <td><code>O(1)</code></td>
+          <td>标准二分的变体</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="complexity">
+      <span class="label">核心复杂度:</span>
+      <span class="value">O(log n)</span>
+    </div>
+
+    <h3>与线性搜索对比</h3>
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>数据规模 n</th>
+          <th>线性搜索 O(n)</th>
+          <th>二分查找 O(log n)</th>
+          <th>加速倍数</th>
+        </tr>
+        <tr>
+          <td>1,000</td>
+          <td>1,000 次</td>
+          <td>10 次</td>
+          <td>100x</td>
+        </tr>
+        <tr>
+          <td>1,000,000</td>
+          <td>1,000,000 次</td>
+          <td>20 次</td>
+          <td>50,000x</td>
+        </tr>
+        <tr>
+          <td>1,000,000,000</td>
+          <td>10^9 次</td>
+          <td>30 次</td>
+          <td>33,000,000x</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 7: Classic Problems -->
+  <!-- ============================== -->
+  <div class="section" id="problems">
+    <h2>经典例题</h2>
+
+    <h3>例题 1: 求 sqrt(x)（LeetCode 69）</h3>
+    <div class="problem">
+      <div class="problem-title">Sqrt(x)</div>
+      <p>给定一个非负整数 x，计算 x 的算术平方根的整数部分（只保留整数部分，小数部分直接舍去）。</p>
+    </div>
+    <pre><code><span class="cm">// 整数二分: 找最大的 m 使得 m*m &lt;= x</span>
+<span class="ty">int</span> <span class="fn">mySqrt</span>(<span class="ty">int</span> x) {
+    <span class="kw">if</span> (x &lt; <span class="num">2</span>) <span class="kw">return</span> x;
+    <span class="ty">int</span> l = <span class="num">1</span>, r = x / <span class="num">2</span>; <span class="cm">// sqrt(x) &lt;= x/2 (当 x &gt;= 4)</span>
+    <span class="kw">while</span> (l &lt;= r) {
+        <span class="ty">long long</span> mid = l + (r - l) / <span class="num">2</span>; <span class="cm">// 用 long long 防溢出</span>
+        <span class="kw">if</span> (mid * mid &lt;= x)
+            l = mid + <span class="num">1</span>;
+        <span class="kw">else</span>
+            r = mid - <span class="num">1</span>;
+    }
+    <span class="kw">return</span> r; <span class="cm">// r 是最大的满足 m*m &lt;= x 的值</span>
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>例题 2: 猜数字大小（LeetCode 374）</h3>
+    <div class="problem">
+      <div class="problem-title">Guess Number Higher or Lower</div>
+      <p>猜一个 1~n 之间的数字。API <code>guess(num)</code> 返回 -1（猜大了）、1（猜小了）、0（猜对了）。</p>
+    </div>
+    <pre><code><span class="ty">int</span> <span class="fn">guessNumber</span>(<span class="ty">int</span> n) {
+    <span class="ty">int</span> l = <span class="num">1</span>, r = n;
+    <span class="kw">while</span> (l &lt;= r) {
+        <span class="ty">int</span> mid = l + (r - l) / <span class="num">2</span>;
+        <span class="ty">int</span> res = <span class="fn">guess</span>(mid);
+        <span class="kw">if</span> (res == <span class="num">0</span>) <span class="kw">return</span> mid;
+        <span class="kw">else if</span> (res == -<span class="num">1</span>) r = mid - <span class="num">1</span>;
+        <span class="kw">else</span> l = mid + <span class="num">1</span>;
+    }
+    <span class="kw">return</span> -<span class="num">1</span>;
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>例题 3: 在排序数组中查找元素的第一个和最后一个位置（LeetCode 34）</h3>
+    <div class="problem">
+      <div class="problem-title">Find First and Last Position of Element in Sorted Array</div>
+      <p>给定一个按照升序排列的整数数组 nums 和一个目标值 target，找出给定目标值在数组中的开始位置和结束位置。如果不存在，返回 [-1, -1]。要求时间复杂度 O(log n)。</p>
+    </div>
+    <pre><code><span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">searchRange</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; nums, <span class="ty">int</span> target) {
+    <span class="kw">auto</span> lo = <span class="fn">lower_bound</span>(nums.<span class="fn">begin</span>(), nums.<span class="fn">end</span>(), target);
+    <span class="kw">auto</span> hi = <span class="fn">upper_bound</span>(nums.<span class="fn">begin</span>(), nums.<span class="fn">end</span>(), target);
+    <span class="kw">if</span> (lo == hi) <span class="kw">return</span> {-<span class="num">1</span>, -<span class="num">1</span>}; <span class="cm">// 不存在</span>
+    <span class="kw">return</span> {(<span class="ty">int</span>)(lo - nums.<span class="fn">begin</span>()), (<span class="ty">int</span>)(hi - nums.<span class="fn">begin</span>() - <span class="num">1</span>)};
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>例题 4: 求解不等式的最小整数解</h3>
+    <div class="problem">
+      <div class="problem-title">求满足 n * log2(n) &gt;= k 的最小正整数 n</div>
+      <p>这是算法竞赛中常见的「二分答案 + 函数单调性」问题。</p>
+    </div>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">long long</span> k;
+    cin &gt;&gt; k;
+
+    <span class="cm">// 二分答案: 求最小的 n 使得 n*log2(n) &gt;= k</span>
+    <span class="ty">long long</span> l = <span class="num">1</span>, r = <span class="num">2e18</span>, ans = r;
+    <span class="kw">while</span> (l &lt;= r) {
+        <span class="ty">long long</span> mid = l + (r - l) / <span class="num">2</span>;
+        <span class="cm">// 计算 mid * log2(mid)，用 long double 防精度丢失</span>
+        <span class="ty">long double</span> val = (<span class="ty">long double</span>)mid * <span class="fn">log2</span>((<span class="ty">long double</span>)mid);
+        <span class="kw">if</span> (val &gt;= k) {
+            ans = mid;
+            r = mid - <span class="num">1</span>;
+        } <span class="kw">else</span> {
+            l = mid + <span class="num">1</span>;
+        }
+    }
+    cout &lt;&lt; ans &lt;&lt; endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code><span class="lang-label">C++</span></pre>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 8: Tips -->
+  <!-- ============================== -->
+  <div class="section" id="tips">
+    <h2>易错点与技巧</h2>
+
+    <h3>常见错误</h3>
+    <div class="box box-hard">
+      <div class="box-title">错误 1: 整数溢出</div>
+      <p><code>mid = (l + r) / 2</code> 当 <code>l</code> 和 <code>r</code> 都很大时会溢出。应使用 <code>mid = l + (r - l) / 2</code>。</p>
+    </div>
+
+    <div class="box box-hard">
+      <div class="box-title">错误 2: 死循环</div>
+      <p>左闭右闭写法中，当 <code>l = mid</code> 且 <code>mid = (l+r)/2</code> 下取整时，若 <code>r = l + 1</code>，则 <code>mid = l</code>，<code>l = mid</code> 不变，死循环。解法：改用上取整 <code>mid = l + (r-l+1)/2</code>。</p>
+    </div>
+
+    <div class="box box-hard">
+      <div class="box-title">错误 3: 浮点精度问题</div>
+      <p>浮点二分不要用 <code>l == r</code> 判断终止，浮点数比较有精度误差。推荐固定迭代次数。</p>
+    </div>
+
+    <div class="box box-hard">
+      <div class="box-title">错误 4: check 函数写反</div>
+      <p>二分答案时，<code>check(mid)</code> 的返回值与更新方向搞混。记住：<strong>求最小用 lower_bound 模式，求最大用 upper_bound 模式</strong>。先确定好 <code>check</code> 的含义，再写更新逻辑。</p>
+    </div>
+
+    <h3>实用技巧</h3>
+
+    <div class="box box-tip">
+      <div class="box-title">技巧 1: STL 二分函数</div>
+      <p>C++ STL 提供了 <code>lower_bound</code>、<code>upper_bound</code>、<code>binary_search</code> 函数，适用于有序容器（如 <code>vector</code>、<code>set</code>）。在 <code>set</code> 中使用成员函数版本 <code>s.lower_bound(x)</code> 比全局版本更快（O(log n) vs O(n)）。</p>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">技巧 2: 二分答案的 check 函数设计</div>
+      <p>二分答案的关键在于设计 <code>check</code> 函数。常见思路：</p>
+      <ul>
+        <li><strong>贪心验证</strong>：如「Aggressive Cows」中贪心放置</li>
+        <li><strong>计数</strong>：统计满足条件的元素个数</li>
+        <li><strong>模拟</strong>：模拟整个过程判断是否可行</li>
+      </ul>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">技巧 3: 实数二分的通用模板</div>
+      <p>对于实数二分，推荐以下写法避免精度问题：</p>
+    </div>
+    <pre><code><span class="cm">// 实数二分通用模板 (固定迭代次数)</span>
+<span class="ty">double</span> <span class="fn">solve</span>() {
+    <span class="ty">double</span> l = <span class="num">0.0</span>, r = <span class="num">1e18</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; <span class="num">200</span>; i++) { <span class="cm">// 200 次迭代，精度达 2^{-200}</span>
+        <span class="ty">double</span> mid = (l + r) / <span class="num">2.0</span>;
+        <span class="kw">if</span> (<span class="fn">check</span>(mid))
+            r = mid;
+        <span class="kw">else</span>
+            l = mid;
+    }
+    <span class="kw">return</span> l;
+}</code><span class="lang-label">C++</span></pre>
+
+    <div class="box box-info">
+      <div class="box-title">总结: 二分查找解题框架</div>
+      <ol>
+        <li><strong>确定搜索空间</strong>：答案的取值范围是什么？</li>
+        <li><strong>确定单调性</strong>：为什么可以用二分？单调性如何？</li>
+        <li><strong>设计 check 函数</strong>：给定一个候选答案 mid，如何判断它是否可行？</li>
+        <li><strong>确定二分模式</strong>：求最大还是求最小？用哪个模板？</li>
+        <li><strong>注意边界</strong>：初始范围是否正确？是否需要防溢出？是否需要防死循环？</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="section" style="text-align:center; padding:20px; border:none; background:transparent; box-shadow:none;">
+    <p style="color:var(--text-dim); font-size:0.9em;">
+      <a href="../index.html" style="color:var(--accent); text-decoration:none;">返回首页</a>
+      &nbsp;&middot;&nbsp;
+      <a href="prefix-sum.html" style="color:var(--accent); text-decoration:none;">下一篇: 前缀和 &amp; 差分</a>
+    </p>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

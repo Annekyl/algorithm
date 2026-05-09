@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>最短路 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html">图论</a> &gt;
+    最短路
+  </div>
+
+  <div class="page-header">
+    <h1>最短路算法</h1>
+    <p class="subtitle">Dijkstra / SPFA / Floyd / Bellman-Ford / Johnson</p>
+    <div class="tags">
+      <span class="tag tag-graph">图论</span>
+      <span class="tag tag-mid">中等</span>
+      <span class="tag tag-base">基础算法</span>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#overview">最短路算法概述</a></li>
+      <li><a href="#dijkstra">Dijkstra 算法</a></li>
+      <li><a href="#bellman-ford">Bellman-Ford 算法</a></li>
+      <li><a href="#spfa">SPFA 算法</a></li>
+      <li><a href="#floyd">Floyd-Warshall 算法</a></li>
+      <li><a href="#johnson">Johnson 算法</a></li>
+      <li><a href="#comparison">算法对比与选型</a></li>
+    </ul>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 1: 最短路算法概述 -->
+  <!-- ============================================================ -->
+  <div class="section" id="overview">
+    <h2>最短路算法概述</h2>
+    <p>最短路问题是图论中最经典的问题之一：给定一个带权图，求从源点到目标点（或所有点对之间）权值之和最小的路径。根据问题规模和图的特性，有不同的算法可供选择。</p>
+
+    <h3>问题分类</h3>
+    <ul>
+      <li><strong>单源最短路 (SSSP)</strong>：从一个源点出发，到所有其他点的最短距离。代表算法：Dijkstra、Bellman-Ford、SPFA。</li>
+      <li><strong>全源最短路 (APSP)</strong>：任意两点之间的最短距离。代表算法：Floyd-Warshall、Johnson。</li>
+    </ul>
+
+    <h3>算法总览对比表</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>算法</th>
+            <th>类型</th>
+            <th>时间复杂度</th>
+            <th>负权边</th>
+            <th>负环检测</th>
+            <th>适用场景</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Dijkstra (朴素)</td>
+            <td>SSSP</td>
+            <td>O(V<sup>2</sup>)</td>
+            <td>不支持</td>
+            <td>否</td>
+            <td>稠密图</td>
+          </tr>
+          <tr>
+            <td>Dijkstra (堆优化)</td>
+            <td>SSSP</td>
+            <td>O((V+E) log V)</td>
+            <td>不支持</td>
+            <td>否</td>
+            <td>稀疏图，无负权</td>
+          </tr>
+          <tr>
+            <td>Bellman-Ford</td>
+            <td>SSSP</td>
+            <td>O(VE)</td>
+            <td>支持</td>
+            <td>是</td>
+            <td>含负权边</td>
+          </tr>
+          <tr>
+            <td>SPFA</td>
+            <td>SSSP</td>
+            <td>均摊 O(E)，最坏 O(VE)</td>
+            <td>支持</td>
+            <td>是</td>
+            <td>含负权边，稀疏图</td>
+          </tr>
+          <tr>
+            <td>Floyd-Warshall</td>
+            <td>APSP</td>
+            <td>O(V<sup>3</sup>)</td>
+            <td>支持</td>
+            <td>是</td>
+            <td>小规模图 (V &le; 500)</td>
+          </tr>
+          <tr>
+            <td>Johnson</td>
+            <td>APSP</td>
+            <td>O(V&middot;E&middot;log V)</td>
+            <td>支持</td>
+            <td>是</td>
+            <td>稀疏图全源最短路</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>松弛操作 (Relaxation)</h3>
+    <p>几乎所有最短路算法都基于<strong>松弛操作</strong>。对于一条边 (u, v, w)，如果经过 u 到达 v 的路径更短，则更新：</p>
+    <pre><code><span class="cm">// 松弛操作：核心思想</span>
+<span class="kw">if</span> (dist[u] + w < dist[v]) {
+    dist[v] = dist[u] + w;  <span class="cm">// 更新最短距离</span>
+    pre[v] = u;             <span class="cm">// 记录前驱（用于路径还原）</span>
+}</code></pre>
+
+    <h3>示例图</h3>
+    <p>后续各算法的执行过程将以如下有向图为例：</p>
+    <div class="diagram">
+      <pre>
+        +-----+   1   +-----+   2   +-----+
+        |  1  |------&gt;|  2  |------&gt;|  4  |
+        +-----+       +-----+       +-----+
+          |   ^          |              ^
+          |   | 7        | 3            | 1
+          |   |          v              |
+          v   |       +-----+          |
+        +-----+       |  3  |----------+
+        |  5  |&lt;------|     |
+        +-----+  2    +-----+
+
+        顶点: 1, 2, 3, 4, 5
+        源点: 1
+        边:
+          1-&gt;2 (w=1), 1-&gt;5 (w=10)
+          2-&gt;4 (w=2), 2-&gt;3 (w=3)
+          3-&gt;4 (w=1), 3-&gt;5 (w=2)
+          5-&gt;1 (w=7)
+      </pre>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 2: Dijkstra -->
+  <!-- ============================================================ -->
+  <div class="section" id="dijkstra">
+    <h2>Dijkstra 算法</h2>
+
+    <h3>算法思想</h3>
+    <p>Dijkstra 是一种<strong>贪心 + 优先队列</strong>的单源最短路算法。核心思想：每次从尚未确定最短路的顶点中，选择距离源点最近的顶点，标记为"已确定"，然后用它去松弛相邻的边。</p>
+    <ul>
+      <li>维护一个距离数组 <code>dist[]</code>，<code>dist[i]</code> 表示源点到顶点 i 的当前最短距离估计值。</li>
+      <li>维护一个集合 S，存放已确定最短路的顶点。</li>
+      <li>每次从 S 的补集中取出 dist 最小的顶点 u，加入 S，并对 u 的所有出边执行松弛。</li>
+    </ul>
+
+    <h3>正确性证明（直觉）</h3>
+    <p>假设所有边权非负。设 u 是当前未确定顶点中 dist 最小的点，假设存在一条更短的路径 P 到达 u。则 P 上必定存在某个未确定的中间顶点 v，而 <code>dist[v] &le; dist[u]</code>（因为 v 先于 u 被经过，且边权非负），这与 u 是最小的假设矛盾。因此 dist[u] 就是最短路。</p>
+
+    <div class="box box-info">
+      <div class="box-title">关键性质</div>
+      <p>Dijkstra 要求所有边权<strong>非负</strong>。因为贪心策略依赖于"已经确定的顶点不会被更优路径更新"，负权边会破坏这个性质。</p>
+    </div>
+
+    <h3>为什么不能处理负权边？</h3>
+    <p>考虑一个反例：A→B (w=3)，A→C (w=5)，C→B (w=-4)。Dijkstra 先确定 B（dist=3），但实际最短路是 A→C→B = 5+(-4) = 1。已标记的顶点 B 的距离不会被修正，因此结果错误。</p>
+
+    <h3>算法流程（堆优化版）</h3>
+    <div class="steps">
+      <div class="step">初始化：dist[source] = 0，其余 dist[] = +∞，将 (0, source) 压入优先队列。</div>
+      <div class="step">从优先队列中弹出距离最小的 (d, u)。若 d &gt; dist[u]，说明已被更优值更新过，跳过。</div>
+      <div class="step">对 u 的每条出边 (u, v, w)，执行松弛：若 dist[u] + w &lt; dist[v]，更新 dist[v] 并将 (dist[v], v) 压入队列。</div>
+      <div class="step">重复步骤 2-3 直到队列为空。</div>
+    </div>
+
+    <h3>执行过程追踪</h3>
+    <p>以示例图，源点为 1 为例：</p>
+
+    <div class="array-vis">
+      <div class="cell hi">0<span class="idx">dist[1]</span></div>
+      <div class="cell">∞<span class="idx">dist[2]</span></div>
+      <div class="cell">∞<span class="idx">dist[3]</span></div>
+      <div class="cell">∞<span class="idx">dist[4]</span></div>
+      <div class="cell">∞<span class="idx">dist[5]</span></div>
+    </div>
+    <p>初始状态：dist[1]=0，其余为无穷大。优先队列：{(0,1)}</p>
+
+    <div class="steps">
+      <div class="step"><strong>弹出 (0, 1)</strong>：标记 1 已确定。松弛 1→2(w=1)：dist[2]=1；松弛 1→5(w=10)：dist[5]=10。队列：{(1,2), (10,5)}</div>
+      <div class="step"><strong>弹出 (1, 2)</strong>：标记 2 已确定。松弛 2→4(w=2)：dist[4]=3；松弛 2→3(w=3)：dist[3]=4。队列：{(3,4), (4,3), (10,5)}</div>
+      <div class="step"><strong>弹出 (3, 4)</strong>：标记 4 已确定。4 无出边可松弛。队列：{(4,3), (10,5)}</div>
+      <div class="step"><strong>弹出 (4, 3)</strong>：标记 3 已确定。松弛 3→4(w=1)：dist[4]=min(3,4+1)=3，不更新；松弛 3→5(w=2)：dist[5]=min(10,4+2)=6。队列：{(6,5), (10,5)}</div>
+      <div class="step"><strong>弹出 (6, 5)</strong>：标记 5 已确定。松弛 5→1(w=7)：dist[1]=min(0,6+7)=0，不更新。队列中 (10,5) 将被跳过。队列为空，结束。</div>
+    </div>
+
+    <p>最终结果：</p>
+    <div class="array-vis">
+      <div class="cell done">0<span class="idx">dist[1]</span></div>
+      <div class="cell done">1<span class="idx">dist[2]</span></div>
+      <div class="cell done">4<span class="idx">dist[3]</span></div>
+      <div class="cell done">3<span class="idx">dist[4]</span></div>
+      <div class="cell done">6<span class="idx">dist[5]</span></div>
+    </div>
+
+    <h3>复杂度分析</h3>
+    <div class="complexity">
+      <span class="label">时间:</span>
+      <span class="value">O((V + E) log V)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间:</span>
+      <span class="value">O(V + E)</span>
+    </div>
+    <p>每个顶点最多入队一次（不考虑重复），每次出队后遍历其所有出边。优先队列操作为 O(log V)，总计 O((V+E) log V)。使用斐波那契堆可优化到 O(V log V + E)，但实践中意义不大。</p>
+
+    <h3>C++ 代码模板</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">typedef</span> <span class="ty">pair</span>&lt;<span class="ty">int</span>, <span class="ty">int</span>&gt; <span class="ty">pii</span>;  <span class="cm">// (距离, 顶点)</span>
+
+<span class="kw">const</span> <span class="ty">int</span> INF = <span class="num">0x3f3f3f3f</span>;
+<span class="kw">const</span> <span class="ty">int</span> MAXN = <span class="num">100005</span>;
+
+<span class="ty">vector</span>&lt;<span class="ty">pii</span>&gt; adj[MAXN];   <span class="cm">// adj[u] = {(v, w), ...}</span>
+<span class="ty">int</span> dist[MAXN];
+<span class="ty">bool</span> vis[MAXN];
+<span class="ty">int</span> pre[MAXN];            <span class="cm">// 前驱数组，用于路径还原</span>
+
+<span class="ty">void</span> <span class="fn">dijkstra</span>(<span class="ty">int</span> src, <span class="ty">int</span> n) {
+    <span class="fn">memset</span>(dist, <span class="num">0x3f</span>, <span class="kw">sizeof</span>(dist));
+    <span class="fn">memset</span>(vis, <span class="num">0</span>, <span class="kw">sizeof</span>(vis));
+    <span class="fn">memset</span>(pre, -<span class="num">1</span>, <span class="kw">sizeof</span>(pre));
+
+    dist[src] = <span class="num">0</span>;
+    priority_queue&lt;<span class="ty">pii</span>, <span class="ty">vector</span>&lt;<span class="ty">pii</span>&gt;, greater&lt;<span class="ty">pii</span>&gt;&gt; pq;
+    pq.<span class="fn">push</span>({<span class="num">0</span>, src});
+
+    <span class="kw">while</span> (!pq.<span class="fn">empty</span>()) {
+        <span class="kw">auto</span> [d, u] = pq.<span class="fn">top</span>();
+        pq.<span class="fn">pop</span>();
+
+        <span class="kw">if</span> (vis[u]) <span class="kw">continue</span>;  <span class="cm">// 跳过已松弛的旧条目</span>
+        vis[u] = <span class="kw">true</span>;
+
+        <span class="kw">for</span> (<span class="kw">auto</span>& [v, w] : adj[u]) {
+            <span class="kw">if</span> (dist[u] + w &lt; dist[v]) {
+                dist[v] = dist[u] + w;
+                pre[v] = u;
+                pq.<span class="fn">push</span>({dist[v], v});
+            }
+        }
+    }
+}
+
+<span class="cm">// 路径还原：从终点回溯到源点</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">get_path</span>(<span class="ty">int</span> src, <span class="ty">int</span> dst) {
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; path;
+    <span class="kw">for</span> (<span class="ty">int</span> v = dst; v != -<span class="num">1</span>; v = pre[v])
+        path.<span class="fn">push_back</span>(v);
+    <span class="fn">reverse</span>(path.<span class="fn">begin</span>(), path.<span class="fn">end</span>());
+    <span class="kw">return</span> path;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, m, src;
+    <span class="fn">scanf</span>(<span class="str">"%d%d%d"</span>, &amp;n, &amp;m, &amp;src);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; m; i++) {
+        <span class="ty">int</span> u, v, w;
+        <span class="fn">scanf</span>(<span class="str">"%d%d%d"</span>, &amp;u, &amp;v, &amp;w);
+        adj[u].<span class="fn">push_back</span>({v, w});
+        <span class="cm">// adj[v].push_back({u, w}); // 无向图取消注释</span>
+    }
+    <span class="fn">dijkstra</span>(src, n);
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        <span class="fn">printf</span>(<span class="str">"%d "</span>, dist[i]);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">实现技巧</div>
+      <ul>
+        <li>使用 <code>vis[]</code> 数组标记已确定顶点，而不是在队列中删除旧条目（懒删除）。</li>
+        <li>距离初始化用 <code>0x3f3f3f3f</code> 而非 <code>INT_MAX</code>，因为前者相加不会溢出。</li>
+        <li>路径还原需要维护 <code>pre[]</code> 前驱数组。</li>
+      </ul>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">经典题目</div>
+      <p><a href="https://www.luogu.com.cn/problem/P4779" target="_blank">Luogu P4779 - 单源最短路径（标准版）</a></p>
+      <p>模板题，堆优化 Dijkstra 求单源最短路。</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 3: Bellman-Ford -->
+  <!-- ============================================================ -->
+  <div class="section" id="bellman-ford">
+    <h2>Bellman-Ford 算法</h2>
+
+    <h3>算法思想</h3>
+    <p>Bellman-Ford 是一种能处理<strong>负权边</strong>的单源最短路算法。其核心思想是：对图中所有边执行 V-1 轮松弛操作。经过 k 轮松弛后，可以确定从源点经过最多 k 条边到达各点的最短距离。</p>
+
+    <h3>算法流程</h3>
+    <div class="steps">
+      <div class="step">初始化：dist[source] = 0，其余 dist[] = +∞。</div>
+      <div class="step">执行 V-1 轮循环，每轮遍历所有边 (u, v, w)，对每条边执行松弛操作。</div>
+      <div class="step"><strong>负环检测</strong>：再执行第 V 轮松弛，若仍有更新，说明存在负权环。</div>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">正确性</div>
+      <p>不含负环的图中，最短路最多经过 V-1 条边。第 i 轮松弛保证了经过最多 i 条边的最短路已确定。因此 V-1 轮后所有最短路都被正确计算。</p>
+    </div>
+
+    <h3>执行过程追踪</h3>
+    <p>同样以示例图为例，源点 1：</p>
+    <div class="steps">
+      <div class="step"><strong>第 1 轮</strong>：遍历所有边。1→2(w=1)：dist[2]=1；1→5(w=10)：dist[5]=10；2→4(w=2)：dist[4]=3；2→3(w=3)：dist[3]=4；3→4(w=1)：3→5(w=2)：dist[5]=6。</div>
+      <div class="step"><strong>第 2 轮</strong>：无更新。</div>
+      <div class="step"><strong>第 3 轮</strong>：无更新。</div>
+      <div class="step"><strong>第 4 轮</strong>：无更新。V-1=4 轮完成，无负环。</div>
+    </div>
+
+    <h3>复杂度分析</h3>
+    <div class="complexity">
+      <span class="label">时间:</span>
+      <span class="value">O(V &middot; E)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间:</span>
+      <span class="value">O(V + E)</span>
+    </div>
+
+    <h3>C++ 代码模板</h3>
+    <pre><code><span class="kw">struct</span> <span class="ty">Edge</span> {
+    <span class="ty">int</span> u, v, w;
+};
+
+<span class="ty">vector</span>&lt;<span class="ty">Edge</span>&gt; edges;
+<span class="ty">int</span> dist[MAXN];
+
+<span class="cm">// 返回 true 表示存在负环</span>
+<span class="ty">bool</span> <span class="fn">bellman_ford</span>(<span class="ty">int</span> src, <span class="ty">int</span> n) {
+    <span class="fn">memset</span>(dist, <span class="num">0x3f</span>, <span class="kw">sizeof</span>(dist));
+    dist[src] = <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt; n; i++) { <span class="cm">// V-1 轮</span>
+        <span class="ty">bool</span> updated = <span class="kw">false</span>;
+        <span class="kw">for</span> (<span class="kw">auto</span>& e : edges) {
+            <span class="kw">if</span> (dist[e.u] != INF &amp;&amp; dist[e.u] + e.w &lt; dist[e.v]) {
+                dist[e.v] = dist[e.u] + e.w;
+                updated = <span class="kw">true</span>;
+            }
+        }
+        <span class="kw">if</span> (!updated) <span class="kw">break</span>; <span class="cm">// 提前终止优化</span>
+    }
+
+    <span class="cm">// 第 V 轮：检测负环</span>
+    <span class="kw">for</span> (<span class="kw">auto</span>& e : edges) {
+        <span class="kw">if</span> (dist[e.u] != INF &amp;&amp; dist[e.u] + e.w &lt; dist[e.v]) {
+            <span class="kw">return true</span>; <span class="cm">// 存在负环</span>
+        }
+    }
+    <span class="kw">return false</span>;
+}</code></pre>
+
+    <div class="problem">
+      <div class="problem-title">经典题目</div>
+      <p><a href="https://www.luogu.com.cn/problem/P3385" target="_blank">Luogu P3385 - 负环</a></p>
+      <p>判断图中是否存在从源点可达的负环。</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 4: SPFA -->
+  <!-- ============================================================ -->
+  <div class="section" id="spfa">
+    <h2>SPFA 算法</h2>
+
+    <h3>算法思想</h3>
+    <p>SPFA (Shortest Path Faster Algorithm) 是 Bellman-Ford 的队列优化版本。核心观察：在 Bellman-Ford 中，只有上一轮 dist 发生变化的顶点，其出边才可能产生新的松弛。因此，用一个队列维护"需要松弛的顶点"，避免无效遍历。</p>
+
+    <h3>算法流程</h3>
+    <div class="steps">
+      <div class="step">初始化：dist[source] = 0，将 source 加入队列，标记 in_queue[source] = true。</div>
+      <div class="step">取出队首顶点 u，标记 in_queue[u] = false。</div>
+      <div class="step">遍历 u 的所有出边 (u, v, w)。若 dist[u] + w &lt; dist[v]，更新 dist[v]。若 v 不在队列中，将 v 入队。</div>
+      <div class="step">重复步骤 2-3 直到队列为空。</div>
+      <div class="step"><strong>负环检测</strong>：记录每个顶点的入队次数，若某个顶点入队超过 V 次，说明存在负环。</div>
+    </div>
+
+    <h3>与 Bellman-Ford 的关系</h3>
+    <p>SPFA 本质上等价于 Bellman-Ford，只是用队列优化了松弛顺序。在最坏情况下（如网格图），SPFA 的时间复杂度退化为 O(VE)，与 Bellman-Ford 相同。</p>
+
+    <div class="box box-warn">
+      <div class="box-title">注意：SPFA 已被卡</div>
+      <p>在 ACM 竞赛中，出题人可以通过构造特殊数据（如网格图、菊花图等）使 SPFA 退化到 O(VE)。对于<strong>无负权边</strong>的问题，应优先使用 Dijkstra。SPFA 在最坏情况下会被 TLE。</p>
+    </div>
+
+    <h3>SPFA vs Dijkstra 选择指南</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>条件</th>
+            <th>推荐算法</th>
+            <th>原因</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>无负权边</td>
+            <td>Dijkstra</td>
+            <td>稳定 O((V+E)logV)，不会被卡</td>
+          </tr>
+          <tr>
+            <td>有负权边，无负环</td>
+            <td>SPFA</td>
+            <td>平均 O(E)，比 Bellman-Ford 快</td>
+          </tr>
+          <tr>
+            <td>需要检测负环</td>
+            <td>SPFA / Bellman-Ford</td>
+            <td>Dijkstra 无法处理</td>
+          </tr>
+          <tr>
+            <td>差分约束系统</td>
+            <td>SPFA</td>
+            <td>可将约束转化为带负权的最短路</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>执行过程追踪</h3>
+    <p>以示例图为例（假设存在负权边 2→3(w=-1)）：</p>
+    <div class="steps">
+      <div class="step">初始化：dist[1]=0，其余 ∞。队列：[1]</div>
+      <div class="step">弹出 1：松弛 1→2：dist[2]=1，入队 2；松弛 1→5：dist[5]=10，入队 5。队列：[2, 5]</div>
+      <div class="step">弹出 2：松弛 2→4：dist[4]=3，入队 4；松弛 2→3(w=-1)：dist[3]=0，入队 3。队列：[5, 4, 3]</div>
+      <div class="step">弹出 5：松弛 5→1：不更新。队列：[4, 3]</div>
+      <div class="step">弹出 4：无出边。队列：[3]</div>
+      <div class="step">弹出 3：松弛 3→4：不更新；松弛 3→5：dist[5]=2，入队 5。队列：[5]</div>
+      <div class="step">弹出 5：松弛 5→1：不更新。队列为空，结束。</div>
+    </div>
+
+    <h3>复杂度分析</h3>
+    <div class="complexity">
+      <span class="label">平均时间:</span>
+      <span class="value">O(E)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">最坏时间:</span>
+      <span class="value">O(V &middot; E)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间:</span>
+      <span class="value">O(V + E)</span>
+    </div>
+
+    <h3>C++ 代码模板</h3>
+    <pre><code><span class="ty">vector</span>&lt;<span class="ty">pii</span>&gt; adj[MAXN]; <span class="cm">// (v, w)</span>
+<span class="ty">int</span> dist[MAXN];
+<span class="ty">bool</span> in_queue[MAXN];
+<span class="ty">int</span> cnt[MAXN];  <span class="cm">// 入队次数，用于判负环</span>
+
+<span class="cm">// 返回 true 表示存在负环</span>
+<span class="ty">bool</span> <span class="fn">spfa</span>(<span class="ty">int</span> src, <span class="ty">int</span> n) {
+    <span class="fn">memset</span>(dist, <span class="num">0x3f</span>, <span class="kw">sizeof</span>(dist));
+    <span class="fn">memset</span>(in_queue, <span class="kw">false</span>, <span class="kw">sizeof</span>(in_queue));
+    <span class="fn">memset</span>(cnt, <span class="num">0</span>, <span class="kw">sizeof</span>(cnt));
+
+    queue&lt;<span class="ty">int</span>&gt; q;
+    dist[src] = <span class="num">0</span>;
+    q.<span class="fn">push</span>(src);
+    in_queue[src] = <span class="kw">true</span>;
+    cnt[src] = <span class="num">1</span>;
+
+    <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+        <span class="ty">int</span> u = q.<span class="fn">front</span>();
+        q.<span class="fn">pop</span>();
+        in_queue[u] = <span class="kw">false</span>;
+
+        <span class="kw">for</span> (<span class="kw">auto</span>& [v, w] : adj[u]) {
+            <span class="kw">if</span> (dist[u] + w &lt; dist[v]) {
+                dist[v] = dist[u] + w;
+                <span class="kw">if</span> (!in_queue[v]) {
+                    q.<span class="fn">push</span>(v);
+                    in_queue[v] = <span class="kw">true</span>;
+                    cnt[v]++;
+                    <span class="kw">if</span> (cnt[v] &gt; n) <span class="kw">return true</span>; <span class="cm">// 负环</span>
+                }
+            }
+        }
+    }
+    <span class="kw">return false</span>;
+}
+
+<span class="cm">// SLF 优化（Small Label First）：加速常数</span>
+<span class="cm">// 如果 dist[new_node] &lt; dist[q.front()]，插入队首而非队尾</span>
+<span class="cm">// 使用 deque 替代 queue 实现</span></code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">SPFA 优化技巧</div>
+      <ul>
+        <li><strong>SLF 优化</strong>：如果新节点的 dist 小于队首节点的 dist，插入队首（用 deque）。</li>
+        <li><strong>LLL 优化</strong>：队列中 dist 低于平均值的节点优先处理。</li>
+        <li><strong>栈代替队列</strong>：某些场景下用栈代替队列效果更好（DFS 序）。</li>
+      </ul>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">经典题目</div>
+      <p><a href="https://www.luogu.com.cn/problem/P3385" target="_blank">Luogu P3385 - 负环</a> - 判断负环</p>
+      <p><a href="https://www.luogu.com.cn/problem/P5960" target="_blank">Luogu P5960 - 差分约束</a> - 差分约束系统模板</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 5: Floyd-Warshall -->
+  <!-- ============================================================ -->
+  <div class="section" id="floyd">
+    <h2>Floyd-Warshall 算法</h2>
+
+    <h3>算法思想</h3>
+    <p>Floyd-Warshall 是一种求解<strong>全源最短路</strong>（所有顶点对之间的最短距离）的动态规划算法。核心思想：设 <code>dp[k][i][j]</code> 表示只经过前 k 个顶点作为中间节点时，从 i 到 j 的最短距离。</p>
+
+    <p>状态转移方程：</p>
+    <pre><code>dp[k][i][j] = min(dp[k-1][i][j], dp[k-1][i][k] + dp[k-1][k][j])</code></pre>
+    <p>即：从 i 到 j 经过前 k 个节点的最短路，要么不经过 k（等于经过前 k-1 个节点的结果），要么经过 k（等于 i→k 的最短路 + k→j 的最短路）。</p>
+
+    <p>由于 dp[k] 只依赖 dp[k-1]，可以用滚动数组优化为二维 <code>dp[i][j]</code>，就得到了经典的三重循环写法。</p>
+
+    <h3>算法流程</h3>
+    <div class="steps">
+      <div class="step">初始化 <code>dp[i][j]</code>：若 i==j 则 0，若有边 i→j 则为边权，否则 +∞。</div>
+      <div class="step">三重循环：最外层枚举中间节点 k，内两层枚举起点 i 和终点 j。</div>
+      <div class="step">执行松弛：<code>dp[i][j] = min(dp[i][j], dp[i][k] + dp[k][j])</code>。</div>
+      <div class="step">循环结束后，<code>dp[i][j]</code> 即为 i 到 j 的最短距离。</div>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">循环顺序至关重要</div>
+      <p>k 必须在最外层！如果把 i 或 j 放在最外层，dp 值可能被错误地用还未初始化的状态更新，导致结果错误。</p>
+    </div>
+
+    <h3>负环检测</h3>
+    <p>Floyd 执行完毕后，检查对角线 <code>dp[i][i]</code>。若 <code>dp[i][i] &lt; 0</code>，说明顶点 i 在某个负环上。</p>
+
+    <h3>路径还原</h3>
+    <p>维护一个 <code>nxt[i][j]</code> 数组，记录 i 到 j 最短路上 i 的下一个顶点。</p>
+    <pre><code><span class="cm">// 初始化</span>
+nxt[i][j] = j;  <span class="cm">// 若有边 i→j</span>
+
+<span class="cm">// Floyd 过程中更新</span>
+<span class="kw">if</span> (dp[i][k] + dp[k][j] &lt; dp[i][j]) {
+    dp[i][j] = dp[i][k] + dp[k][j];
+    nxt[i][j] = nxt[i][k];  <span class="cm">// 经过 k，i 的下一跳与 i→k 相同</span>
+}
+
+<span class="cm">// 还原路径</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">get_path</span>(<span class="ty">int</span> i, <span class="ty">int</span> j) {
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; path = {i};
+    <span class="kw">while</span> (i != j) {
+        i = nxt[i][j];
+        path.<span class="fn">push_back</span>(i);
+    }
+    <span class="kw">return</span> path;
+}</code></pre>
+
+    <h3>执行过程追踪</h3>
+    <p>以示例图为例（无负权）：</p>
+    <p>初始距离矩阵：</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>1</strong></td><td>0</td><td>1</td><td>∞</td><td>∞</td><td>10</td></tr>
+          <tr><td><strong>2</strong></td><td>∞</td><td>0</td><td>3</td><td>2</td><td>∞</td></tr>
+          <tr><td><strong>3</strong></td><td>∞</td><td>∞</td><td>0</td><td>1</td><td>2</td></tr>
+          <tr><td><strong>4</strong></td><td>∞</td><td>∞</td><td>∞</td><td>0</td><td>∞</td></tr>
+          <tr><td><strong>5</strong></td><td>7</td><td>∞</td><td>∞</td><td>∞</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="steps">
+      <div class="step"><strong>k=1</strong>：以顶点 1 为中转。5→1→2：dist[5][2]=7+1=8。更新矩阵。</div>
+      <div class="step"><strong>k=2</strong>：以顶点 2 为中转。1→2→3：dist[1][3]=1+3=4；1→2→4：dist[1][4]=1+2=3；5→2→3：dist[5][3]=8+3=11；5→2→4：dist[5][4]=8+2=10。</div>
+      <div class="step"><strong>k=3</strong>：以顶点 3 为中转。1→3→4：dist[1][4]=min(3,4+1)=3；1→3→5：dist[1][5]=min(10,4+2)=6；5→3→4：dist[5][4]=min(10,11+1)=10；5→3→5：不更新。</div>
+      <div class="step"><strong>k=4</strong>：无新更新。</div>
+      <div class="step"><strong>k=5</strong>：5→1→... 可能的更新，但均已覆盖。</div>
+    </div>
+
+    <p>最终矩阵即为全源最短路结果。</p>
+
+    <h3>复杂度分析</h3>
+    <div class="complexity">
+      <span class="label">时间:</span>
+      <span class="value">O(V<sup>3</sup>)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间:</span>
+      <span class="value">O(V<sup>2</sup>)</span>
+    </div>
+    <p>三重循环，每层 V 次。适合 V &le; 500 左右的规模。V=1000 时约 10<sup>9</sup> 操作，通常会 TLE。</p>
+
+    <h3>C++ 代码模板</h3>
+    <pre><code><span class="kw">const</span> <span class="ty">int</span> INF = <span class="num">0x3f3f3f3f</span>;
+<span class="ty">int</span> dp[MAXN][MAXN];  <span class="cm">// dp[i][j] = i到j的最短距离</span>
+<span class="ty">int</span> nxt[MAXN][MAXN]; <span class="cm">// 路径还原</span>
+
+<span class="ty">void</span> <span class="fn">floyd</span>(<span class="ty">int</span> n) {
+    <span class="cm">// 初始化已在读入时完成</span>
+    <span class="kw">for</span> (<span class="ty">int</span> k = <span class="num">1</span>; k &lt;= n; k++)
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+            <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">1</span>; j &lt;= n; j++)
+                <span class="kw">if</span> (dp[i][k] + dp[k][j] &lt; dp[i][j]) {
+                    dp[i][j] = dp[i][k] + dp[k][j];
+                    nxt[i][j] = nxt[i][k];
+                }
+}
+
+<span class="cm">// 检测负环</span>
+<span class="ty">bool</span> <span class="fn">has_negative_cycle</span>(<span class="ty">int</span> n) {
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        <span class="kw">if</span> (dp[i][i] &lt; <span class="num">0</span>) <span class="kw">return true</span>;
+    <span class="kw">return false</span>;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, m;
+    <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;n, &amp;m);
+
+    <span class="cm">// 初始化</span>
+    <span class="fn">memset</span>(dp, <span class="num">0x3f</span>, <span class="kw">sizeof</span>(dp));
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        dp[i][i] = <span class="num">0</span>;
+        nxt[i][i] = i;
+    }
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; m; i++) {
+        <span class="ty">int</span> u, v, w;
+        <span class="fn">scanf</span>(<span class="str">"%d%d%d"</span>, &amp;u, &amp;v, &amp;w);
+        dp[u][v] = <span class="fn">min</span>(dp[u][v], w); <span class="cm">// 重边取最小</span>
+        nxt[u][v] = v;
+    }
+
+    <span class="fn">floyd</span>(n);
+
+    <span class="cm">// 输出所有点对最短路</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">1</span>; j &lt;= n; j++)
+            <span class="fn">printf</span>(<span class="str">"%d%c"</span>, dp[i][j] == INF ? -<span class="num">1</span> : dp[i][j],
+                   j == n ? <span class="str">'\n'</span> : <span class="str">' '</span>);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">Floyd 的其他用途</div>
+      <ul>
+        <li><strong>传递闭包</strong>：将边权设为 1（或用 bool），可求任意两点是否连通。</li>
+        <li><strong>最小环</strong>：在 Floyd 过程中，<code>dp[i][i] + dp[i][k] + dp[k][i]</code> 可以求最小环。</li>
+        <li><strong>字典序最小路径</strong>：配合 nxt 数组还原路径。</li>
+      </ul>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">经典题目</div>
+      <p><a href="https://www.luogu.com.cn/problem/P2910" target="_blank">Luogu P2910 - Clear And Present Danger</a></p>
+      <p>先 Floyd 预处理，再按给定路径累加。</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 6: Johnson -->
+  <!-- ============================================================ -->
+  <div class="section" id="johnson">
+    <h2>Johnson 算法</h2>
+
+    <h3>问题背景</h3>
+    <p>对于含负权边的图，要求全源最短路：</p>
+    <ul>
+      <li>Floyd 的 O(V<sup>3</sup>) 对大规模稀疏图太慢。</li>
+      <li>不能直接对每个顶点跑 Dijkstra（负权边）。</li>
+      <li>对每个顶点跑 SPFA 最坏 O(V<sup>2</sup>E)，也不够快。</li>
+    </ul>
+    <p>Johnson 算法通过<strong>势函数重赋权</strong>消除负权边，然后对每个顶点跑 Dijkstra。</p>
+
+    <h3>算法原理</h3>
+    <h4>势函数 (Potential Function)</h4>
+    <p>引入一个虚拟源点 s，连接到所有顶点（边权为 0）。从 s 跑 Bellman-Ford（或 SPFA）得到 <code>h[v]</code> = s 到 v 的最短距离。</p>
+    <p>定义新边权：<code>w'(u,v) = w(u,v) + h[u] - h[v]</code></p>
+
+    <div class="box box-info">
+      <div class="box-title">关键性质</div>
+      <ul>
+        <li><strong>非负性</strong>：对于原图中的每条边 (u,v,w)，由三角不等式 h[v] &le; h[u] + w，得到 w' = w + h[u] - h[v] &ge; 0。所有新边权非负！</li>
+        <li><strong>最短路等价</strong>：新图中 u 到 v 的最短路与原图中仅相差一个常数 h[v]-h[u]。即 <code>dist'[u][v] = dist[u][v] + h[v] - h[u]</code>。</li>
+      </ul>
+    </div>
+
+    <h3>算法流程</h3>
+    <div class="steps">
+      <div class="step">添加虚拟源点 0，向所有顶点连边权为 0 的边。</div>
+      <div class="step">从 0 跑 Bellman-Ford/SPFA 得到势函数 h[]。若存在负环则报告。</div>
+      <div class="step">对每条边 (u, v, w)，重新赋权为 w' = w + h[u] - h[v]。</div>
+      <div class="step">对每个顶点 1~V 跑 Dijkstra（新图无负权边）。</div>
+      <div class="step">将结果还原：<code>dist[i][j] = dist'[i][j] - h[j] + h[i]</code>。</div>
+    </div>
+
+    <h3>复杂度分析</h3>
+    <div class="complexity">
+      <span class="label">时间:</span>
+      <span class="value">O(V&middot;E&middot;log V)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">空间:</span>
+      <span class="value">O(V + E)</span>
+    </div>
+    <p>Bellman-Ford/SPFA 阶段：O(VE)。Dijkstra 阶段：V 次 Dijkstra = O(V &middot; (V+E) log V)。对于稀疏图 (E ~ V)，总体约 O(V<sup>2</sup> log V)。</p>
+
+    <div class="box box-tip">
+      <div class="box-title">Johnson vs Floyd</div>
+      <ul>
+        <li><strong>稀疏图</strong>（E ~ V）：Johnson O(V<sup>2</sup> log V) 远优于 Floyd O(V<sup>3</sup>)。</li>
+        <li><strong>稠密图</strong>（E ~ V<sup>2</sup>）：Johnson O(V<sup>3</sup> log V) 反而比 Floyd 慢。</li>
+        <li>实际竞赛中，V &le; 500 一般用 Floyd；V &le; 3000 且为稀疏图用 Johnson。</li>
+      </ul>
+    </div>
+
+    <h3>C++ 代码模板</h3>
+    <pre><code><span class="kw">const</span> <span class="ty">int</span> INF = <span class="num">0x3f3f3f3f</span>;
+<span class="kw">const</span> <span class="ty">int</span> MAXN = <span class="num">3005</span>;
+
+<span class="kw">struct</span> <span class="ty">Edge</span> {
+    <span class="ty">int</span> v, w;
+};
+
+<span class="ty">vector</span>&lt;<span class="ty">Edge</span>&gt; adj[MAXN]; <span class="cm">// 原图</span>
+<span class="ty">vector</span>&lt;<span class="ty">Edge</span>&gt; adj_new[MAXN]; <span class="cm">// 重赋权后的图</span>
+<span class="ty">int</span> h[MAXN];  <span class="cm">// 势函数</span>
+<span class="ty">int</span> dist_all[MAXN][MAXN]; <span class="cm">// 全源最短路结果</span>
+
+<span class="cm">// SPFA 求势函数</span>
+<span class="ty">bool</span> <span class="fn">compute_potential</span>(<span class="ty">int</span> n) {
+    <span class="fn">memset</span>(h, <span class="num">0x3f</span>, <span class="kw">sizeof</span>(h));
+    <span class="ty">bool</span> inq[MAXN] = {};
+    <span class="ty">int</span> cnt[MAXN] = {};
+    queue&lt;<span class="ty">int</span>&gt; q;
+
+    <span class="cm">// 虚拟源点 0 到所有点距离为 0</span>
+    h[<span class="num">0</span>] = <span class="num">0</span>;
+    q.<span class="fn">push</span>(<span class="num">0</span>);
+    inq[<span class="num">0</span>] = <span class="kw">true</span>;
+
+    <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+        <span class="ty">int</span> u = q.<span class="fn">front</span>();
+        q.<span class="fn">pop</span>();
+        inq[u] = <span class="kw">false</span>;
+
+        <span class="kw">for</span> (<span class="kw">auto</span>& [v, w] : adj[u]) {
+            <span class="kw">if</span> (h[u] + w &lt; h[v]) {
+                h[v] = h[u] + w;
+                <span class="kw">if</span> (!inq[v]) {
+                    q.<span class="fn">push</span>(v);
+                    inq[v] = <span class="kw">true</span>;
+                    cnt[v]++;
+                    <span class="kw">if</span> (cnt[v] &gt; n) <span class="kw">return false</span>; <span class="cm">// 负环</span>
+                }
+            }
+        }
+    }
+    <span class="kw">return true</span>;
+}
+
+<span class="cm">// Dijkstra（堆优化）</span>
+<span class="ty">void</span> <span class="fn">dijkstra</span>(<span class="ty">int</span> src, <span class="ty">int</span> n) {
+    <span class="ty">int</span>&#38; out = dist_all[src]; <span class="cm">// 输出到全局数组</span>
+    <span class="fn">memset</span>(out, <span class="num">0x3f</span>, (n + <span class="num">1</span>) * <span class="kw">sizeof</span>(<span class="ty">int</span>));
+    out[src] = <span class="num">0</span>;
+    priority_queue&lt;<span class="ty">pii</span>, <span class="ty">vector</span>&lt;<span class="ty">pii</span>&gt;, greater&lt;<span class="ty">pii</span>&gt;&gt; pq;
+    pq.<span class="fn">push</span>({<span class="num">0</span>, src});
+
+    <span class="kw">while</span> (!pq.<span class="fn">empty</span>()) {
+        <span class="kw">auto</span> [d, u] = pq.<span class="fn">top</span>();
+        pq.<span class="fn">pop</span>();
+        <span class="kw">if</span> (d &gt; out[u]) <span class="kw">continue</span>;
+        <span class="kw">for</span> (<span class="kw">auto</span>& [v, w] : adj_new[u]) {
+            <span class="kw">if</span> (out[u] + w &lt; out[v]) {
+                out[v] = out[u] + w;
+                pq.<span class="fn">push</span>({out[v], v});
+            }
+        }
+    }
+}
+
+<span class="ty">void</span> <span class="fn">johnson</span>(<span class="ty">int</span> n) {
+    <span class="cm">// 1. 添加虚拟源点</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        adj[<span class="num">0</span>].<span class="fn">push_back</span>({i, <span class="num">0</span>});
+
+    <span class="cm">// 2. 计算势函数</span>
+    <span class="kw">if</span> (!<span class="fn">compute_potential</span>(n)) {
+        <span class="fn">printf</span>(<span class="str">"Negative cycle detected!\n"</span>);
+        <span class="kw">return</span>;
+    }
+
+    <span class="cm">// 3. 重赋权</span>
+    <span class="kw">for</span> (<span class="ty">int</span> u = <span class="num">1</span>; u &lt;= n; u++)
+        <span class="kw">for</span> (<span class="kw">auto</span>& [v, w] : adj[u])
+            adj_new[u].<span class="fn">push_back</span>({v, w + h[u] - h[v]});
+
+    <span class="cm">// 4. 对每个顶点跑 Dijkstra</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        <span class="fn">dijkstra</span>(i, n);
+
+    <span class="cm">// 5. 还原真实距离</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">1</span>; j &lt;= n; j++)
+            <span class="kw">if</span> (dist_all[i][j] != INF)
+                dist_all[i][j] += h[j] - h[i];
+}</code></pre>
+
+    <div class="problem">
+      <div class="problem-title">经典题目</div>
+      <p><a href="https://www.luogu.com.cn/problem/P5905" target="_blank">Luogu P5905 - Johnson 全源最短路</a></p>
+      <p>Johnson 算法模板题。</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- Section 7: 算法对比与选型 -->
+  <!-- ============================================================ -->
+  <div class="section" id="comparison">
+    <h2>算法对比与选型指南</h2>
+
+    <h3>综合对比表</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>特性</th>
+            <th>Dijkstra</th>
+            <th>Bellman-Ford</th>
+            <th>SPFA</th>
+            <th>Floyd</th>
+            <th>Johnson</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>问题类型</td>
+            <td>SSSP</td>
+            <td>SSSP</td>
+            <td>SSSP</td>
+            <td>APSP</td>
+            <td>APSP</td>
+          </tr>
+          <tr>
+            <td>时间复杂度</td>
+            <td>O((V+E)logV)</td>
+            <td>O(VE)</td>
+            <td>O(E)~O(VE)</td>
+            <td>O(V<sup>3</sup>)</td>
+            <td>O(VElogV)</td>
+          </tr>
+          <tr>
+            <td>负权边</td>
+            <td>不支持</td>
+            <td>支持</td>
+            <td>支持</td>
+            <td>支持</td>
+            <td>支持</td>
+          </tr>
+          <tr>
+            <td>负环检测</td>
+            <td>否</td>
+            <td>是</td>
+            <td>是</td>
+            <td>是</td>
+            <td>是</td>
+          </tr>
+          <tr>
+            <td>实现难度</td>
+            <td>简单</td>
+            <td>简单</td>
+            <td>简单</td>
+            <td>极简</td>
+            <td>较难</td>
+          </tr>
+          <tr>
+            <td>适用 V 规模</td>
+            <td>10<sup>5</sup>+</td>
+            <td>10<sup>3</sup></td>
+            <td>10<sup>4</sup></td>
+            <td>500</td>
+            <td>3000</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>选型决策树</h3>
+    <div class="diagram">
+      <pre>
+                   需要求什么？
+                  /            \
+            单源(SSSP)      全源(APSP)
+             /     \            /      \
+        有负权？  无负权     V &le; 500   V &gt; 500
+         /          \          |         |
+       SPFA      Dijkstra   Floyd    Johnson
+       (注意卡常)
+
+       特殊情况：
+       - 差分约束 → SPFA
+       - 判负环 → Bellman-Ford / SPFA
+       - DAG 最短路 → 拓扑排序 + DP
+      </pre>
+    </div>
+
+    <h3>DAG 最短路（附赠）</h3>
+    <p>对于有向无环图 (DAG)，可以先拓扑排序，然后按拓扑序依次松弛。时间复杂度 O(V+E)，是最优解法。</p>
+    <pre><code><span class="ty">vector</span>&lt;<span class="ty">pii</span>&gt; adj[MAXN]; <span class="cm">// (v, w)</span>
+<span class="ty">int</span> indeg[MAXN];
+<span class="ty">int</span> dist[MAXN];
+
+<span class="ty">void</span> <span class="fn">dag_shortest</span>(<span class="ty">int</span> src, <span class="ty">int</span> n) {
+    <span class="fn">memset</span>(dist, <span class="num">0x3f</span>, <span class="kw">sizeof</span>(dist));
+    dist[src] = <span class="num">0</span>;
+
+    queue&lt;<span class="ty">int</span>&gt; q;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        <span class="kw">if</span> (indeg[i] == <span class="num">0</span>) q.<span class="fn">push</span>(i);
+
+    <span class="kw">while</span> (!q.<span class="fn">empty</span>()) {
+        <span class="ty">int</span> u = q.<span class="fn">front</span>(); q.<span class="fn">pop</span>();
+        <span class="kw">for</span> (<span class="kw">auto</span>& [v, w] : adj[u]) {
+            <span class="kw">if</span> (dist[u] + w &lt; dist[v])
+                dist[v] = dist[u] + w;
+            <span class="kw">if</span> (--indeg[v] == <span class="num">0</span>)
+                q.<span class="fn">push</span>(v);
+        }
+    }
+}</code></pre>
+
+    <h3>常见陷阱与注意事项</h3>
+    <div class="box box-warn">
+      <div class="box-title">竞赛中的常见错误</div>
+      <ul>
+        <li><strong>多测不清空</strong>：多组测试数据时忘记清空邻接表、距离数组等。建议每次 memset 或使用 vector.clear()。</li>
+        <li><strong>重边处理</strong>：邻接表自然支持重边；邻接矩阵需取 min。</li>
+        <li><strong>自环</strong>：正权自环无影响，负权自环构成负环。</li>
+        <li><strong>溢出</strong>：边权和可能超过 INT_MAX，注意使用 long long。</li>
+        <li><strong>INF 设置</strong>：0x3f3f3f3f (约 10<sup>9</sup>) 可以相加不溢出。若用 long long 则用 0x3f3f3f3f3f3f3f3f。</li>
+        <li><strong>SPFA 被卡</strong>：无负权边时坚决用 Dijkstra。</li>
+      </ul>
+    </div>
+
+    <h3>进阶主题</h3>
+    <ul>
+      <li><strong>0-1 BFS</strong>：边权只有 0 和 1 时，用双端队列 BFS 实现 O(V+E)。</li>
+      <li><strong>分层图最短路</strong>：将图复制 k 层，层间连特定边，用于"最多经过 k 次免费边"等问题。</li>
+      <li><strong>最短路计数</strong>：统计最短路条数，在松弛时额外维护 cnt 数组。</li>
+      <li><strong>次短路</strong>：维护 dist1 和 dist2 两组距离，松弛时同时更新。</li>
+      <li><strong>差分约束</strong>：将不等式约束转化为图论模型，用 SPFA 求解。</li>
+    </ul>
+
+    <div class="problem">
+      <div class="problem-title">综合练习题目</div>
+      <p><a href="https://www.luogu.com.cn/problem/P4779" target="_blank">Luogu P4779 - 单源最短路径（标准版）</a> - Dijkstra 模板</p>
+      <p><a href="https://www.luogu.com.cn/problem/P3371" target="_blank">Luogu P3371 - 单源最短路径（弱化版）</a> - SPFA / Dijkstra</p>
+      <p><a href="https://www.luogu.com.cn/problem/P3385" target="_blank">Luogu P3385 - 负环</a> - SPFA 判负环</p>
+      <p><a href="https://www.luogu.com.cn/problem/P2910" target="_blank">Luogu P2910 - Clear And Present Danger</a> - Floyd 应用</p>
+      <p><a href="https://www.luogu.com.cn/problem/P5905" target="_blank">Luogu P5905 - Johnson 全源最短路</a> - Johnson 模板</p>
+      <p><a href="https://www.luogu.com.cn/problem/P5960" target="_blank">Luogu P5960 - 差分约束</a> - 差分约束系统</p>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

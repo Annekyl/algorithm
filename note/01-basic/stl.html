@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STL 速查手册 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html">01 基础篇</a> &gt;
+    <span>STL 速查手册</span>
+  </nav>
+
+  <div class="page-header">
+    <h1>STL 速查手册</h1>
+    <p class="subtitle">C++ 标准模板库 -- 竞赛常用容器、算法与字符串处理速查</p>
+    <div class="tags">
+      <span class="tag tag-base">基础</span>
+      <span class="tag tag-easy">速查</span>
+      <span class="tag tag-mid">竞赛必备</span>
+    </div>
+  </div>
+
+  <!-- ==================== TOC ==================== -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#containers">一、容器 (Containers)</a></li>
+      <li><a href="#seq-containers">1.1 序列容器: vector / deque / list / forward_list</a></li>
+      <li><a href="#assoc-containers">1.2 关联容器: set / multiset / map / multimap</a></li>
+      <li><a href="#hash-containers">1.3 无序容器: unordered_set / unordered_map</a></li>
+      <li><a href="#adapter-containers">1.4 容器适配器: stack / queue / priority_queue</a></li>
+      <li><a href="#utility">1.5 工具类: pair / tuple</a></li>
+      <li><a href="#algorithms">二、常用算法 (Algorithms)</a></li>
+      <li><a href="#sort-algo">2.1 排序: sort / stable_sort / nth_element</a></li>
+      <li><a href="#search-algo">2.2 查找: lower_bound / upper_bound / binary_search</a></li>
+      <li><a href="#transform-algo">2.3 变换: unique / reverse / rotate / permutation</a></li>
+      <li><a href="#numeric-algo">2.4 数值: accumulate / partial_sum / 内建函数</a></li>
+      <li><a href="#string">三、字符串处理</a></li>
+      <li><a href="#string-class">3.1 string 类常用方法</a></li>
+      <li><a href="#sstream">3.2 stringstream / sscanf / sprintf</a></li>
+      <li><a href="#io-opt">四、输入输出优化</a></li>
+      <li><a href="#io-sync">4.1 同步与绑定</a></li>
+      <li><a href="#io-perf">4.2 scanf/printf vs cin/cout 性能对比</a></li>
+      <li><a href="#pitfalls">五、常见陷阱与最佳实践</a></li>
+    </ul>
+  </div>
+
+  <!-- ============================================================ -->
+  <!--                    一、容器 (Containers)                      -->
+  <!-- ============================================================ -->
+  <div class="section" id="containers">
+    <h2>一、容器 (Containers)</h2>
+    <p>STL 容器是竞赛编程中最常用的数据结构。下面按照类别逐一介绍各容器的核心操作、时间复杂度和使用技巧。</p>
+
+    <!-- ==================== 序列容器 ==================== -->
+    <div id="seq-containers">
+    <h3>1.1 序列容器</h3>
+
+    <!-- vector -->
+    <h4>vector -- 动态数组</h4>
+    <p><code>vector</code> 是最常用的容器，底层为连续内存的动态数组。支持 O(1) 随机访问，尾部插入摊还 O(1)。</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>操作</th><th>时间复杂度</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>push_back(x)</code></td><td>摊还 O(1)</td><td>尾部添加元素（拷贝/移动构造）</td></tr>
+        <tr><td><code>emplace_back(args...)</code></td><td>摊还 O(1)</td><td>尾部原地构造，避免临时对象</td></tr>
+        <tr><td><code>pop_back()</code></td><td>O(1)</td><td>删除尾部元素</td></tr>
+        <tr><td><code>size() / empty()</code></td><td>O(1)</td><td>元素个数 / 是否为空</td></tr>
+        <tr><td><code>resize(n)</code></td><td>O(n)</td><td>调整大小，多删少补（默认值初始化）</td></tr>
+        <tr><td><code>reserve(n)</code></td><td>O(n)</td><td>预分配容量，不改变 size</td></tr>
+        <tr><td><code>operator[] / at(i)</code></td><td>O(1)</td><td>随机访问，at 有越界检查</td></tr>
+        <tr><td><code>insert(it, x)</code></td><td>O(n)</td><td>在迭代器位置前插入</td></tr>
+        <tr><td><code>erase(it)</code></td><td>O(n)</td><td>删除迭代器指向的元素</td></tr>
+        <tr><td><code>clear()</code></td><td>O(n)</td><td>清空所有元素（不释放内存）</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;vector&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="cm">// 基本用法</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v;              <span class="cm">// 空 vector</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v2(<span class="num">10</span>);          <span class="cm">// 10 个 0</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v3(<span class="num">10</span>, <span class="num">5</span>);      <span class="cm">// 10 个 5</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v4 = {<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>,<span class="num">4</span>}; <span class="cm">// 初始化列表</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v5(v4.<span class="fn">begin</span>()+<span class="num">1</span>, v4.<span class="fn">end</span>()); <span class="cm">// 拷贝 [1,end)</span>
+
+<span class="cm">// 二维 vector（邻接表常用）</span>
+<span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; adj(n);  <span class="cm">// n 行，每行空</span>
+<span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; mat(n, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;(m, <span class="num">0</span>)); <span class="cm">// n x m 矩阵</span>
+
+<span class="cm">// emplace_back vs push_back</span>
+<span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; vp;
+vp.<span class="fn">push_back</span>({<span class="num">1</span>,<span class="num">2</span>});          <span class="cm">// 先构造临时 pair，再移动</span>
+vp.<span class="fn">emplace_back</span>(<span class="num">1</span>, <span class="num">2</span>);       <span class="cm">// 原地构造，更高效</span>
+
+<span class="cm">// reserve 避免多次扩容</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v;
+v.<span class="fn">reserve</span>(<span class="num">100000</span>);           <span class="cm">// 预分配，减少 realloc</span>
+<span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; <span class="num">100000</span>; i++)
+    v.<span class="fn">push_back</span>(i);           <span class="cm">// 不会触发扩容</span></code></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">迭代器失效规则 (vector)</div>
+      <ul>
+        <li><code>push_back</code>: 如果触发扩容，所有迭代器失效；否则不影响</li>
+        <li><code>insert</code>: 插入点及之后的所有迭代器失效</li>
+        <li><code>erase</code>: 被删点及之后的所有迭代器失效</li>
+        <li><code>clear</code>: 所有迭代器失效</li>
+      </ul>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">竞赛技巧</div>
+      <ul>
+        <li>已知元素数量时，先 <code>reserve</code> 再 <code>push_back</code>，避免多次扩容</li>
+        <li><code>v.resize(n)</code> 后可以直接 <code>v[i]</code> 访问，比循环 <code>push_back</code> 更简洁</li>
+        <li>用 <code>v.data()</code> 获取底层数组指针，传给 C 接口</li>
+        <li>清空并释放内存: <code>vector&lt;int&gt;().swap(v);</code> 或 <code>v.shrink_to_fit();</code></li>
+      </ul>
+    </div>
+
+    <!-- deque -->
+    <h4>deque -- 双端队列</h4>
+    <p><code>deque</code> 底层为分段连续内存（中控器 + 缓冲区），支持两端 O(1) 插入删除和 O(1) 随机访问。</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>操作</th><th>时间复杂度</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>push_back / push_front</code></td><td>O(1)</td><td>头/尾插入</td></tr>
+        <tr><td><code>pop_back / pop_front</code></td><td>O(1)</td><td>头/尾删除</td></tr>
+        <tr><td><code>operator[] / at(i)</code></td><td>O(1)</td><td>随机访问</td></tr>
+        <tr><td><code>insert / erase</code></td><td>O(n)</td><td>中间插入/删除</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;deque&gt;</span>
+<span class="ty">deque</span>&lt;<span class="ty">int</span>&gt; dq;
+dq.<span class="fn">push_back</span>(<span class="num">1</span>);    <span class="cm">// [1]</span>
+dq.<span class="fn">push_front</span>(<span class="num">2</span>);   <span class="cm">// [2, 1]</span>
+dq.<span class="fn">push_back</span>(<span class="num">3</span>);    <span class="cm">// [2, 1, 3]</span>
+<span class="ty">int</span> a = dq[<span class="num">0</span>];      <span class="cm">// 2 (O(1) 随机访问)</span>
+dq.<span class="fn">pop_front</span>();       <span class="cm">// [1, 3]</span>
+dq.<span class="fn">pop_back</span>();        <span class="cm">// [1]</span>
+
+<span class="cm">// deque 作为单调队列的底层容器</span>
+<span class="ty">deque</span>&lt;<span class="ty">int</span>&gt; mono;    <span class="cm">// 单调队列用 deque 实现滑动窗口</span></code></pre>
+
+    <div class="box box-info">
+      <div class="box-title">deque vs vector</div>
+      <p>deque 头部插入 O(1)，但随机访问比 vector 稍慢（非完全连续内存，需二次寻址）。竞赛中 deque 主要用于 BFS 的双端队列优化和单调队列。</p>
+    </div>
+
+    <!-- list / forward_list -->
+    <h4>list / forward_list -- 链表</h4>
+    <p><code>list</code> 为双向链表，<code>forward_list</code> 为单向链表。在竞赛中使用较少，因为内存不连续、缓存不友好。</p>
+
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;list&gt;</span>
+<span class="ty">list</span>&lt;<span class="ty">int</span>&gt; lst = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>};
+<span class="kw">auto</span> it = lst.<span class="fn">begin</span>();
+<span class="fn">advance</span>(it, <span class="num">2</span>);           <span class="cm">// it 指向第 3 个元素 (3)</span>
+lst.<span class="fn">insert</span>(it, <span class="num">10</span>);        <span class="cm">// [1, 2, 10, 3, 4] O(1)</span>
+lst.<span class="fn">erase</span>(it);              <span class="cm">// [1, 2, 10, 4] O(1) (it 仍有效)</span>
+lst.<span class="fn">splice</span>(lst.<span class="fn">begin</span>(), lst, <span class="fn">prev</span>(lst.<span class="fn">end</span>())); <span class="cm">// 把末尾移到头部</span>
+lst.<span class="fn">sort</span>();                  <span class="cm">// O(n log n)，链表自己的 sort</span>
+lst.<span class="fn">unique</span>();               <span class="cm">// 去除相邻重复元素（需先排序）</span>
+lst.<span class="fn">merge</span>(other_lst);       <span class="cm">// 合并两个有序链表</span></code></pre>
+
+    <div class="complexity">
+      <span class="label">list 插入/删除:</span>
+      <span class="value">O(1)</span>
+      <span class="label">（已有迭代器时）</span>
+    </div>
+    <div class="complexity">
+      <span class="label">list 查找:</span>
+      <span class="value">O(n)</span>
+      <span class="label">（不支持随机访问）</span>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">竞赛建议</div>
+      <p>竞赛中几乎不需要 <code>list</code> / <code>forward_list</code>。需要链表时通常手写链式前向星或用 <code>vector + 下标</code> 模拟。仅在需要大量中间插删且不需要随机访问时考虑。</p>
+    </div>
+    </div>
+
+    <!-- ==================== 关联容器 ==================== -->
+    <div id="assoc-containers">
+    <h3>1.2 关联容器 (有序)</h3>
+    <p>基于红黑树实现，元素自动有序排列。</p>
+
+    <!-- set / multiset -->
+    <h4>set / multiset -- 有序集合</h4>
+    <p><code>set</code> 不允许重复元素，<code>multiset</code> 允许重复。支持 O(log n) 插入、删除、查找。</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>操作</th><th>时间复杂度</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>insert(x)</code></td><td>O(log n)</td><td>插入元素</td></tr>
+        <tr><td><code>erase(x)</code></td><td>O(log n)</td><td>删除值为 x 的所有元素</td></tr>
+        <tr><td><code>erase(it)</code></td><td>O(1)</td><td>删除迭代器指向的元素</td></tr>
+        <tr><td><code>find(x)</code></td><td>O(log n)</td><td>返回迭代器，找不到返回 end()</td></tr>
+        <tr><td><code>count(x)</code></td><td>O(log n + k)</td><td>元素 x 的个数（set 只有 0 或 1）</td></tr>
+        <tr><td><code>lower_bound(x)</code></td><td>O(log n)</td><td>&gt;= x 的第一个元素</td></tr>
+        <tr><td><code>upper_bound(x)</code></td><td>O(log n)</td><td>&gt; x 的第一个元素</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;set&gt;</span>
+
+<span class="cm">// set: 自动去重 + 有序</span>
+<span class="ty">set</span>&lt;<span class="ty">int</span>&gt; s = {<span class="num">3</span>, <span class="num">1</span>, <span class="num">4</span>, <span class="num">1</span>, <span class="num">5</span>};
+<span class="cm">// s = {1, 3, 4, 5}  自动排序去重</span>
+s.<span class="fn">insert</span>(<span class="num">2</span>);          <span class="cm">// {1, 2, 3, 4, 5}</span>
+s.<span class="fn">erase</span>(<span class="num">3</span>);           <span class="cm">// {1, 2, 4, 5}</span>
+
+<span class="kw">if</span> (s.<span class="fn">find</span>(<span class="num">4</span>) != s.<span class="fn">end</span>())  <span class="cm">// 存在</span>
+    <span class="fn">puts</span>(<span class="str">"found"</span>);
+
+<span class="kw">auto</span> it = s.<span class="fn">lower_bound</span>(<span class="num">3</span>);  <span class="cm">// 指向 4（第一个 &gt;= 3）</span>
+<span class="kw">auto</span> it2 = s.<span class="fn">upper_bound</span>(<span class="num">3</span>); <span class="cm">// 指向 4（第一个 &gt; 3）</span>
+
+<span class="cm">// 遍历（有序）</span>
+<span class="kw">for</span> (<span class="ty">int</span> x : s) <span class="fn">printf</span>(<span class="str">"%d "</span>, x);
+<span class="cm">// 输出: 1 2 4 5</span>
+
+<span class="cm">// multiset: 允许重复</span>
+<span class="ty">multiset</span>&lt;<span class="ty">int</span>&gt; ms = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">3</span>, <span class="num">3</span>};
+ms.<span class="fn">insert</span>(<span class="num">2</span>);       <span class="cm">// {1, 2, 2, 2, 3, 3, 3}</span>
+ms.<span class="fn">count</span>(<span class="num">2</span>);        <span class="cm">// 返回 3</span>
+
+<span class="cm">// 删除 multiset 中某个特定元素（只删一个）</span>
+ms.<span class="fn">erase</span>(ms.<span class="fn">find</span>(<span class="num">2</span>)); <span class="cm">// 只删一个 2</span>
+
+<span class="cm">// 获取最小/最大值</span>
+<span class="ty">int</span> mn = *s.<span class="fn">begin</span>();         <span class="cm">// 最小值</span>
+<span class="ty">int</span> mx = *s.<span class="fn">rbegin</span>();        <span class="cm">// 最大值（反向迭代器）</span></code></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">multiset 的 erase 陷阱</div>
+      <p><code>ms.erase(x)</code> 会删除 <strong>所有</strong> 值为 x 的元素！如果只想删一个，必须用 <code>ms.erase(ms.find(x))</code>。但要先确认 x 存在（<code>find</code> 返回 <code>end()</code> 时不要 erase）。</p>
+    </div>
+
+    <!-- map / multimap -->
+    <h4>map / multimap -- 有序映射</h4>
+    <p><code>map</code> 是键值对的有序集合，键唯一。底层红黑树，按键排序。</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>操作</th><th>时间复杂度</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>m[key]</code></td><td>O(log n)</td><td>访问/插入键 key（不存在则默认初始化）</td></tr>
+        <tr><td><code>m.at(key)</code></td><td>O(log n)</td><td>访问键 key（不存在则抛异常）</td></tr>
+        <tr><td><code>m.insert({k,v})</code></td><td>O(log n)</td><td>插入，已存在则不覆盖</td></tr>
+        <tr><td><code>m.emplace(k,v)</code></td><td>O(log n)</td><td>原地构造插入</td></tr>
+        <tr><td><code>m.count(k)</code></td><td>O(log n)</td><td>键 k 是否存在（0 或 1）</td></tr>
+        <tr><td><code>m.find(k)</code></td><td>O(log n)</td><td>查找，返回迭代器</td></tr>
+        <tr><td><code>m.erase(k)</code></td><td>O(log n)</td><td>删除键 k</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;map&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;string&gt;</span>
+
+<span class="ty">map</span>&lt;<span class="ty">string</span>, <span class="ty">int</span>&gt; mp;
+
+<span class="cm">// 插入方式</span>
+mp[<span class="str">"apple"</span>] = <span class="num">3</span>;                 <span class="cm">// [] 会自动创建</span>
+mp.<span class="fn">insert</span>({<span class="str">"banana"</span>, <span class="num">5</span>});         <span class="cm">// 已存在则无效</span>
+mp.<span class="fn">emplace</span>(<span class="str">"cherry"</span>, <span class="num">7</span>);          <span class="cm">// 原地构造</span>
+
+<span class="cm">// 访问</span>
+<span class="ty">int</span> val = mp[<span class="str">"apple"</span>];            <span class="cm">// 3</span>
+<span class="ty">int</span> val2 = mp[<span class="str">"unknown"</span>];         <span class="cm">// 0! 注意：会自动插入</span>
+
+<span class="cm">// 安全访问（不自动插入）</span>
+<span class="kw">if</span> (mp.<span class="fn">count</span>(<span class="str">"unknown"</span>))          <span class="cm">// 不存在，返回 0</span>
+    <span class="fn">printf</span>(<span class="str">"found\n"</span>);
+
+<span class="kw">auto</span> it = mp.<span class="fn">find</span>(<span class="str">"apple"</span>);       <span class="cm">// 返回迭代器</span>
+<span class="kw">if</span> (it != mp.<span class="fn">end</span>())
+    <span class="fn">printf</span>(<span class="str">"%s: %d\n"</span>, it-&gt;first.<span class="fn">c_str</span>(), it-&gt;second);
+
+<span class="cm">// 遍历（按键的升序）</span>
+<span class="kw">for</span> (<span class="kw">auto</span>&amp; [k, v] : mp)          <span class="cm">// C++17 结构化绑定</span>
+    <span class="fn">printf</span>(<span class="str">"%s: %d\n"</span>, k.<span class="fn">c_str</span>(), v);
+
+<span class="cm">// 统计词频的经典写法</span>
+<span class="ty">map</span>&lt;<span class="ty">string</span>, <span class="ty">int</span>&gt; freq;
+<span class="ty">string</span> word;
+<span class="kw">while</span> (cin &gt;&gt; word)
+    freq[word]++;                  <span class="cm">// 自动初始化为 0 再 ++</span></code></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">operator[] 的陷阱</div>
+      <p><code>m[key]</code> 在 key 不存在时会<strong>自动插入</strong>一个默认值！如果只想查询，用 <code>m.find(key)</code> 或 <code>m.count(key)</code>。<code>multimap</code> 不支持 <code>[]</code> 操作。</p>
+    </div>
+    </div>
+
+    <!-- ==================== 无序容器 ==================== -->
+    <div id="hash-containers">
+    <h3>1.3 无序容器 (哈希)</h3>
+    <p>基于哈希表实现，平均 O(1) 操作，但最坏 O(n)。</p>
+
+    <h4>unordered_set / unordered_map</h4>
+
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;unordered_set&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;unordered_map&gt;</span>
+
+<span class="cm">// unordered_set: O(1) 查找/插入</span>
+<span class="ty">unordered_set</span>&lt;<span class="ty">int</span>&gt; us = {<span class="num">3</span>, <span class="num">1</span>, <span class="num">4</span>, <span class="num">1</span>, <span class="num">5</span>};
+us.<span class="fn">insert</span>(<span class="num">2</span>);
+us.<span class="fn">erase</span>(<span class="num">3</span>);
+<span class="kw">if</span> (us.<span class="fn">count</span>(<span class="num">4</span>))  <span class="cm">// O(1) 平均</span>
+    <span class="fn">puts</span>(<span class="str">"found"</span>);
+
+<span class="cm">// unordered_map: O(1) 键值对</span>
+<span class="ty">unordered_map</span>&lt;<span class="ty">string</span>, <span class="ty">int</span>&gt; um;
+um[<span class="str">"hello"</span>] = <span class="num">42</span>;
+um[<span class="str">"world"</span>] = <span class="num">100</span>;
+<span class="kw">for</span> (<span class="kw">auto</span>&amp; [k, v] : um)
+    <span class="fn">printf</span>(<span class="str">"%s: %d\n"</span>, k.<span class="fn">c_str</span>(), v);
+
+<span class="cm">// bucket 相关</span>
+<span class="fn">printf</span>(<span class="str">"bucket_count: %zu\n"</span>, us.<span class="fn">bucket_count</span>());
+<span class="fn">printf</span>(<span class="str">"load_factor: %.2f\n"</span>, us.<span class="fn">load_factor</span>());
+us.<span class="fn">reserve</span>(<span class="num">1000</span>);          <span class="cm">// 预分配桶，减少 rehash</span>
+us.<span class="fn">max_load_factor</span>(<span class="num">0.25</span>);  <span class="cm">// 降低负载因子，减少冲突</span></code></pre>
+
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>操作</th><th>平均</th><th>最坏</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>insert / erase / find</td><td>O(1)</td><td>O(n)</td><td>哈希冲突严重时退化</td></tr>
+        <tr><td>遍历</td><td colspan="2">O(n + bucket_count)</td><td>空桶也会遍历</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">竞赛中 unordered_map 的坑</div>
+      <ul>
+        <li>如果哈希函数被攻击者刻意构造导致大量冲突，复杂度退化为 O(n)。在不确定数据范围时 <code>map</code> 更安全</li>
+        <li>自定义类型需要提供哈希函数（重载 <code>std::hash</code> 或传入自定义仿函数）</li>
+        <li>遍历顺序不确定（与插入顺序不同）</li>
+        <li>竞赛中如需稳定性能，优先用 <code>map</code>（O(log n) 无最坏退化）</li>
+      </ul>
+    </div>
+    </div>
+
+    <!-- ==================== 容器适配器 ==================== -->
+    <div id="adapter-containers">
+    <h3>1.4 容器适配器</h3>
+
+    <h4>stack -- 栈</h4>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;stack&gt;</span>
+<span class="ty">stack</span>&lt;<span class="ty">int</span>&gt; st;
+st.<span class="fn">push</span>(<span class="num">1</span>);      <span class="cm">// 入栈</span>
+st.<span class="fn">push</span>(<span class="num">2</span>);
+st.<span class="fn">push</span>(<span class="num">3</span>);
+<span class="ty">int</span> top = st.<span class="fn">top</span>(); <span class="cm">// 3 (栈顶)</span>
+st.<span class="fn">pop</span>();           <span class="cm">// 弹出栈顶</span>
+<span class="ty">bool</span> empty = st.<span class="fn">empty</span>(); <span class="cm">// false</span>
+<span class="ty">size_t</span> sz = st.<span class="fn">size</span>();   <span class="cm">// 2</span></code></pre>
+
+    <div class="complexity">
+      <span class="label">push / pop / top:</span>
+      <span class="value">均 O(1)</span>
+    </div>
+
+    <h4>queue -- 队列</h4>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;queue&gt;</span>
+<span class="ty">queue</span>&lt;<span class="ty">int</span>&gt; q;
+q.<span class="fn">push</span>(<span class="num">1</span>);       <span class="cm">// 入队</span>
+q.<span class="fn">push</span>(<span class="num">2</span>);
+q.<span class="fn">push</span>(<span class="num">3</span>);
+<span class="ty">int</span> front = q.<span class="fn">front</span>(); <span class="cm">// 1 (队首)</span>
+<span class="ty">int</span> back  = q.<span class="fn">back</span>();  <span class="cm">// 3 (队尾)</span>
+q.<span class="fn">pop</span>();               <span class="cm">// 弹出队首</span></code></pre>
+
+    <div class="complexity">
+      <span class="label">push / pop / front / back:</span>
+      <span class="value">均 O(1)</span>
+    </div>
+
+    <h4>priority_queue -- 优先队列（堆）</h4>
+    <p>默认为大顶堆（最大元素优先出队），底层用 <code>vector</code> 实现。</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>操作</th><th>时间复杂度</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>push(x)</code></td><td>O(log n)</td><td>插入元素</td></tr>
+        <tr><td><code>pop()</code></td><td>O(log n)</td><td>弹出堆顶</td></tr>
+        <tr><td><code>top()</code></td><td>O(1)</td><td>查看堆顶</td></tr>
+        <tr><td><code>size() / empty()</code></td><td>O(1)</td><td>大小/判空</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;queue&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;functional&gt;</span>
+
+<span class="cm">// 大顶堆（默认）</span>
+<span class="ty">priority_queue</span>&lt;<span class="ty">int</span>&gt; pq;
+pq.<span class="fn">push</span>(<span class="num">3</span>); pq.<span class="fn">push</span>(<span class="num">1</span>); pq.<span class="fn">push</span>(<span class="num">4</span>);
+<span class="ty">int</span> mx = pq.<span class="fn">top</span>(); <span class="cm">// 4</span>
+
+<span class="cm">// 小顶堆</span>
+<span class="ty">priority_queue</span>&lt;<span class="ty">int</span>, <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;, <span class="ty">greater</span>&lt;<span class="ty">int</span>&gt;&gt; minpq;
+minpq.<span class="fn">push</span>(<span class="num">3</span>); minpq.<span class="fn">push</span>(<span class="num">1</span>); minpq.<span class="fn">push</span>(<span class="num">4</span>);
+<span class="ty">int</span> mn = minpq.<span class="fn">top</span>(); <span class="cm">// 1</span>
+
+<span class="cm">// pair 作为元素（先比较 first，再比较 second）</span>
+<span class="ty">priority_queue</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; pq2;
+pq2.<span class="fn">push</span>({<span class="num">1</span>, <span class="num">100</span>});
+pq2.<span class="fn">push</span>({<span class="num">2</span>, <span class="num">50</span>});
+pq2.<span class="fn">push</span>({<span class="num">2</span>, <span class="num">200</span>}); <span class="cm">// top = {2, 200}</span>
+
+<span class="cm">// 自定义比较器（仿函数）</span>
+<span class="kw">struct</span> <span class="ty">Cmp</span> {
+    <span class="ty">bool</span> <span class="kw">operator</span>()(<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt; a, <span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt; b) {
+        <span class="kw">return</span> a.first &gt; b.first; <span class="cm">// 小顶堆（按 first）</span>
+    }
+};
+<span class="ty">priority_queue</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;, <span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt;, <span class="ty">Cmp</span>&gt; pq3;</code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">priority_queue vs set/multiset 实现堆</div>
+      <p>两者都能实现堆。priority_queue 更轻量（仅堆顶访问），但不能删除中间元素。需要删除任意元素时用 <code>multiset</code>（或手写带删除的堆）。</p>
+    </div>
+    </div>
+
+    <!-- ==================== pair / tuple ==================== -->
+    <div id="utility">
+    <h3>1.5 工具类: pair / tuple</h3>
+
+    <h4>pair</h4>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;utility&gt;</span>
+
+<span class="cm">// 创建</span>
+<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt; p1 = {<span class="num">1</span>, <span class="num">2</span>};
+<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt; p2 = <span class="fn">make_pair</span>(<span class="num">3</span>, <span class="num">4</span>);
+<span class="kw">auto</span> p3 = <span class="fn">make_pair</span>(<span class="num">5</span>, <span class="num">6</span>);
+
+<span class="cm">// 访问</span>
+<span class="ty">int</span> a = p1.first;   <span class="cm">// 1</span>
+<span class="ty">int</span> b = p1.second;  <span class="cm">// 2</span>
+<span class="kw">auto</span>&amp; [x, y] = p1;  <span class="cm">// C++17 结构化绑定: x=1, y=2</span>
+
+<span class="cm">// 比较：先比 first，再比 second</span>
+<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt; a1 = {<span class="num">1</span>, <span class="num">3</span>};
+<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt; a2 = {<span class="num">1</span>, <span class="num">2</span>};
+<span class="kw">if</span> (a1 &gt; a2) <span class="fn">puts</span>(<span class="str">"a1 > a2"</span>); <span class="cm">// true: first相同，比second</span>
+
+<span class="cm">// 常用于 map 的 insert 和返回多个值</span>
+<span class="ty">map</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt; mp;
+mp.<span class="fn">insert</span>({<span class="num">1</span>, <span class="num">10</span>});  <span class="cm">// pair&lt;int,int&gt;</span></code></pre>
+
+    <h4>tuple</h4>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;tuple&gt;</span>
+
+<span class="cm">// 创建</span>
+<span class="ty">tuple</span>&lt;<span class="ty">int</span>, <span class="ty">string</span>, <span class="ty">double</span>&gt; t1(<span class="num">1</span>, <span class="str">"hello"</span>, <span class="num">3.14</span>);
+<span class="kw">auto</span> t2 = <span class="fn">make_tuple</span>(<span class="num">2</span>, <span class="str">"world"</span>, <span class="num">2.72</span>);
+
+<span class="cm">// 访问</span>
+<span class="ty">int</span> id = <span class="fn">get</span>&lt;<span class="num">0</span>&gt;(t1);        <span class="cm">// 1</span>
+<span class="ty">string</span> name = <span class="fn">get</span>&lt;<span class="num">1</span>&gt;(t1);   <span class="cm">// "hello"</span>
+
+<span class="cm">// C++17 结构化绑定</span>
+<span class="kw">auto</span>&amp; [id2, name2, val2] = t1;
+
+<span class="cm">// C++17 类型推断获取</span>
+<span class="kw">auto</span>&amp; nm = <span class="fn">get</span>&lt;<span class="ty">string</span>&gt;(t1); <span class="cm">// 按类型获取</span>
+
+<span class="cm">// tie 解包</span>
+<span class="ty">int</span> a; <span class="ty">string</span> b; <span class="ty">double</span> c;
+<span class="fn">tie</span>(a, b, c) = t1;            <span class="cm">// a=1, b="hello", c=3.14</span>
+<span class="fn">tie</span>(a, <span class="fn">ignore</span>, c) = t1;      <span class="cm">// 忽略第二个元素</span>
+
+<span class="cm">// 比较（按字典序）</span>
+<span class="kw">auto</span> t3 = <span class="fn">make_tuple</span>(<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>);
+<span class="kw">auto</span> t4 = <span class="fn">make_tuple</span>(<span class="num">1</span>, <span class="num">2</span>, <span class="num">4</span>);
+<span class="kw">if</span> (t3 &lt; t4) <span class="fn">puts</span>(<span class="str">"t3 < t4"</span>); <span class="cm">// true</span>
+
+<span class="cm">// tuple_size 获取元素个数</span>
+<span class="fn">printf</span>(<span class="str">"size: %zu\n"</span>, <span class="ty">tuple_size</span>&lt;<span class="kw">decltype</span>(t1)&gt;::value); <span class="cm">// 3</span></code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">pair 与 tuple 的竞赛用途</div>
+      <ul>
+        <li><code>pair</code>: 存储两个值的组合，如坐标 (x,y)、边 (u,v)、键值对</li>
+        <li><code>tuple</code>: 存储三个及以上值，如图的边 (u,v,w)、Dijkstra 状态 (dist,node,flag)</li>
+        <li>两者都支持字典序比较，可用于排序、set/map 的键</li>
+      </ul>
+    </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!--                   二、常用算法 (Algorithms)                    -->
+  <!-- ============================================================ -->
+  <div class="section" id="algorithms">
+    <h2>二、常用算法 (Algorithms)</h2>
+    <p>STL 算法头文件 <code>&lt;algorithm&gt;</code>、<code>&lt;numeric&gt;</code> 提供了大量通用算法。竞赛中掌握这些可以大幅提高编码效率。</p>
+
+    <!-- ==================== 排序 ==================== -->
+    <div id="sort-algo">
+    <h3>2.1 排序算法</h3>
+
+    <h4>sort -- 快速排序 (IntroSort)</h4>
+    <p>底层为 IntroSort（快排 + 堆排 + 插入排序混合），平均 O(n log n)，不稳定。</p>
+
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;algorithm&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;vector&gt;</span>
+
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v = {<span class="num">5</span>, <span class="num">2</span>, <span class="num">8</span>, <span class="num">1</span>, <span class="num">9</span>, <span class="num">3</span>};
+
+<span class="cm">// 升序排序</span>
+<span class="fn">sort</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>());                <span class="cm">// [1, 2, 3, 5, 8, 9]</span>
+
+<span class="cm">// 降序排序</span>
+<span class="fn">sort</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>(), <span class="ty">greater</span>&lt;<span class="ty">int</span>&gt;()); <span class="cm">// [9, 8, 5, 3, 2, 1]</span>
+
+<span class="cm">// 自定义比较器</span>
+<span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; vp = {{<span class="num">1</span>,<span class="num">3</span>}, {<span class="num">2</span>,<span class="num">1</span>}, {<span class="num">1</span>,<span class="num">2</span>}};
+<span class="fn">sort</span>(vp.<span class="fn">begin</span>(), vp.<span class="fn">end</span>(), [](<span class="kw">auto</span>&amp; a, <span class="kw">auto</span>&amp; b) {
+    <span class="kw">if</span> (a.first != b.first) <span class="kw">return</span> a.first &lt; b.first;
+    <span class="kw">return</span> a.second &gt; b.second;
+});
+<span class="cm">// 结果: [{1,3}, {1,2}, {2,1}]</span>
+
+<span class="cm">// 数组排序</span>
+<span class="ty">int</span> arr[] = {<span class="num">5</span>, <span class="num">2</span>, <span class="num">8</span>, <span class="num">1</span>};
+<span class="fn">sort</span>(arr, arr + <span class="num">4</span>);                     <span class="cm">// [1, 2, 5, 8]</span>
+<span class="fn">sort</span>(arr, arr + <span class="num">4</span>, <span class="ty">greater</span>&lt;<span class="ty">int</span>&gt;());    <span class="cm">// 降序</span>
+
+<span class="cm">// 字符串排序</span>
+<span class="ty">string</span> s = <span class="str">"dcba"</span>;
+<span class="fn">sort</span>(s.<span class="fn">begin</span>(), s.<span class="fn">end</span>());                <span class="cm">// "abcd"</span>
+
+<span class="cm">// 部分排序（只排序 [first, middle) 部分）</span>
+<span class="fn">partial_sort</span>(v.<span class="fn">begin</span>(), v.<span class="fn">begin</span>() + <span class="num">3</span>, v.<span class="fn">end</span>());
+<span class="cm">// 前 3 个是最小的 3 个，已排序；其余无序</span></code></pre>
+
+    <div class="complexity">
+      <span class="label">sort:</span>
+      <span class="value">O(n log n)</span>
+    </div>
+
+    <h4>stable_sort -- 稳定排序</h4>
+    <p>保持相等元素的相对顺序不变。底层为归并排序，O(n log n)，但需要 O(n) 额外空间。</p>
+
+    <pre><code><span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">string</span>&gt;&gt; students = {
+    {<span class="num">90</span>, <span class="str">"Alice"</span>}, {<span class="num">85</span>, <span class="str">"Bob"</span>}, {<span class="num">90</span>, <span class="str">"Charlie"</span>}, {<span class="num">85</span>, <span class="str">"Dave"</span>}
+};
+<span class="cm">// 按成绩排序，相同成绩保持原顺序</span>
+<span class="fn">stable_sort</span>(students.<span class="fn">begin</span>(), students.<span class="fn">end</span>(), [](<span class="kw">auto</span>&amp; a, <span class="kw">auto</span>&amp; b) {
+    <span class="kw">return</span> a.first &gt; b.first;
+});
+<span class="cm">// 结果: {90,Alice}, {90,Charlie}, {85,Bob}, {85,Dave}</span>
+<span class="cm">// 注意 Bob 在 Dave 前面（保持了原顺序）</span></code></pre>
+
+    <h4>nth_element -- 第 n 小元素</h4>
+    <p>将第 n 小的元素放到正确位置，左边都比它小，右边都比它大（但两边不一定有序）。</p>
+
+    <pre><code><span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v = {<span class="num">5</span>, <span class="num">2</span>, <span class="num">8</span>, <span class="num">1</span>, <span class="num">9</span>, <span class="num">3</span>, <span class="num">7</span>, <span class="num">4</span>, <span class="num">6</span>};
+
+<span class="cm">// 求第 4 小的元素（下标 3）</span>
+<span class="fn">nth_element</span>(v.<span class="fn">begin</span>(), v.<span class="fn">begin</span>() + <span class="num">3</span>, v.<span class="fn">end</span>());
+<span class="ty">int</span> kth = v[<span class="num">3</span>]; <span class="cm">// 第 4 小的值</span>
+
+<span class="cm">// 求前 k 小的元素（无序）</span>
+<span class="ty">int</span> k = <span class="num">5</span>;
+<span class="fn">nth_element</span>(v.<span class="fn">begin</span>(), v.<span class="fn">begin</span>() + k, v.<span class="fn">end</span>());
+<span class="cm">// v[0..k-1] 是最小的 k 个元素（无序）</span>
+
+<span class="cm">// 求中位数</span>
+<span class="ty">int</span> n = v.<span class="fn">size</span>();
+<span class="fn">nth_element</span>(v.<span class="fn">begin</span>(), v.<span class="fn">begin</span>() + n/<span class="num">2</span>, v.<span class="fn">end</span>());
+<span class="ty">int</span> median = v[n/<span class="num">2</span>];</code></pre>
+
+    <div class="complexity">
+      <span class="label">nth_element 平均:</span>
+      <span class="value">O(n)</span>
+      <span class="label">（比 sort 的 O(n log n) 更快）</span>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">sort 的比较器要求</div>
+      <p>比较函数必须满足<strong>严格弱序</strong>：不能出现 <code>a &lt; a</code> 为 true 的情况。对于浮点数、pair 等类型要特别注意。常见错误：在比较器中使用 <code>&lt;=</code> 而非 <code>&lt;</code>。</p>
+    </div>
+    </div>
+
+    <!-- ==================== 查找 ==================== -->
+    <div id="search-algo">
+    <h3>2.2 二分查找</h3>
+
+    <h4>lower_bound / upper_bound</h4>
+    <p>在<strong>有序</strong>序列中进行二分查找。</p>
+
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;algorithm&gt;</span>
+
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">3</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>};
+
+<span class="cm">// lower_bound: 第一个 &gt;= x 的迭代器</span>
+<span class="kw">auto</span> it1 = <span class="fn">lower_bound</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>(), <span class="num">3</span>);
+<span class="ty">int</span> idx1 = it1 - v.<span class="fn">begin</span>();  <span class="cm">// 3 (下标)</span>
+<span class="ty">int</span> val1 = *it1;              <span class="cm">// 3 (值)</span>
+
+<span class="cm">// upper_bound: 第一个 &gt; x 的迭代器</span>
+<span class="kw">auto</span> it2 = <span class="fn">upper_bound</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>(), <span class="num">3</span>);
+<span class="ty">int</span> idx2 = it2 - v.<span class="fn">begin</span>();  <span class="cm">// 6 (下标)</span>
+<span class="ty">int</span> val2 = *it2;              <span class="cm">// 4 (值)</span>
+
+<span class="cm">// 统计 x 的个数</span>
+<span class="ty">int</span> cnt = <span class="fn">upper_bound</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>(), <span class="num">3</span>)
+        - <span class="fn">lower_bound</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>(), <span class="num">3</span>);
+<span class="cm">// cnt = 3 (有 3 个 3)</span>
+
+<span class="cm">// binary_search: 判断 x 是否存在</span>
+<span class="ty">bool</span> exists = <span class="fn">binary_search</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>(), <span class="num">3</span>); <span class="cm">// true</span>
+<span class="ty">bool</span> notfound = <span class="fn">binary_search</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>(), <span class="num">6</span>); <span class="cm">// false</span>
+
+<span class="cm">// 在 set/map 中使用（自带成员函数，O(log n)）</span>
+<span class="ty">set</span>&lt;<span class="ty">int</span>&gt; s = {<span class="num">1</span>, <span class="num">3</span>, <span class="num">5</span>, <span class="num">7</span>};
+<span class="kw">auto</span> it3 = s.<span class="fn">lower_bound</span>(<span class="num">4</span>); <span class="cm">// 指向 5</span>
+
+<span class="cm">// 降序序列需要反转比较器</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; desc = {<span class="num">5</span>, <span class="num">3</span>, <span class="num">3</span>, <span class="num">1</span>};
+<span class="kw">auto</span> it4 = <span class="fn">lower_bound</span>(desc.<span class="fn">begin</span>(), desc.<span class="fn">end</span>(), <span class="num">3</span>, <span class="ty">greater</span>&lt;<span class="ty">int</span>&gt;());
+<span class="cm">// 第一个 &lt;= 3 的位置</span></code></pre>
+
+    <div class="complexity">
+      <span class="label">lower_bound / upper_bound / binary_search:</span>
+      <span class="value">O(log n)</span>
+      <span class="label">（随机访问迭代器）</span>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">lower_bound / upper_bound 使用注意</div>
+      <ul>
+        <li>序列必须是<strong>有序</strong>的（升序用默认比较器，降序用 <code>greater</code>）</li>
+        <li>对非随机访问迭代器（如 list、set），复杂度为 O(n) 而非 O(log n)</li>
+        <li><code>lower_bound(v.begin(), v.end(), x)</code> 等价于 <code>set::lower_bound(x)</code></li>
+        <li>不要对 <code>unordered_set</code> 使用这些函数（无序）</li>
+      </ul>
+    </div>
+    </div>
+
+    <!-- ==================== 变换 ==================== -->
+    <div id="transform-algo">
+    <h3>2.3 变换算法</h3>
+
+    <h4>unique -- 去重</h4>
+    <p>去除<strong>相邻</strong>的重复元素，返回新末尾迭代器。通常先排序再去重。</p>
+
+    <pre><code><span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v = {<span class="num">1</span>, <span class="num">3</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>};
+<span class="fn">sort</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>());   <span class="cm">// [1, 1, 2, 2, 3, 3, 3]</span>
+<span class="kw">auto</span> it = <span class="fn">unique</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>());
+v.<span class="fn">erase</span>(it, v.<span class="fn">end</span>());       <span class="cm">// 真正删除尾部垃圾: [1, 2, 3]</span>
+
+<span class="cm">// 一行去重模板</span>
+v.<span class="fn">erase</span>(<span class="fn">unique</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>()), v.<span class="fn">end</span>());
+
+<span class="cm">// 计算去重后元素个数</span>
+<span class="ty">int</span> n = <span class="fn">unique</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>()) - v.<span class="fn">begin</span>();</code></pre>
+
+    <div class="complexity">
+      <span class="label">unique:</span>
+      <span class="value">O(n)</span>
+    </div>
+
+    <h4>reverse -- 反转</h4>
+    <pre><code><span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>};
+<span class="fn">reverse</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>()); <span class="cm">// [5, 4, 3, 2, 1]</span>
+
+<span class="ty">string</span> s = <span class="str">"abcde"</span>;
+<span class="fn">reverse</span>(s.<span class="fn">begin</span>(), s.<span class="fn">end</span>()); <span class="cm">// "edcba"</span>
+
+<span class="cm">// 部分反转</span>
+<span class="fn">reverse</span>(v.<span class="fn">begin</span>(), v.<span class="fn">begin</span>() + <span class="num">3</span>); <span class="cm">// 反转前 3 个</span></code></pre>
+
+    <h4>rotate -- 循环移位</h4>
+    <pre><code><span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>};
+<span class="cm">// 左旋: 将 it 指向的元素移到开头</span>
+<span class="fn">rotate</span>(v.<span class="fn">begin</span>(), v.<span class="fn">begin</span>() + <span class="num">2</span>, v.<span class="fn">end</span>());
+<span class="cm">// v = [3, 4, 5, 1, 2]</span>
+
+<span class="cm">// 右旋 1 位</span>
+<span class="fn">rotate</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>() - <span class="num">1</span>, v.<span class="fn">end</span>());
+<span class="cm">// v = [2, 3, 4, 5, 1]</span></code></pre>
+
+    <h4>next_permutation / prev_permutation -- 全排列</h4>
+    <p>生成下一个/上一个字典序排列。需要先排序才能遍历所有排列。</p>
+
+    <pre><code><span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>};
+
+<span class="cm">// 枚举所有排列（必须先排序）</span>
+<span class="kw">do</span> {
+    <span class="kw">for</span> (<span class="ty">int</span> x : v) <span class="fn">printf</span>(<span class="str">"%d "</span>, x);
+    <span class="fn">puts</span>(<span class="str">""</span>);
+} <span class="kw">while</span> (<span class="fn">next_permutation</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>()));
+<span class="cm">// 输出: 123, 132, 213, 231, 312, 321</span>
+
+<span class="cm">// 判断是否还有下一个排列</span>
+<span class="ty">bool</span> has_next = <span class="fn">next_permutation</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>());
+<span class="cm">// v 已经是 {3,2,1}，没有下一个，返回 false</span>
+
+<span class="cm">// 上一个排列</span>
+<span class="fn">prev_permutation</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>());</code></pre>
+
+    <div class="complexity">
+      <span class="label">next_permutation / prev_permutation:</span>
+      <span class="value">O(n)</span>
+      <span class="label">（每次调用）</span>
+    </div>
+
+    <h4>min_element / max_element / minmax_element</h4>
+    <pre><code><span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v = {<span class="num">3</span>, <span class="num">1</span>, <span class="num">4</span>, <span class="num">1</span>, <span class="num">5</span>, <span class="num">9</span>};
+
+<span class="cm">// 最小值</span>
+<span class="kw">auto</span> mn = <span class="fn">min_element</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>());
+<span class="fn">printf</span>(<span class="str">"min = %d at pos %d\n"</span>, *mn, (int)(mn - v.<span class="fn">begin</span>()));
+
+<span class="cm">// 最大值</span>
+<span class="kw">auto</span> mx = <span class="fn">max_element</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>());
+<span class="fn">printf</span>(<span class="str">"max = %d\n"</span>, *mx);
+
+<span class="cm">// 同时获取最小和最大（只遍历一次）</span>
+<span class="kw">auto</span> [lo, hi] = <span class="fn">minmax_element</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>());
+<span class="fn">printf</span>(<span class="str">"min = %d, max = %d\n"</span>, *lo, *hi);
+
+<span class="cm">// 自定义比较器</span>
+<span class="kw">auto</span> cmp = [](<span class="ty">int</span> a, <span class="ty">int</span> b) { <span class="kw">return</span> <span class="fn">abs</span>(a) &lt; <span class="fn">abs</span>(b); };
+<span class="kw">auto</span> it = <span class="fn">min_element</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>(), cmp);</code></pre>
+
+    <div class="complexity">
+      <span class="label">min_element / max_element:</span>
+      <span class="value">O(n)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">minmax_element:</span>
+      <span class="value">O(n * 3/2)</span>
+      <span class="label">（比分开调用更高效）</span>
+    </div>
+    </div>
+
+    <!-- ==================== 数值 ==================== -->
+    <div id="numeric-algo">
+    <h3>2.4 数值算法</h3>
+
+    <h4>accumulate -- 累加</h4>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;numeric&gt;</span>
+
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>};
+
+<span class="cm">// 求和（初始值 0）</span>
+<span class="ty">int</span> sum = <span class="fn">accumulate</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>(), <span class="num">0</span>);
+<span class="cm">// sum = 15</span>
+
+<span class="cm">// 求积（初始值 1）</span>
+<span class="ty">int</span> prod = <span class="fn">accumulate</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>(), <span class="num">1</span>, multiplies&lt;<span class="ty">int</span>&gt;());
+<span class="cm">// prod = 120</span>
+
+<span class="cm">// 拼接字符串</span>
+<span class="ty">vector</span>&lt;<span class="ty">string</span>&gt; vs = {<span class="str">"hello"</span>, <span class="str">" "</span>, <span class="str">"world"</span>};
+<span class="ty">string</span> result = <span class="fn">accumulate</span>(vs.<span class="fn">begin</span>(), vs.<span class="fn">end</span>(), <span class="ty">string</span>(<span class="str">""</span>));
+<span class="cm">// result = "hello world"</span>
+
+<span class="cm">// 注意：初始值类型决定返回类型！</span>
+<span class="cm">// 如果初始值是 int，大数会溢出，用 0LL</span>
+<span class="ty">long</span> <span class="ty">long</span> sum2 = <span class="fn">accumulate</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>(), <span class="num">0LL</span>);</code></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">accumulate 溢出问题</div>
+      <p>初始值的类型决定了累加结果的类型。如果 <code>vector&lt;int&gt;</code> 的元素很大，必须用 <code>0LL</code> 作为初始值来获得 <code>long long</code> 结果。</p>
+    </div>
+
+    <h4>partial_sum -- 前缀和</h4>
+    <pre><code><span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>};
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; pre(v.<span class="fn">size</span>());
+
+<span class="cm">// 计算前缀和</span>
+<span class="fn">partial_sum</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>(), pre.<span class="fn">begin</span>());
+<span class="cm">// pre = [1, 3, 6, 10, 15]</span>
+
+<span class="cm">// 自定义操作（前缀积）</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; pre2(v.<span class="fn">size</span>());
+<span class="fn">partial_sum</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>(), pre2.<span class="fn">begin</span>(), multiplies&lt;<span class="ty">int</span>&gt;());
+<span class="cm">// pre2 = [1, 2, 6, 24, 120]</span>
+
+<span class="cm">// 利用前缀和求区间和: sum[l..r] = pre[r] - pre[l-1]</span></code></pre>
+
+    <div class="complexity">
+      <span class="label">partial_sum:</span>
+      <span class="value">O(n)</span>
+    </div>
+
+    <h4>内建函数 (GCC/Clang)</h4>
+    <p>这些不是标准 STL，而是编译器内建函数，在竞赛中非常实用。</p>
+
+    <pre><code><span class="cm">// __gcd: 最大公约数 (C++14 可用 std::gcd)</span>
+<span class="ty">int</span> g = <span class="fn">__gcd</span>(<span class="num">12</span>, <span class="num">8</span>);   <span class="cm">// 4</span>
+<span class="ty">int</span> lcm = a / <span class="fn">__gcd</span>(a, b) * b; <span class="cm">// 最小公倍数（先除防溢出）</span>
+
+<span class="cm">// __builtin_popcount: 二进制中 1 的个数</span>
+<span class="ty">int</span> cnt1 = <span class="fn">__builtin_popcount</span>(<span class="num">7</span>);     <span class="cm">// 3  (111)</span>
+<span class="ty">int</span> cnt2 = <span class="fn">__builtin_popcountll</span>(<span class="num">7LL</span>); <span class="cm">// 3  (long long 版本)</span>
+
+<span class="cm">// __builtin_clz: 前导零个数 (count leading zeros)</span>
+<span class="ty">int</span> clz = <span class="fn">__builtin_clz</span>(<span class="num">16</span>);  <span class="cm">// 27 (32位中前导零个数)</span>
+<span class="cm">// log2(x) = 31 - __builtin_clz(x)</span>
+
+<span class="cm">// __builtin_ctz: 尾部零个数 (count trailing zeros)</span>
+<span class="ty">int</span> ctz = <span class="fn">__builtin_ctz</span>(<span class="num">16</span>);  <span class="cm">// 4  (10000, 尾部 4 个零)</span>
+
+<span class="cm">// __builtin_parity: 二进制中 1 的个数的奇偶性</span>
+<span class="ty">int</span> par = <span class="fn">__builtin_parity</span>(<span class="num">7</span>); <span class="cm">// 1 (奇数个 1)</span>
+
+<span class="cm">// 位运算常用组合</span>
+<span class="cm">// 判断 x 是否为 2 的幂</span>
+<span class="ty">bool</span> is_power_of_2 = (x &amp; (x - <span class="num">1</span>)) == <span class="num">0</span>;
+<span class="cm">// 最低位的 1</span>
+<span class="ty">int</span> lowbit = x &amp; (-x);</code></pre>
+
+    <div class="complexity">
+      <span class="label">__builtin 系列:</span>
+      <span class="value">O(1)</span>
+      <span class="label">（直接映射到 CPU 指令）</span>
+    </div>
+
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>函数</th><th>功能</th><th>适用类型</th><th>示例</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>__gcd(a,b)</code></td><td>最大公约数</td><td>int / long long</td><td><code>__gcd(12,8)=4</code></td></tr>
+        <tr><td><code>__builtin_popcount(x)</code></td><td>1 的个数</td><td>unsigned int</td><td><code>__builtin_popcount(7)=3</code></td></tr>
+        <tr><td><code>__builtin_popcountll(x)</code></td><td>1 的个数</td><td>unsigned long long</td><td><code>__builtin_popcountll(255)=8</code></td></tr>
+        <tr><td><code>__builtin_clz(x)</code></td><td>前导零个数</td><td>unsigned int</td><td><code>__builtin_clz(16)=27</code></td></tr>
+        <tr><td><code>__builtin_ctz(x)</code></td><td>尾部零个数</td><td>unsigned int</td><td><code>__builtin_ctz(16)=4</code></td></tr>
+        <tr><td><code>__builtin_parity(x)</code></td><td>1 的奇偶性</td><td>unsigned int</td><td><code>__builtin_parity(7)=1</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">C++17 标准函数</div>
+      <p>C++17 起可以用 <code>std::gcd(a,b)</code> 和 <code>std::lcm(a,b)</code>（<code>&lt;numeric&gt;</code> 头文件），比 <code>__gcd</code> 更规范。</p>
+    </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!--                   三、字符串处理                               -->
+  <!-- ============================================================ -->
+  <div class="section" id="string">
+    <h2>三、字符串处理</h2>
+
+    <div id="string-class">
+    <h3>3.1 string 类常用方法</h3>
+    <p><code>string</code> 是竞赛中最常用的字符串类型，兼具 C 字符串的灵活性和 STL 容器的便利性。</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>操作</th><th>时间复杂度</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>s.substr(pos, len)</code></td><td>O(len)</td><td>返回子串 [pos, pos+len)</td></tr>
+        <tr><td><code>s.find(t, pos)</code></td><td>O(n*m)</td><td>从 pos 开始查找子串 t，返回位置或 npos</td></tr>
+        <tr><td><code>s.rfind(t)</code></td><td>O(n*m)</td><td>从后往前查找</td></tr>
+        <tr><td><code>s.replace(pos, len, t)</code></td><td>O(n)</td><td>替换子串</td></tr>
+        <tr><td><code>s.insert(pos, t)</code></td><td>O(n)</td><td>在 pos 处插入</td></tr>
+        <tr><td><code>s.erase(pos, len)</code></td><td>O(n)</td><td>删除子串</td></tr>
+        <tr><td><code>s.compare(t)</code></td><td>O(n)</td><td>字典序比较</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;string&gt;</span>
+
+<span class="cm">// 基本操作</span>
+<span class="ty">string</span> s = <span class="str">"hello world"</span>;
+<span class="ty">int</span> len = s.<span class="fn">size</span>();       <span class="cm">// 11</span>
+<span class="ty">char</span> c = s[<span class="num">0</span>];            <span class="cm">// 'h'</span>
+<span class="ty">char</span> c2 = s.<span class="fn">back</span>();       <span class="cm">// 'd' (最后一个字符)</span>
+
+<span class="cm">// 子串</span>
+<span class="ty">string</span> sub = s.<span class="fn">substr</span>(<span class="num">6</span>, <span class="num">5</span>); <span class="cm">// "world"</span>
+<span class="ty">string</span> sub2 = s.<span class="fn">substr</span>(<span class="num">6</span>);    <span class="cm">// "world" (从 6 到末尾)</span>
+
+<span class="cm">// 查找</span>
+<span class="ty">size_t</span> pos = s.<span class="fn">find</span>(<span class="str">"world"</span>);  <span class="cm">// 6</span>
+<span class="kw">if</span> (pos != <span class="ty">string</span>::npos)       <span class="cm">// 找到了</span>
+    <span class="fn">printf</span>(<span class="str">"found at %zu\n"</span>, pos);
+
+<span class="cm">// 找所有出现位置</span>
+<span class="ty">string</span> text = <span class="str">"abcabcabc"</span>;
+<span class="ty">string</span> pattern = <span class="str">"abc"</span>;
+<span class="ty">size_t</span> p = <span class="num">0</span>;
+<span class="kw">while</span> ((p = text.<span class="fn">find</span>(pattern, p)) != <span class="ty">string</span>::npos) {
+    <span class="fn">printf</span>(<span class="str">"found at %zu\n"</span>, p);
+    p += pattern.<span class="fn">size</span>();
+}
+
+<span class="cm">// 拼接</span>
+<span class="ty">string</span> a = <span class="str">"hello"</span>, b = <span class="str">" world"</span>;
+<span class="ty">string</span> c3 = a + b;        <span class="cm">// "hello world"</span>
+a += b;                     <span class="cm">// a = "hello world"</span>
+a.<span class="fn">push_back</span>(<span class="str">'!'</span>);           <span class="cm">// a = "hello world!"</span>
+
+<span class="cm">// 类型转换</span>
+<span class="ty">int</span> n1 = <span class="fn">stoi</span>(<span class="str">"123"</span>);          <span class="cm">// 123</span>
+<span class="ty">long</span> <span class="ty">long</span> n2 = <span class="fn">stoll</span>(<span class="str">"12345678901"</span>);
+<span class="ty">double</span> d = <span class="fn">stod</span>(<span class="str">"3.14"</span>);       <span class="cm">// 3.14</span>
+<span class="ty">string</span> s2 = <span class="fn">to_string</span>(<span class="num">12345</span>); <span class="cm">// "12345"</span>
+
+<span class="cm">// 数字转字符串（C++11）</span>
+<span class="ty">string</span> s3 = <span class="fn">to_string</span>(<span class="num">3.14</span>);  <span class="cm">// "3.140000"</span>
+<span class="ty">string</span> s4 = <span class="fn">to_string</span>(<span class="num">42LL</span>);  <span class="cm">// "42"</span>
+
+<span class="cm">// 大小写转换</span>
+<span class="ty">string</span> lo = <span class="str">"Hello"</span>;
+<span class="fn">transform</span>(lo.<span class="fn">begin</span>(), lo.<span class="fn">end</span>(), lo.<span class="fn">begin</span>(), ::tolower);
+<span class="cm">// lo = "hello"</span>
+
+<span class="cm">// 字符判断（C 风格函数）</span>
+<span class="fn">isalpha</span>(<span class="str">'a'</span>);   <span class="cm">// true (字母)</span>
+<span class="fn">isdigit</span>(<span class="str">'9'</span>);   <span class="cm">// true (数字)</span>
+<span class="fn">isalnum</span>(<span class="str">'a'</span>);   <span class="cm">// true (字母或数字)</span>
+<span class="fn">isspace</span>(<span class="str">' '</span>);   <span class="cm">// true (空白字符)</span></code></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">stoi / stoll 异常</div>
+      <p><code>stoi("abc")</code> 会抛出 <code>std::invalid_argument</code> 异常！竞赛中通常用 <code>scanf</code> 或 <code>stringstream</code> 来安全转换。</p>
+    </div>
+    </div>
+
+    <div id="sstream">
+    <h3>3.2 stringstream / sscanf / sprintf</h3>
+
+    <h4>stringstream -- 字符串流</h4>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;sstream&gt;</span>
+
+<span class="cm">// 字符串分割（按空格）</span>
+<span class="ty">string</span> line = <span class="str">"hello world foo bar"</span>;
+<span class="ty">stringstream</span> ss(line);
+<span class="ty">string</span> word;
+<span class="kw">while</span> (ss &gt;&gt; word)
+    <span class="fn">printf</span>(<span class="str">"[%s] "</span>, word.<span class="fn">c_str</span>());
+<span class="cm">// [hello] [world] [foo] [bar]</span>
+
+<span class="cm">// 字符串转数字</span>
+<span class="ty">stringstream</span> ss2(<span class="str">"123 456.78 hello"</span>);
+<span class="ty">int</span> a; <span class="ty">double</span> b; <span class="ty">string</span> c;
+ss2 &gt;&gt; a &gt;&gt; b &gt;&gt; c;
+<span class="cm">// a=123, b=456.78, c="hello"</span>
+
+<span class="cm">// 数字转字符串</span>
+<span class="ty">stringstream</span> ss3;
+ss3 &lt;&lt; <span class="str">"pi = "</span> &lt;&lt; <span class="num">3.14159</span> &lt;&lt; <span class="str">", e = "</span> &lt;&lt; <span class="num">2.71828</span>;
+<span class="ty">string</span> result = ss3.<span class="fn">str</span>();
+<span class="cm">// result = "pi = 3.14159, e = 2.71828"</span>
+
+<span class="cm">// 重复使用需清空</span>
+ss.<span class="fn">clear</span>();              <span class="cm">// 清除错误标志</span>
+ss.<span class="fn">str</span>(<span class="str">"new content"</span>);   <span class="cm">// 替换内容</span>
+
+<span class="cm">// 按分隔符分割（getline）</span>
+<span class="ty">string</span> csv = <span class="str">"a,b,c,d"</span>;
+<span class="ty">stringstream</span> ss4(csv);
+<span class="ty">string</span> token;
+<span class="kw">while</span> (<span class="fn">getline</span>(ss4, token, <span class="str">','</span>))
+    <span class="fn">printf</span>(<span class="str">"[%s] "</span>, token.<span class="fn">c_str</span>());
+<span class="cm">// [a] [b] [c] [d]</span></code></pre>
+
+    <div class="complexity">
+      <span class="label">stringstream:</span>
+      <span class="value">O(n)</span>
+      <span class="label">（n 为字符串长度）</span>
+    </div>
+
+    <h4>sscanf / sprintf -- C 风格格式化</h4>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;cstdio&gt;</span>
+
+<span class="cm">// sscanf: 从字符串读取</span>
+<span class="ty">char</span> buf[] = <span class="str">"2023-12-25"</span>;
+<span class="ty">int</span> y, m, d;
+<span class="fn">sscanf</span>(buf, <span class="str">"%d-%d-%d"</span>, &amp;y, &amp;m, &amp;d);
+<span class="cm">// y=2023, m=12, d=25</span>
+
+<span class="ty">char</span> buf2[] = <span class="str">"Name: Alice, Age: 20"</span>;
+<span class="ty">char</span> name[<span class="num">50</span>]; <span class="ty">int</span> age;
+<span class="fn">sscanf</span>(buf2, <span class="str">"Name: %s, Age: %d"</span>, name, &amp;age);
+<span class="cm">// name="Alice", age=20</span>
+
+<span class="cm">// sprintf: 格式化写入字符串</span>
+<span class="ty">char</span> out[<span class="num">100</span>];
+<span class="fn">sprintf</span>(out, <span class="str">"%04d-%02d-%02d"</span>, y, m, d);
+<span class="cm">// out = "2023-12-25"</span>
+
+<span class="cm">// snprintf: 安全版本，限制长度</span>
+<span class="fn">snprintf</span>(out, <span class="kw">sizeof</span>(out), <span class="str">"Result: %d"</span>, <span class="num">42</span>);
+
+<span class="cm">// 浮点数格式化</span>
+<span class="fn">sprintf</span>(out, <span class="str">"%.2f"</span>, <span class="num">3.14159</span>); <span class="cm">// "3.14"</span>
+<span class="fn">sprintf</span>(out, <span class="str">"%10.3f"</span>, <span class="num">3.14</span>);  <span class="cm">// "     3.140" (右对齐)</span>
+<span class="fn">sprintf</span>(out, <span class="str">"%-10.3f"</span>, <span class="num">3.14</span>); <span class="cm">// "3.140     " (左对齐)</span></code></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">stringstream vs sscanf/sprintf 选择</div>
+      <ul>
+        <li><code>stringstream</code>: 类型安全，支持 C++ 类型（string 等），但较慢</li>
+        <li><code>sscanf/sprintf</code>: 速度快，但需手动管理缓冲区，对 string 不友好</li>
+        <li>竞赛中需要大量字符串解析时，<code>sscanf</code> 更高效</li>
+        <li>处理含有 <code>string</code> 类型的数据时，用 <code>stringstream</code></li>
+      </ul>
+    </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!--                   四、输入输出优化                              -->
+  <!-- ============================================================ -->
+  <div class="section" id="io-opt">
+    <h2>四、输入输出优化</h2>
+
+    <div id="io-sync">
+    <h3>4.1 同步与绑定</h3>
+    <p>默认情况下，C++ 的 <code>cin/cout</code> 与 C 的 <code>scanf/printf</code> 同步，以保证两者可以混用。但这会带来性能开销。</p>
+
+    <pre><code><span class="cm">// 关闭同步 + 解绑 cin/cout（竞赛模板必备）</span>
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">ios::sync_with_stdio</span>(<span class="kw">false</span>);  <span class="cm">// 关闭 C/C++ 同步</span>
+    cin.<span class="fn">tie</span>(<span class="num">0</span>);                     <span class="cm">// 解绑 cin 和 cout</span>
+    <span class="cm">// 此后不要混用 cin/cout 和 scanf/printf！</span>
+
+    <span class="cm">// 可选：加速 cout</span>
+    cout.<span class="fn">tie</span>(<span class="num">0</span>);                   <span class="cm">// 解绑 cout（默认绑定到 cin）</span>
+    <span class="cm">// 注意：关闭同步后 cout 不会自动刷新</span>
+    <span class="cm">// 如需在 cout 后立即输出，手动 cout.flush()</span>
+}</code></pre>
+
+    <div class="box box-info">
+      <div class="box-title">各选项的作用</div>
+      <ul>
+        <li><code>ios::sync_with_stdio(false)</code>: 关闭 C/C++ 流同步，cin/cout 速度大幅提升</li>
+        <li><code>cin.tie(0)</code>: 解除 cin 与 cout 的绑定。默认每次读入前会刷新 cout</li>
+        <li><code>cout.tie(0)</code>: 解除 cout 的绑定（通常 cout 绑定到 cin）</li>
+      </ul>
+    </div>
+
+    <h3>4.2 scanf/printf vs cin/cout 性能对比</h3>
+
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>方式</th><th>读入 10^6 个 int</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>cin</code>（默认）</td><td>~2000ms</td><td>非常慢，不推荐</td></tr>
+        <tr><td><code>cin + sync(false)</code></td><td>~300ms</td><td>推荐，简洁易用</td></tr>
+        <tr><td><code>scanf</code></td><td>~400ms</td><td>标准选择</td></tr>
+        <tr><td><code>cin + sync(false) + tie(0)</code></td><td>~280ms</td><td>最快 cin 方案</td></tr>
+        <tr><td>手写快读 (getchar)</td><td>~120ms</td><td>极端优化</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <pre><code><span class="cm">// 方案一：关闭同步的 cin/cout（推荐）</span>
+<span class="pp">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">ios::sync_with_stdio</span>(<span class="kw">false</span>);
+    cin.<span class="fn">tie</span>(<span class="num">0</span>);
+    <span class="ty">int</span> n; cin &gt;&gt; n;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="ty">int</span> x; cin &gt;&gt; x;
+        cout &lt;&lt; x &lt;&lt; <span class="str">'\n'</span>;  <span class="cm">// '\n' 比 endl 快（endl 会刷新）</span>
+    }
+}
+
+<span class="cm">// 方案二：scanf/printf</span>
+<span class="pp">#include</span> <span class="str">&lt;cstdio&gt;</span>
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n; <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;n);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="ty">int</span> x; <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;x);
+        <span class="fn">printf</span>(<span class="str">"%d\n"</span>, x);
+    }
+}
+
+<span class="cm">// 方案三：手写快读（极端优化）</span>
+<span class="kw">inline</span> <span class="ty">int</span> <span class="fn">read</span>() {
+    <span class="ty">int</span> x = <span class="num">0</span>, f = <span class="num">1</span>;
+    <span class="ty">char</span> ch = <span class="fn">getchar</span>();
+    <span class="kw">while</span> (ch &lt; <span class="str">'0'</span> || ch &gt; <span class="str">'9'</span>) {
+        <span class="kw">if</span> (ch == <span class="str">'-'</span>) f = -<span class="num">1</span>;
+        ch = <span class="fn">getchar</span>();
+    }
+    <span class="kw">while</span> (ch &gt;= <span class="str">'0'</span> &amp;&amp; ch &lt;= <span class="str">'9'</span>) {
+        x = x * <span class="num">10</span> + ch - <span class="str">'0'</span>;
+        ch = <span class="fn">getchar</span>();
+    }
+    <span class="kw">return</span> x * f;
+}
+
+<span class="kw">inline</span> <span class="ty">void</span> <span class="fn">write</span>(<span class="ty">int</span> x) {
+    <span class="kw">if</span> (x &lt; <span class="num">0</span>) { <span class="fn">putchar</span>(<span class="str">'-'</span>); x = -x; }
+    <span class="kw">if</span> (x &gt; <span class="num">9</span>) <span class="fn">write</span>(x / <span class="num">10</span>);
+    <span class="fn">putchar</span>(x % <span class="num">10</span> + <span class="str">'0'</span>);
+}</code></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">endl vs '\n'</div>
+      <p><code>endl</code> 除了换行还会<strong>刷新缓冲区</strong>，性能很差。竞赛中输出大量数据时，务必用 <code>'\n'</code> 代替 <code>endl</code>。关闭同步后更应注意。</p>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">竞赛 IO 模板</div>
+      <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">ios::sync_with_stdio</span>(<span class="kw">false</span>);
+    cin.<span class="fn">tie</span>(<span class="num">0</span>);
+    <span class="cm">// ... 你的代码 ...</span>
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+    </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!--                   五、常见陷阱与最佳实践                        -->
+  <!-- ============================================================ -->
+  <div class="section" id="pitfalls">
+    <h2>五、常见陷阱与最佳实践</h2>
+
+    <h3>5.1 迭代器失效总结</h3>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>容器</th><th>操作</th><th>失效范围</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>vector</td><td>push_back (扩容)</td><td>全部失效</td></tr>
+        <tr><td>vector</td><td>insert / erase</td><td>操作点及之后全部失效</td></tr>
+        <tr><td>deque</td><td>push_front/back</td><td>全部失效（但引用不失效）</td></tr>
+        <tr><td>deque</td><td>insert / erase</td><td>全部失效</td></tr>
+        <tr><td>list</td><td>insert</td><td>不失效</td></tr>
+        <tr><td>list</td><td>erase</td><td>仅被删元素失效</td></tr>
+        <tr><td>set/map</td><td>insert / erase</td><td>仅被删元素失效</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>5.2 常见错误模式</h3>
+    <div class="box box-hard">
+      <div class="box-title">经典错误集合</div>
+
+      <pre><code><span class="cm">// 错误 1: vector 边遍历边删除</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>};
+<span class="cm">// 错误写法:</span>
+<span class="kw">for</span> (<span class="kw">auto</span> it = v.<span class="fn">begin</span>(); it != v.<span class="fn">end</span>(); it++) {
+    <span class="kw">if</span> (*it == <span class="num">3</span>) v.<span class="fn">erase</span>(it);  <span class="cm">// BUG! erase 后 it 失效</span>
+}
+<span class="cm">// 正确写法:</span>
+<span class="kw">for</span> (<span class="kw">auto</span> it = v.<span class="fn">begin</span>(); it != v.<span class="fn">end</span>(); ) {
+    <span class="kw">if</span> (*it == <span class="num">3</span>) it = v.<span class="fn">erase</span>(it);  <span class="cm">// erase 返回下一个有效迭代器</span>
+    <span class="kw">else</span> ++it;
+}
+<span class="cm">// C++20: std::erase(v, 3);</span>
+
+<span class="cm">// 错误 2: map 的 [] 自动插入</span>
+<span class="ty">map</span>&lt;<span class="ty">string</span>, <span class="ty">int</span>&gt; mp;
+<span class="kw">if</span> (mp[<span class="str">"key"</span>] == <span class="num">0</span>)  <span class="cm">// "key" 不存在时自动插入值 0</span>
+    <span class="fn">puts</span>(<span class="str">"not found"</span>); <span class="cm">// 会输出！因为 0==0</span>
+<span class="cm">// 正确: 用 mp.count("key") 或 mp.find("key") != mp.end()</span>
+
+<span class="cm">// 错误 3: multiset erase 删除全部</span>
+<span class="ty">multiset</span>&lt;<span class="ty">int</span>&gt; ms = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">2</span>, <span class="num">2</span>, <span class="num">3</span>};
+ms.<span class="fn">erase</span>(<span class="num">2</span>);  <span class="cm">// 删除所有 2！只剩 {1, 3}</span>
+<span class="cm">// 只删一个: ms.erase(ms.find(2));</span>
+
+<span class="cm">// 错误 4: 未排序就用 lower_bound</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v2 = {<span class="num">5</span>, <span class="num">2</span>, <span class="num">8</span>, <span class="num">1</span>};
+<span class="kw">auto</span> it2 = <span class="fn">lower_bound</span>(v2.<span class="fn">begin</span>(), v2.<span class="fn">end</span>(), <span class="num">3</span>); <span class="cm">// 未排序！结果不确定</span>
+
+<span class="cm">// 错误 5: accumulate 溢出</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; v3(<span class="num">1000000</span>, <span class="num">1000000</span>);
+<span class="ty">int</span> sum = <span class="fn">accumulate</span>(v3.<span class="fn">begin</span>(), v3.<span class="fn">end</span>(), <span class="num">0</span>); <span class="cm">// 溢出！int 范围</span>
+<span class="ty">long</span> <span class="ty">long</span> sum2 = <span class="fn">accumulate</span>(v3.<span class="fn">begin</span>(), v3.<span class="fn">end</span>(), <span class="num">0LL</span>); <span class="cm">// 正确</span></code></pre>
+    </div>
+
+    <h3>5.3 竞赛最佳实践</h3>
+    <div class="box box-tip">
+      <div class="box-title">STL 使用口诀</div>
+      <ul>
+        <li><strong>能用 STL 就用 STL</strong>：少手写，减少 bug</li>
+        <li><strong>reserve 先行</strong>：已知大小就 reserve，减少扩容</li>
+        <li><strong>emplace 优先</strong>：比 push 更高效（原地构造）</li>
+        <li><strong>'\\n' 代替 endl</strong>：避免不必要的刷新</li>
+        <li><strong>lower_bound 代替手写二分</strong>：STL 的二分已高度优化</li>
+        <li><strong>pair 当 key</strong>：多关键字排序用 <code>vector&lt;pair&gt; + sort</code> 或 <code>set&lt;pair&gt;</code></li>
+        <li><strong>tie 解包返回值</strong>：函数返回多个值时用 <code>tie(a,b,c) = func()</code></li>
+        <li><strong>结构化绑定 (C++17)</strong>：<code>auto [a, b] = make_pair(1, 2);</code></li>
+      </ul>
+    </div>
+
+    <h3>5.4 常用 STL 复杂度速查表</h3>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>容器/操作</th><th>随机访问</th><th>头插</th><th>尾插</th><th>中间插删</th><th>查找</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>vector</td><td style="color:var(--accent3)">O(1)</td><td style="color:var(--accent4)">O(n)</td><td style="color:var(--accent3)">摊还 O(1)</td><td style="color:var(--accent4)">O(n)</td><td style="color:var(--accent4)">O(n)</td></tr>
+        <tr><td>deque</td><td style="color:var(--accent3)">O(1)</td><td style="color:var(--accent3)">O(1)</td><td style="color:var(--accent3)">O(1)</td><td style="color:var(--accent4)">O(n)</td><td style="color:var(--accent4)">O(n)</td></tr>
+        <tr><td>list</td><td style="color:var(--accent4)">O(n)</td><td style="color:var(--accent3)">O(1)</td><td style="color:var(--accent3)">O(1)</td><td style="color:var(--accent3)">O(1)</td><td style="color:var(--accent4)">O(n)</td></tr>
+        <tr><td>set / map</td><td style="color:var(--accent5)">--</td><td style="color:var(--accent5)">--</td><td style="color:var(--accent5)">--</td><td style="color:var(--accent3)">O(log n)</td><td style="color:var(--accent3)">O(log n)</td></tr>
+        <tr><td>unordered_set/map</td><td style="color:var(--accent5)">--</td><td style="color:var(--accent5)">--</td><td style="color:var(--accent5)">--</td><td style="color:var(--accent3)">O(1) 平均</td><td style="color:var(--accent3)">O(1) 平均</td></tr>
+        <tr><td>stack / queue</td><td style="color:var(--accent5)">--</td><td style="color:var(--accent5)">--</td><td style="color:var(--accent3)">O(1)</td><td style="color:var(--accent5)">--</td><td style="color:var(--accent5)">--</td></tr>
+        <tr><td>priority_queue</td><td style="color:var(--accent5)">--</td><td style="color:var(--accent5)">--</td><td style="color:var(--accent3)">O(log n)</td><td style="color:var(--accent5)">--</td><td style="color:var(--accent5)">--</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>5.5 竞赛常用 STL 操作一行模板</h3>
+    <pre><code><span class="cm">// ===== 一行模板汇总 =====</span>
+
+<span class="cm">// 去重: sort + unique + erase</span>
+v.<span class="fn">erase</span>(<span class="fn">unique</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>()), v.<span class="fn">end</span>());
+
+<span class="cm">// 前缀和</span>
+<span class="fn">partial_sum</span>(a.<span class="fn">begin</span>(), a.<span class="fn">end</span>(), pre.<span class="fn">begin</span>());
+
+<span class="cm">// 元素个数</span>
+<span class="ty">int</span> cnt = <span class="fn">count</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>(), <span class="num">3</span>);
+
+<span class="cm">// 是否存在</span>
+<span class="ty">bool</span> has = <span class="fn">find</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>(), <span class="num">3</span>) != v.<span class="fn">end</span>();
+
+<span class="cm">// 填充</span>
+<span class="fn">fill</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>(), <span class="num">0</span>);
+
+<span class="cm">// 生成</span>
+<span class="fn">iota</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>(), <span class="num">1</span>);  <span class="cm">// 1, 2, 3, ..., n</span>
+
+<span class="cm">// 最大公约数 (C++17)</span>
+<span class="ty">int</span> g = <span class="fn">gcd</span>(a, b);
+<span class="ty">int</span> l = a / <span class="fn">gcd</span>(a, b) * b;  <span class="cm">// 最小公倍数</span>
+
+<span class="cm">// 字符串分割</span>
+<span class="ty">stringstream</span> ss(s); <span class="ty">string</span> tok;
+<span class="kw">while</span> (<span class="fn">getline</span>(ss, tok, <span class="str">','</span>)) { <span class="cm">/* ... */</span> }
+
+<span class="cm">// 快速构建邻接表</span>
+<span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&gt; adj(n);
+adj[u].<span class="fn">push_back</span>(v);
+
+<span class="cm">// pair 排序</span>
+<span class="fn">sort</span>(vp.<span class="fn">begin</span>(), vp.<span class="fn">end</span>());  <span class="cm">// 自动按 first, second 排序</span>
+
+<span class="cm">// 所有排列</span>
+<span class="fn">sort</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>());
+<span class="kw">do</span> { <span class="cm">/* ... */</span> } <span class="kw">while</span> (<span class="fn">next_permutation</span>(v.<span class="fn">begin</span>(), v.<span class="fn">end</span>()));</code></pre>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

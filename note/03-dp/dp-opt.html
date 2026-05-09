@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DP 优化 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- 面包屑导航 -->
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#03-dp">动态规划</a> &gt;
+    DP 优化
+  </div>
+
+  <!-- 页面标题 -->
+  <div class="page-header">
+    <h1>DP 优化</h1>
+    <p class="subtitle">单调队列优化 / 斜率优化 / 四边形不等式优化</p>
+    <div class="tags">
+      <span class="tag tag-hard">进阶</span>
+      <span class="tag tag-dp">动态规划</span>
+      <span class="tag tag-math">数学推导</span>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#overview">1. DP 优化概述</a></li>
+      <li><a href="#monoq">2. 单调队列优化 DP</a></li>
+      <li><a href="#slope">3. 斜率优化 DP (Convex Hull Trick)</a></li>
+      <li><a href="#quad">4. 四边形不等式优化</a></li>
+      <li><a href="#summary">5. 总结与对比</a></li>
+    </ul>
+  </div>
+
+  <!-- ==================== 1. DP 优化概述 ==================== -->
+  <div class="section" id="overview">
+    <h2>1. DP 优化概述</h2>
+
+    <h3>为什么要优化 DP？</h3>
+    <p>动态规划的核心思想是<strong>用空间换时间</strong>，通过记忆化子问题的解避免重复计算。但很多时候，朴素 DP 的时间复杂度仍然很高（如 O(n&sup3;) 或 O(n&sup2;m)），在 n 达到 10&sim;10 量级时无法通过。此时需要利用问题的<strong>特殊结构</strong>来优化转移过程。</p>
+
+    <h3>常见优化思路</h3>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>优化技术</th>
+          <th>适用条件</th>
+          <th>典型复杂度优化</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>单调队列优化</td>
+          <td>转移方程中有<strong>滑动窗口</strong>上的最值查询</td>
+          <td>O(n&sup2;) &rarr; O(n)</td>
+        </tr>
+        <tr>
+          <td>斜率优化 (CHT)</td>
+          <td>转移方程可化为 <code>y = kx + b</code> 的形式</td>
+          <td>O(n&sup2;) &rarr; O(n) 或 O(n log n)</td>
+        </tr>
+        <tr>
+          <td>四边形不等式优化</td>
+          <td>区间 DP 中代价函数满足四边形不等式</td>
+          <td>O(n&sup3;) &rarr; O(n&sup2;)</td>
+        </tr>
+        <tr>
+          <td>矩阵快速幂优化</td>
+          <td>线性递推关系、转移矩阵可快速幂</td>
+          <td>O(n) &rarr; O(log n)</td>
+        </tr>
+        <tr>
+          <td>分治优化 (CDQ)</td>
+          <td>转移下标满足单调性，可分治处理</td>
+          <td>O(n&sup2;) &rarr; O(n log n)</td>
+        </tr>
+        <tr>
+          <td>决策单调性优化</td>
+          <td>最优决策点随状态单调移动</td>
+          <td>O(n&sup2;) &rarr; O(n log n)</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">优化的核心思想</div>
+      <p>DP 优化的本质是<strong>减少无效的决策枚举</strong>。通过证明决策的单调性、凸性等性质，我们可以用更高效的数据结构或算法跳过大量不可能成为最优解的决策点。关键步骤是：观察转移方程 &rarr; 提取数学结构 &rarr; 利用性质剪枝。</p>
+    </div>
+  </div>
+
+  <!-- ==================== 2. 单调队列优化 DP ==================== -->
+  <div class="section" id="monoq">
+    <h2>2. 单调队列优化 DP</h2>
+
+    <h3>适用场景</h3>
+    <p>当 DP 转移方程中，需要在某个<strong>滑动窗口</strong> [i-w, i-1] 内求最大值或最小值时，可以使用单调队列将转移从 O(w) 优化到 O(1) 均摊。</p>
+
+    <div class="box box-tip">
+      <div class="box-title">模式识别</div>
+      <p>转移方程形如：<code>dp[i] = max/min{ dp[j] + f(j) }，其中 i - w &le; j &le; i - 1</code></p>
+      <p>或：<code>dp[i] = max/min{ dp[j] + g(i, j) }，其中 g(i, j) 可拆分为只含 i 和只含 j 的部分</code></p>
+    </div>
+
+    <h3>经典问题 1：滑动窗口最大值</h3>
+    <p>给定长度为 n 的数组和窗口大小 k，求每个长度为 k 的连续子数组的最大值。这是理解单调队列的基础。</p>
+
+    <h4>算法原理</h4>
+    <div class="steps">
+      <div class="step">维护一个<strong>单调递减</strong>的双端队列 (deque)，队列中存放的是数组<strong>下标</strong></div>
+      <div class="step">遍历数组，对于每个位置 i：先弹出队首过期元素（下标 &lt; i - k + 1）</div>
+      <div class="step">从队尾弹出所有值小于 a[i] 的元素（维护单调性），然后将 i 入队</div>
+      <div class="step">队首即为当前窗口的最大值</div>
+    </div>
+
+    <div class="array-vis">
+      <div class="cell hi">3<span class="idx">0</span></div>
+      <div class="cell">1<span class="idx">1</span></div>
+      <div class="cell hi">5<span class="idx">2</span></div>
+      <div class="cell">2<span class="idx">3</span></div>
+      <div class="cell active">4<span class="idx">4</span></div>
+      <div class="cell">6<span class="idx">5</span></div>
+    </div>
+    <p style="text-align:center;color:var(--text-dim);font-size:0.85em;">蓝色 = 队列中的元素，绿色 = 当前处理位置（k=3 的示例）</p>
+
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="cm">// 滑动窗口最大值 - 单调队列模板</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">slidingWindowMax</span>(<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt;&amp; a, <span class="ty">int</span> k) {
+    <span class="ty">deque</span>&lt;<span class="ty">int</span>&gt; dq;          <span class="cm">// 存下标，队首到队尾对应值单调递减</span>
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; res;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; a.<span class="fn">size</span>(); i++) {
+        <span class="cm">// 1. 弹出过期元素（超出窗口左边界）</span>
+        <span class="kw">while</span> (!dq.<span class="fn">empty</span>() &amp;&amp; dq.<span class="fn">front</span>() &lt; i - k + <span class="num">1</span>)
+            dq.<span class="fn">pop_front</span>();
+        <span class="cm">// 2. 维护单调递减：弹出队尾所有 &lt; a[i] 的元素</span>
+        <span class="kw">while</span> (!dq.<span class="fn">empty</span>() &amp;&amp; a[dq.<span class="fn">back</span>()] &lt; a[i])
+            dq.<span class="fn">pop_back</span>();
+        <span class="cm">// 3. 当前元素入队</span>
+        dq.<span class="fn">push_back</span>(i);
+        <span class="cm">// 4. 队首即为窗口最大值</span>
+        <span class="kw">if</span> (i &gt;= k - <span class="num">1</span>)
+            res.<span class="fn">push_back</span>(a[dq.<span class="fn">front</span>()]);
+    }
+    <span class="kw">return</span> res;
+}</code></pre>
+
+    <h3>经典问题 2：最大连续子段和 (限制长度)</h3>
+
+    <div class="problem">
+      <div class="problem-title">POJ 2823 / Luogu P1886 - 滑动窗口</div>
+      <p>给定 n 个数和窗口大小 k，分别求每个窗口的最大值和最小值。</p>
+    </div>
+
+    <h3>经典问题 3：切木条 (Cut Ribbon 的变体)</h3>
+
+    <div class="problem">
+      <div class="problem-title">Luogu P2627 - 修剪草坪</div>
+      <p>有 n 头奶牛，第 i 头效率为 E[i]。选择若干头奶牛工作，但不能有<strong>连续超过 k 头</strong>奶牛同时工作。求最大效率总和。</p>
+    </div>
+
+    <h4>DP 转移方程推导</h4>
+    <p>设 <code>dp[i]</code> 表示考虑前 i 头奶牛，且<strong>第 i 头必须不工作</strong>时的最大效率。</p>
+    <p><code>dp[i] = max{ dp[j] + sum(j+1, i-1) }</code>，其中 <code>max(0, i-k-1) &le; j &le; i-1</code></p>
+    <p>展开得 <code>dp[i] = max{ dp[j] + S[i-1] - S[j] }</code>，其中 S 是前缀和。</p>
+    <p>整理：<code>dp[i] = S[i-1] + max{ dp[j] - S[j] }</code>，j 在滑动窗口内。</p>
+    <p>于是问题转化为在滑动窗口中求 <code>dp[j] - S[j]</code> 的最大值 &mdash; 典型的单调队列优化！</p>
+
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="kw">typedef</span> <span class="ty">long long</span> <span class="ty">ll</span>;
+
+<span class="cm">// Luogu P2627 修剪草坪 - 单调队列优化DP</span>
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n, k;
+    <span class="fn">scanf</span>(<span class="str">"%d%d"</span>, &amp;n, &amp;k);
+
+    <span class="ty">vector</span>&lt;<span class="ty">ll</span>&gt; E(n + <span class="num">1</span>), S(n + <span class="num">1</span>, <span class="num">0</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="fn">scanf</span>(<span class="str">"%lld"</span>, &amp;E[i]);
+        S[i] = S[i - <span class="num">1</span>] + E[i];
+    }
+
+    <span class="cm">// dp[i]: 前 i 头中，第 i 头不工作时的最大效率</span>
+    <span class="ty">vector</span>&lt;<span class="ty">ll</span>&gt; dp(n + <span class="num">1</span>, <span class="num">0</span>);
+    <span class="ty">deque</span>&lt;<span class="ty">int</span>&gt; dq;
+    dq.<span class="fn">push_back</span>(<span class="num">0</span>);  <span class="cm">// 哨兵</span>
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="cm">// 弹出过期决策: j &lt; i - k - 1</span>
+        <span class="kw">while</span> (!dq.<span class="fn">empty</span>() &amp;&amp; dq.<span class="fn">front</span>() &lt; i - k - <span class="num">1</span>)
+            dq.<span class="fn">pop_front</span>();
+
+        <span class="cm">// dp[i] = S[i-1] + max{ dp[j] - S[j] }</span>
+        dp[i] = S[i - <span class="num">1</span>] + (dp[dq.<span class="fn">front</span>()] - S[dq.<span class="fn">front</span>()]);
+
+        <span class="cm">// 维护单调递减：以 val = dp[i] - S[i] 的值为基准</span>
+        <span class="kw">while</span> (!dq.<span class="fn">empty</span>() &amp;&amp;
+               dp[dq.<span class="fn">back</span>()] - S[dq.<span class="fn">back</span>()] &lt;= dp[i] - S[i])
+            dq.<span class="fn">pop_back</span>();
+        dq.<span class="fn">push_back</span>(i);
+    }
+
+    <span class="cm">// 答案: 要么全部工作(最后一个也工作), 要么dp[n](最后一个不工作)</span>
+    <span class="fn">printf</span>(<span class="str">"%lld\n"</span>, <span class="fn">max</span>(dp[n], dp[n - <span class="num">1</span>] + E[n]));
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <h3>单调队列优化 DP 通用模板</h3>
+    <pre><code><span class="cm">// 通用框架: dp[i] = min/max{ dp[j] + cost(j) }，j 在 [i-w, i-1] 内</span>
+<span class="ty">deque</span>&lt;<span class="ty">int</span>&gt; dq;
+<span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+    <span class="cm">// Step 1: 加入新决策 i-1 (扩大窗口右端)</span>
+    <span class="kw">while</span> (!dq.<span class="fn">empty</span>() &amp;&amp; <span class="fn">val</span>(dq.<span class="fn">back</span>()) &lt;= <span class="fn">val</span>(i - <span class="num">1</span>)) <span class="cm">// 求max用 &lt;=，求min用 &gt;=</span>
+        dq.<span class="fn">pop_back</span>();
+    dq.<span class="fn">push_back</span>(i - <span class="num">1</span>);
+
+    <span class="cm">// Step 2: 弹出过期决策 (窗口左端收缩)</span>
+    <span class="kw">while</span> (!dq.<span class="fn">empty</span>() &amp;&amp; dq.<span class="fn">front</span>() &lt; i - w)
+        dq.<span class="fn">pop_front</span>();
+
+    <span class="cm">// Step 3: 取队首作为最优决策</span>
+    dp[i] = <span class="fn">compute</span>(dq.<span class="fn">front</span>());
+}</code></pre>
+
+    <h3>复杂度对比</h3>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>方法</th>
+          <th>时间复杂度</th>
+          <th>空间复杂度</th>
+          <th>说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>朴素枚举</td>
+          <td><span class="complexity"><span class="label">Time</span><span class="value">O(n &times; w)</span></span></td>
+          <td>O(n)</td>
+          <td>对每个 i 枚举窗口内所有 j</td>
+        </tr>
+        <tr>
+          <td>单调队列优化</td>
+          <td><span class="complexity"><span class="label">Time</span><span class="value">O(n)</span></span></td>
+          <td>O(n)</td>
+          <td>每个元素最多入队出队各一次</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- ==================== 3. 斜率优化 DP ==================== -->
+  <div class="section" id="slope">
+    <h2>3. 斜率优化 DP (Convex Hull Trick)</h2>
+
+    <h3>适用场景</h3>
+    <p>当 DP 转移方程经过代数变形后，可以写成一次函数 <code>y = kx + b</code> 的形式时，可以用<strong>维护凸包</strong>的方式在 O(n log n) 甚至 O(n) 内完成转移。</p>
+
+    <div class="box box-tip">
+      <div class="box-title">模式识别</div>
+      <p>转移方程中含有 <code>j&sup2;</code>、<code>j*S[j]</code> 等二次项，且可以将 dp[j] 和 dp[i] 分离到等式两边。通常需要令 <code>y = dp[j] + ...</code>，<code>x = f(j)</code>，<code>k = g(i)</code>，<code>b = dp[i]</code>。</p>
+    </div>
+
+    <h3>数学推导</h3>
+    <p>以经典的<strong>任务安排问题</strong>为例：</p>
+    <p>有 n 个任务，每个任务有处理时间 t[i] 和费用 c[i]。将任务分成若干批，第 i 批的代价为 <code>S &times; sum_c(第i批之后的所有任务)</code>。求最小总费用。</p>
+
+    <h4>朴素转移方程</h4>
+    <p><code>dp[i] = min{ dp[j] + S * (C[n] - C[j]) + T[i] * (C[i] - C[j]) }</code></p>
+    <p>其中 T[i], C[i] 分别是 t 和 c 的前缀和。</p>
+
+    <h4>变形过程</h4>
+    <div class="steps">
+      <div class="step">展开：<code>dp[i] = min{ dp[j] + S*C[n] - S*C[j] + T[i]*C[i] - T[i]*C[j] }</code></div>
+      <div class="step">将与 j 无关的项提出：<code>dp[i] = S*C[n] + T[i]*C[i] + min{ dp[j] - S*C[j] - T[i]*C[j] }</code></div>
+      <div class="step">整理 min 内：<code>dp[j] = (S + T[i]) * C[j] + (dp[i] - S*C[n] - T[i]*C[i])</code></div>
+      <div class="step">视为直线：<code>y = kx + b</code>，其中 <code>y = dp[j]</code>，<code>x = C[j]</code>，<code>k = S + T[i]</code>，<code>b = dp[i] - ...</code></div>
+      <div class="step">对于固定的 i，k 确定。要使 dp[i] 最小，即要使截距 b 最小，等价于找凸包上的最优切点</div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+  y (dp[j])
+  ^
+  |     *  *
+  |   *      \*       凸包上半部分（求最小值用下凸壳）
+  |  *        |\
+  | *    k    | \
+  |*----->    v  *
+  |            *
+  +-------------------> x (C[j])
+
+  斜率 k 随 i 递增（因为 T[i] 单调递增），
+  所以最优决策点在凸包上单调右移
+      </pre>
+    </div>
+
+    <h3>两种情况对比</h3>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>特性</th>
+          <th>斜率单调（常见）</th>
+          <th>斜率不单调</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>凸包维护方式</td>
+          <td>队列（只在队尾插入，队首删除）</td>
+          <td>平衡树 / 二分</td>
+        </tr>
+        <tr>
+          <td>查询方式</td>
+          <td>队首弹出直到最优</td>
+          <td>在凸包上二分查找</td>
+        </tr>
+        <tr>
+          <td>总复杂度</td>
+          <td><span class="complexity"><span class="label">Time</span><span class="value">O(n)</span></span></td>
+          <td><span class="complexity"><span class="label">Time</span><span class="value">O(n log n)</span></span></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>斜率计算与判断</h3>
+    <div class="box box-warn">
+      <div class="box-title">精度陷阱</div>
+      <p>不要用浮点数计算斜率！用<strong>叉积</strong>判断三点是否构成凸壳：<br>
+      对于三个点 A(x1,y1), B(x2,y2), C(x3,y3)，判断 B 是否应在凸包上：<br>
+      <code>(x2-x1)*(y3-y1) - (y2-y1)*(x3-x1) &gt; 0</code> 表示 A&rarr;B&rarr;C 逆时针（上凸壳保留 B）<br>
+      求下凸壳则反之。实际使用时需要根据求最大/最小值以及斜率正负性仔细判断。</p>
+    </div>
+
+    <h3>完整代码模板：斜率优化 DP（斜率单调）</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="kw">typedef</span> <span class="ty">long long</span> <span class="ty">ll</span>;
+
+<span class="cm">/*
+ * 斜率优化 DP 模板 - 以任务安排为例
+ * dp[i] = min{ dp[j] + S*(C[n]-C[j]) + T[i]*(C[i]-C[j]) }
+ * 变形: dp[j] = (S + T[i]) * C[j] + dp[i] - S*C[n] - T[i]*C[i]
+ *       y    =         k        * x    +         b
+ * 求最小截距 b，维护下凸壳
+ */</span>
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n;
+    <span class="ty">ll</span> S;
+    <span class="fn">scanf</span>(<span class="str">"%d%lld"</span>, &amp;n, &amp;S);
+
+    <span class="ty">vector</span>&lt;<span class="ty">ll</span>&gt; T(n + <span class="num">1</span>, <span class="num">0</span>), C(n + <span class="num">1</span>, <span class="num">0</span>);
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="ty">ll</span> t, c;
+        <span class="fn">scanf</span>(<span class="str">"%lld%lld"</span>, &amp;t, &amp;c);
+        T[i] = T[i - <span class="num">1</span>] + t;
+        C[i] = C[i - <span class="num">1</span>] + c;
+    }
+
+    <span class="ty">vector</span>&lt;<span class="ty">ll</span>&gt; dp(n + <span class="num">1</span>, <span class="num">0</span>);
+    <span class="ty">deque</span>&lt;<span class="ty">int</span>&gt; dq;  <span class="cm">// 凸包上的点（存下标）</span>
+    dq.<span class="fn">push_back</span>(<span class="num">0</span>);
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="ty">ll</span> k = S + T[i];  <span class="cm">// 当前查询斜率</span>
+
+        <span class="cm">// 求最小截距：斜率单调递增时，弹出队首斜率 &lt; k 的边</span>
+        <span class="kw">while</span> (dq.<span class="fn">size</span>() &gt;= <span class="num">2</span>) {
+            <span class="ty">int</span> a = dq[<span class="num">0</span>], b = dq[<span class="num">1</span>];
+            <span class="cm">// 若 (dp[b]-dp[a]) / (C[b]-C[a]) &lt;= k, 弹出 a</span>
+            <span class="cm">// 用叉积避免浮点: (dp[b]-dp[a]) &lt;= k * (C[b]-C[a])</span>
+            <span class="kw">if</span> (dp[b] - dp[a] &lt;= k * (C[b] - C[a]))
+                dq.<span class="fn">pop_front</span>();
+            <span class="kw">else</span> <span class="kw">break</span>;
+        }
+        <span class="ty">int</span> j = dq.<span class="fn">front</span>();
+
+        <span class="cm">// 用最优决策转移</span>
+        dp[i] = dp[j] + S * (C[n] - C[j]) + T[i] * (C[i] - C[j]);
+
+        <span class="cm">// 将 i 加入凸包，维护下凸壳性质</span>
+        <span class="kw">while</span> (dq.<span class="fn">size</span>() &gt;= <span class="num">2</span>) {
+            <span class="ty">int</span> a = dq[dq.<span class="fn">size</span>() - <span class="num">2</span>];
+            <span class="ty">int</span> b = dq.<span class="fn">back</span>();
+            <span class="cm">// 判断 (dp[i]-dp[b])/(C[i]-C[b]) &lt;= (dp[b]-dp[a])/(C[b]-C[a])</span>
+            <span class="cm">// 即 b 点不在凸壳上，需要弹出</span>
+            <span class="kw">if</span> ((dp[i] - dp[b]) * (C[b] - C[a]) &lt;= (dp[b] - dp[a]) * (C[i] - C[b]))
+                dq.<span class="fn">pop_back</span>();
+            <span class="kw">else</span> <span class="kw">break</span>;
+        }
+        dq.<span class="fn">push_back</span>(i);
+    }
+
+    <span class="fn">printf</span>(<span class="str">"%lld\n"</span>, dp[n]);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <h3>经典例题详解</h3>
+
+    <div class="problem">
+      <div class="problem-title">Luogu P3628 / BZOJ 1010 - 玩具装箱</div>
+      <p>有 n 个玩具，第 i 个长度为 L[i]。将它们分成若干组装箱，每组代价为 <code>(sum(L) + 组内玩具数 - 1 - C)&sup2;</code>，求最小总代价。</p>
+    </div>
+
+    <h4>解题思路</h4>
+    <p>设前缀和 <code>S[i] = sum(L[1..i]) + i</code>（包含间隔），转移方程为：</p>
+    <p><code>dp[i] = min{ dp[j] + (S[i] - S[j] - 1 - C)&sup2; }</code></p>
+    <p>令 <code>A = S[i] - 1 - C</code>，展开平方：</p>
+    <p><code>dp[i] = min{ dp[j] + A&sup2; - 2*A*S[j] + S[j]&sup2; }</code></p>
+    <p>整理：<code>dp[j] + S[j]&sup2; = 2*A * S[j] + (dp[i] - A&sup2;)</code></p>
+    <p>令 <code>y = dp[j] + S[j]&sup2;</code>，<code>x = S[j]</code>，<code>k = 2*A = 2*(S[i]-1-C)</code>，<code>b = dp[i] - A&sup2;</code></p>
+    <p>由于 A 随 i 递增，斜率 k 单调递增，用单调队列维护凸包即可 O(n) 解决。</p>
+
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="kw">typedef</span> <span class="ty">long long</span> <span class="ty">ll</span>;
+
+<span class="cm">// Luogu P3628 玩具装箱 - 斜率优化DP</span>
+<span class="ty">ll</span> L[<span class="num">50010</span>], S[<span class="num">50010</span>], dp[<span class="num">50010</span>];
+<span class="ty">int</span> q[<span class="num">50010</span>];  <span class="cm">// 手写队列</span>
+
+<span class="cm">// 计算斜率：判断 f[j1] 和 f[j2] 对应的斜率</span>
+<span class="cm">// f[j] = dp[j] + S[j]^2, x[j] = S[j]</span>
+<span class="cm">// slope(j1, j2) = (f[j2] - f[j1]) / (x[j2] - x[j1])</span>
+<span class="ty">double</span> <span class="fn">slope</span>(<span class="ty">int</span> j1, <span class="ty">int</span> j2) {
+    <span class="kw">return</span> (<span class="ty">double</span>)(dp[j2] + S[j2] * S[j2] - dp[j1] - S[j1] * S[j1])
+         / (<span class="ty">double</span>)(S[j2] - S[j1]);
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n;
+    <span class="ty">ll</span> C;
+    <span class="fn">scanf</span>(<span class="str">"%d%lld"</span>, &amp;n, &amp;C);
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="fn">scanf</span>(<span class="str">"%lld"</span>, &amp;L[i]);
+        S[i] = S[i - <span class="num">1</span>] + L[i] + <span class="num">1</span>;  <span class="cm">// 含间隔的前缀和</span>
+    }
+
+    <span class="ty">int</span> head = <span class="num">0</span>, tail = <span class="num">0</span>;
+    q[tail++] = <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="ty">ll</span> A = S[i] - <span class="num">1</span> - C;       <span class="cm">// 查询斜率 k = 2*A</span>
+
+        <span class="cm">// 弹出队首直到最优</span>
+        <span class="kw">while</span> (head + <span class="num">1</span> &lt; tail &amp;&amp;
+               <span class="fn">slope</span>(q[head], q[head + <span class="num">1</span>]) &lt;= <span class="num">2.0</span> * A)
+            head++;
+
+        <span class="ty">int</span> j = q[head];
+        dp[i] = dp[j] + (S[i] - S[j] - <span class="num">1</span> - C) * (S[i] - S[j] - <span class="num">1</span> - C);
+
+        <span class="cm">// 维护凸包</span>
+        <span class="kw">while</span> (head + <span class="num">1</span> &lt; tail &amp;&amp;
+               <span class="fn">slope</span>(q[tail - <span class="num">2</span>], q[tail - <span class="num">1</span>]) &gt;= <span class="fn">slope</span>(q[tail - <span class="num">1</span>], i))
+            tail--;
+        q[tail++] = i;
+    }
+
+    <span class="fn">printf</span>(<span class="str">"%lld\n"</span>, dp[n]);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <h3>通用斜率优化模板（支持斜率不单调）</h3>
+    <pre><code><span class="cm">// 当查询斜率不单调时，在凸包上二分查找最优决策</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; hull;  <span class="cm">// 凸包上的点（按下标）</span>
+
+<span class="cm">// 查询：在凸包上二分找到斜率 &lt;= k 的最右位置</span>
+<span class="ty">int</span> <span class="fn">query</span>(<span class="ty">ll</span> k) {
+    <span class="ty">int</span> lo = <span class="num">0</span>, hi = hull.<span class="fn">size</span>() - <span class="num">1</span>;
+    <span class="kw">while</span> (lo &lt; hi) {
+        <span class="ty">int</span> mid = (lo + hi) / <span class="num">2</span>;
+        <span class="cm">// 比较 hull[mid] 和 hull[mid+1] 之间的斜率与 k</span>
+        <span class="kw">if</span> (<span class="fn">getSlope</span>(hull[mid], hull[mid + <span class="num">1</span>]) &lt;= k)
+            lo = mid + <span class="num">1</span>;
+        <span class="kw">else</span>
+            hi = mid;
+    }
+    <span class="kw">return</span> hull[lo];
+}
+
+<span class="cm">// 插入：维护凸包，与单调队列方式相同</span>
+<span class="kw">void</span> <span class="fn">insert</span>(<span class="ty">int</span> i) {
+    <span class="kw">while</span> (hull.<span class="fn">size</span>() &gt;= <span class="num">2</span> &amp;&amp;
+           <span class="fn">bad</span>(hull[hull.<span class="fn">size</span>() - <span class="num">2</span>], hull.<span class="fn">back</span>(), i))
+        hull.<span class="fn">pop_back</span>();
+    hull.<span class="fn">push_back</span>(i);
+}</code></pre>
+
+    <h3>复杂度对比</h3>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>方法</th>
+          <th>时间复杂度</th>
+          <th>空间复杂度</th>
+          <th>说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>朴素枚举</td>
+          <td><span class="complexity"><span class="label">Time</span><span class="value">O(n&sup2;)</span></span></td>
+          <td>O(n)</td>
+          <td>对每个 i 枚举所有 j</td>
+        </tr>
+        <tr>
+          <td>斜率优化（斜率单调）</td>
+          <td><span class="complexity"><span class="label">Time</span><span class="value">O(n)</span></span></td>
+          <td>O(n)</td>
+          <td>单调队列维护凸包</td>
+        </tr>
+        <tr>
+          <td>斜率优化（斜率不单调）</td>
+          <td><span class="complexity"><span class="label">Time</span><span class="value">O(n log n)</span></span></td>
+          <td>O(n)</td>
+          <td>凸包上二分查询</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- ==================== 4. 四边形不等式优化 ==================== -->
+  <div class="section" id="quad">
+    <h2>4. 四边形不等式优化</h2>
+
+    <h3>适用场景</h3>
+    <p>四边形不等式优化主要用于<strong>区间 DP</strong> 问题。当代价函数 w(i,j) 满足四边形不等式时，可以证明最优决策点具有单调性，从而将 O(n&sup3;) 优化到 O(n&sup2;)。</p>
+
+    <div class="box box-tip">
+      <div class="box-title">模式识别</div>
+      <p>区间 DP 转移方程形如：<code>dp[i][j] = min{ dp[i][k] + dp[k+1][j] + w(i,j) }，其中 i &le; k &lt; j</code></p>
+      <p>且代价函数 w(i,j) 满足<strong>四边形不等式</strong>。</p>
+    </div>
+
+    <h3>四边形不等式定义</h3>
+    <div class="box box-info">
+      <div class="box-title">四边形不等式 (Quadrangle Inequality)</div>
+      <p>函数 w(i,j) 满足四边形不等式，当且仅当对任意 <code>a &le; b &le; c &le; d</code>，有：</p>
+      <p style="text-align:center;font-size:1.1em;"><code>w(a, c) + w(b, d) &le; w(a, d) + w(b, c)</code></p>
+      <p>直观理解：矩阵 w 中，对于任意一个 2&times;2 的子矩阵，<strong>"对角线之和 &le; 反对角线之和"</strong>。</p>
+    </div>
+
+    <h3>区间上的单调性</h3>
+    <p>若 w(i,j) 满足四边形不等式且 w(i,j) &le; w(i+1,j)（区间包含单调性），则以下结论成立：</p>
+
+    <div class="box box-info">
+      <div class="box-title">关键定理</div>
+      <p>设 <code>s[i][j]</code> 为 dp[i][j] 的最优决策点，则有：</p>
+      <p style="text-align:center;"><code>s[i][j-1] &le; s[i][j] &le; s[i+1][j]</code></p>
+      <p>即最优决策点对列 j 单调不减，对行 i 单调不增。这将搜索范围从 O(n) 缩小到 <code>s[i+1][j] - s[i][j-1]</code>。</p>
+    </div>
+
+    <h3>常见的满足四边形不等式的函数</h3>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>函数形式</th>
+          <th>是否满足 QI</th>
+          <th>典型问题</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>w(i,j) = sum(a[i..j])</code></td>
+          <td>是</td>
+          <td>石子合并</td>
+        </tr>
+        <tr>
+          <td><code>w(i,j) = (S[j]-S[i-1])&sup2;</code></td>
+          <td>是</td>
+          <td>邮局问题</td>
+        </tr>
+        <tr>
+          <td><code>w(i,j) = j - i</code></td>
+          <td>是（平凡情况）</td>
+          <td>&mdash;</td>
+        </tr>
+        <tr>
+          <td>一般凸函数</td>
+          <td>通常是</td>
+          <td>需要具体验证</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>四边形不等式的验证方法</h3>
+    <div class="steps">
+      <div class="step"><strong>定义验证</strong>：直接验证 <code>w(a,c) + w(b,d) &le; w(a,d) + w(b,c)</code></div>
+      <div class="step"><strong>导数判别法</strong>：对于连续函数 w，若 <code>&part;&sup2;w/(&part;i&part;j) &le; 0</code>（交叉偏导非正），则满足</div>
+      <div class="step"><strong>差分判别法</strong>：对于离散函数，验证 <code>w(i,j+1) - w(i,j)</code> 对 i 单调不增即可</div>
+    </div>
+
+    <h3>经典例题：石子合并</h3>
+
+    <div class="problem">
+      <div class="problem-title">Luogu P1880 / NOI 1995 - 石子合并</div>
+      <p>有 n 堆石子围成一圈，每次可以合并相邻两堆，代价为两堆石子之和。求合并成一堆的最小和最大代价。</p>
+    </div>
+
+    <h4>朴素区间 DP（不优化）</h4>
+    <pre><code><span class="cm">// 朴素 O(n^3) 区间DP</span>
+<span class="cm">// dp[i][j]: 合并 [i,j] 内石子的最小代价</span>
+<span class="cm">// dp[i][j] = min{ dp[i][k] + dp[k+1][j] + w(i,j) }，i &le; k &lt; j</span>
+<span class="cm">// w(i,j) = S[j] - S[i-1]</span>
+
+<span class="kw">for</span> (<span class="ty">int</span> len = <span class="num">2</span>; len &lt;= n; len++) {
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i + len - <span class="num">1</span> &lt;= n; i++) {
+        <span class="ty">int</span> j = i + len - <span class="num">1</span>;
+        dp[i][j] = INF;
+        <span class="kw">for</span> (<span class="ty">int</span> k = i; k &lt; j; k++) {  <span class="cm">// O(n) 枚举决策点</span>
+            dp[i][j] = <span class="fn">min</span>(dp[i][j], dp[i][k] + dp[k + <span class="num">1</span>][j] + w(i, j));
+        }
+    }
+}</code></pre>
+
+    <h4>四边形不等式优化版本</h4>
+    <pre><code><span class="cm">// 四边形不等式优化 O(n^2)</span>
+<span class="cm">// 关键: s[i][j-1] &lt;= s[i][j] &lt;= s[i+1][j]</span>
+<span class="cm">// 枚举 k 的范围从 [i, j) 缩小到 [s[i][j-1], s[i+1][j]]</span>
+
+<span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+    s[i][i] = i;  <span class="cm">// 边界：长度为1时决策点就是自身</span>
+    dp[i][i] = <span class="num">0</span>;
+}
+
+<span class="kw">for</span> (<span class="ty">int</span> len = <span class="num">2</span>; len &lt;= n; len++) {
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i + len - <span class="num">1</span> &lt;= n; i++) {
+        <span class="ty">int</span> j = i + len - <span class="num">1</span>;
+        dp[i][j] = INF;
+        <span class="cm">// 利用决策单调性缩小枚举范围</span>
+        <span class="ty">int</span> left = s[i][j - <span class="num">1</span>];
+        <span class="ty">int</span> right = s[i + <span class="num">1</span>][j];
+        <span class="kw">for</span> (<span class="ty">int</span> k = left; k &lt;= right; k++) {
+            <span class="ty">ll</span> val = dp[i][k] + dp[k + <span class="num">1</span>][j] + w(i, j);
+            <span class="kw">if</span> (val &lt; dp[i][j]) {
+                dp[i][j] = val;
+                s[i][j] = k;
+            }
+        }
+    }
+}</code></pre>
+
+    <h3>完整代码：石子合并（四边形不等式优化）</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="kw">typedef</span> <span class="ty">long long</span> <span class="ty">ll</span>;
+<span class="kw">const</span> <span class="ty">int</span> N = <span class="num">2010</span>;
+<span class="kw">const</span> <span class="ty">ll</span> INF = <span class="num">1e18</span>;
+
+<span class="ty">ll</span> a[N], S[N];       <span class="cm">// a[i]: 第i堆石子数, S: 前缀和</span>
+<span class="ty">ll</span> dp_min[N][N];      <span class="cm">// 最小代价</span>
+<span class="ty">ll</span> dp_max[N][N];      <span class="cm">// 最大代价</span>
+<span class="ty">int</span> smin[N][N];       <span class="cm">// 最小值对应的最优决策点</span>
+<span class="ty">int</span> smax[N][N];       <span class="cm">// 最大值对应的最优决策点</span>
+
+<span class="cm">// 代价函数 w(i,j) = S[j] - S[i-1]</span>
+<span class="kw">inline</span> <span class="ty">ll</span> <span class="fn">w</span>(<span class="ty">int</span> i, <span class="ty">int</span> j) {
+    <span class="kw">return</span> S[j] - S[i - <span class="num">1</span>];
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">int</span> n;
+    <span class="fn">scanf</span>(<span class="str">"%d"</span>, &amp;n);
+
+    <span class="cm">// 环形转链形：复制一倍</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="fn">scanf</span>(<span class="str">"%lld"</span>, &amp;a[i]);
+        a[i + n] = a[i];
+    }
+    n *= <span class="num">2</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        S[i] = S[i - <span class="num">1</span>] + a[i];
+
+    <span class="cm">// 初始化边界</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        smin[i][i] = i;
+        smax[i][i] = i;
+        dp_min[i][i] = <span class="num">0</span>;
+        dp_max[i][i] = <span class="num">0</span>;
+    }
+
+    <span class="cm">// 区间DP + 四边形不等式优化</span>
+    <span class="kw">for</span> (<span class="ty">int</span> len = <span class="num">2</span>; len &lt;= n; len++) {
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i + len - <span class="num">1</span> &lt;= n; i++) {
+            <span class="ty">int</span> j = i + len - <span class="num">1</span>;
+
+            <span class="cm">// 求最小值</span>
+            dp_min[i][j] = INF;
+            <span class="kw">for</span> (<span class="ty">int</span> k = smin[i][j - <span class="num">1</span>]; k &lt;= smin[i + <span class="num">1</span>][j]; k++) {
+                <span class="ty">ll</span> val = dp_min[i][k] + dp_min[k + <span class="num">1</span>][j] + <span class="fn">w</span>(i, j);
+                <span class="kw">if</span> (val &lt; dp_min[i][j]) {
+                    dp_min[i][j] = val;
+                    smin[i][j] = k;
+                }
+            }
+
+            <span class="cm">// 求最大值 (注意: 最大值的决策单调性与最小值相反)</span>
+            dp_max[i][j] = -INF;
+            <span class="kw">for</span> (<span class="ty">int</span> k = smax[i][j - <span class="num">1</span>]; k &lt;= smax[i + <span class="num">1</span>][j]; k++) {
+                <span class="ty">ll</span> val = dp_max[i][k] + dp_max[k + <span class="num">1</span>][j] + <span class="fn">w</span>(i, j);
+                <span class="kw">if</span> (val &gt; dp_max[i][j]) {
+                    dp_max[i][j] = val;
+                    smax[i][j] = k;
+                }
+            }
+        }
+    }
+
+    <span class="cm">// 在所有长度为 n 的区间中取最优</span>
+    <span class="ty">ll</span> ans_min = INF, ans_max = -INF;
+    n /= <span class="num">2</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        ans_min = <span class="fn">min</span>(ans_min, dp_min[i][i + n - <span class="num">1</span>]);
+        ans_max = <span class="fn">max</span>(ans_max, dp_max[i][i + n - <span class="num">1</span>]);
+    }
+
+    <span class="fn">printf</span>(<span class="str">"%lld\n%lld\n"</span>, ans_min, ans_max);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code></pre>
+
+    <h3>邮局问题</h3>
+
+    <div class="problem">
+      <div class="problem-title">Luogu P4767 / IOI 2000 - 邮局</div>
+      <p>在一条直线上有 n 个村庄和 p 个邮局，求如何放置邮局使得所有村庄到最近邮局的总距离最小。</p>
+    </div>
+
+    <h4>DP 转移</h4>
+    <p><code>dp[i][j] = min{ dp[i-1][k] + w(k+1, j) }</code>，其中 w(l, r) 表示在 [l, r] 中设一个邮局的最小距离和。</p>
+    <p>w(l, r) 取 [l, r] 中位数位置的邮局即可。可以证明 w(l, r) 满足四边形不等式。</p>
+    <p>复杂度从 O(p&times;n&sup2;) 优化到 O(p&times;n)。</p>
+
+    <h3>复杂度对比</h3>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>方法</th>
+          <th>时间复杂度</th>
+          <th>空间复杂度</th>
+          <th>说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>朴素区间 DP</td>
+          <td><span class="complexity"><span class="label">Time</span><span class="value">O(n&sup3;)</span></span></td>
+          <td>O(n&sup2;)</td>
+          <td>枚举所有 i,j,k</td>
+        </tr>
+        <tr>
+          <td>四边形不等式优化</td>
+          <td><span class="complexity"><span class="label">Time</span><span class="value">O(n&sup2;)</span></span></td>
+          <td>O(n&sup2;)</td>
+          <td>利用决策单调性缩小 k 的范围</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">四边形不等式优化注意事项</div>
+      <ul>
+        <li>必须先证明 w(i,j) 满足四边形不等式，否则优化是错误的</li>
+        <li>区间长度 len 必须从小到大枚举，保证 s[i][j-1] 和 s[i+1][j] 已经计算</li>
+        <li>最大值和最小值的决策单调性方向可能不同，需要分别推导</li>
+        <li>环形问题先倍增为链形，再做区间 DP</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ==================== 5. 总结与对比 ==================== -->
+  <div class="section" id="summary">
+    <h2>5. 总结与对比</h2>
+
+    <h3>三大优化技术对比</h3>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>特性</th>
+          <th>单调队列优化</th>
+          <th>斜率优化</th>
+          <th>四边形不等式优化</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>适用 DP 类型</td>
+          <td>线性 DP</td>
+          <td>线性 DP</td>
+          <td>区间 DP</td>
+        </tr>
+        <tr>
+          <td>转移特征</td>
+          <td>滑动窗口最值</td>
+          <td>可化为 y=kx+b</td>
+          <td>代价函数满足 QI</td>
+        </tr>
+        <tr>
+          <td>典型复杂度</td>
+          <td>O(n&sup2;) &rarr; O(n)</td>
+          <td>O(n&sup2;) &rarr; O(n)/O(n log n)</td>
+          <td>O(n&sup3;) &rarr; O(n&sup2;)</td>
+        </tr>
+        <tr>
+          <td>核心数据结构</td>
+          <td>双端队列 deque</td>
+          <td>凸包 + 队列/二分</td>
+          <td>决策记录数组 s[][]</td>
+        </tr>
+        <tr>
+          <td>推导难度</td>
+          <td>中等</td>
+          <td>较高（需要代数变形）</td>
+          <td>中等（需要证明 QI）</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>解题思路总结</h3>
+    <div class="steps">
+      <div class="step"><strong>写出朴素 DP 转移方程</strong> &mdash; 这是一切优化的基础</div>
+      <div class="step"><strong>分析转移方程的数学结构</strong> &mdash; 是否有滑动窗口？是否可化为线性函数？代价函数是否有特殊性质？</div>
+      <div class="step"><strong>选择合适的优化技术</strong> &mdash; 根据方程结构匹配对应的优化方法</div>
+      <div class="step"><strong>验证性质</strong> &mdash; 单调性、凸性、四边形不等式是否成立</div>
+      <div class="step"><strong>实现并调试</strong> &mdash; 注意边界条件、精度问题（斜率优化避免浮点）</div>
+    </div>
+
+    <h3>推荐阅读与练习</h3>
+    <div class="problem">
+      <div class="problem-title">单调队列优化练习题</div>
+      <ul>
+        <li>Luogu P1886 - 滑动窗口（基础）</li>
+        <li>Luogu P2627 - 修剪草坪</li>
+        <li>Luogu P3957 - 跳房子</li>
+        <li>POJ 3017 - Cut the Sequence</li>
+      </ul>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">斜率优化练习题</div>
+      <ul>
+        <li>Luogu P3628 - 玩具装箱</li>
+        <li>Luogu P3195 - 玩具装箱（加强版）</li>
+        <li>Luogu P4072 - 征途</li>
+        <li>Luogu P2900 - Land Acquisition (USACO)</li>
+        <li>BZOJ 1010 - 玩具装箱</li>
+      </ul>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">四边形不等式优化练习题</div>
+      <ul>
+        <li>Luogu P1880 - 石子合并</li>
+        <li>Luogu P4767 - 邮局</li>
+        <li>Luogu P1775 - 石子合并（弱化版）</li>
+        <li>Luogu P3233 - 世界树</li>
+      </ul>
+    </div>
+
+    <div class="box box-hard">
+      <div class="box-title">进阶方向</div>
+      <ul>
+        <li><strong>决策单调性 + 分治优化</strong>：当转移满足决策单调性但不满足四边形不等式时，可用分治在 O(n log n) 内求解</li>
+        <li><strong>WQS 二分（Alien 技巧）</strong>：当 DP 有附加限制（如恰好选 k 个）时，通过二分惩罚系数转化为无限制 DP</li>
+        <li><strong>李超线段树</strong>：维护动态凸包，支持插入直线和查询最大值，适合斜率不单调且在线的场景</li>
+        <li><strong>CDQ 分治优化 DP</strong>：将 DP 的转移下标分治处理，配合数据结构优化</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

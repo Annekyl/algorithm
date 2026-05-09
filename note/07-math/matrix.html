@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>矩阵快速幂 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt;
+    <a href="../index.html#07-math">数学</a> &gt;
+    矩阵快速幂
+  </div>
+
+  <div class="page-header">
+    <h1>矩阵快速幂</h1>
+    <p class="subtitle">Matrix Fast Exponentiation &mdash; 线性递推的加速利器</p>
+    <div class="tags">
+      <span class="tag tag-math">数学</span>
+      <span class="tag tag-mid">中等</span>
+      <span class="tag tag-base">基础算法</span>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#matrix-mul">矩阵乘法</a></li>
+      <li><a href="#fast-pow">矩阵快速幂</a></li>
+      <li><a href="#applications">应用</a></li>
+      <li><a href="#template">C++ 完整模板</a></li>
+      <li><a href="#problems">经典问题</a></li>
+    </ul>
+  </div>
+
+  <!-- ===== 矩阵乘法 ===== -->
+  <div class="section" id="matrix-mul">
+    <h2>矩阵乘法</h2>
+
+    <h3>定义</h3>
+    <p>设 A 是 m x n 矩阵，B 是 n x p 矩阵，则它们的乘积 C = A * B 是 m x p 矩阵，其中：</p>
+    <p><code>C[i][j] = sum(A[i][k] * B[k][j])  (k = 0, 1, ..., n-1)</code></p>
+
+    <div class="diagram">
+      <pre>
+  A (m x n)        B (n x p)        C (m x p)
+  +-------+        +-------+        +-------+
+  | a b c |   *    | g h i |        | ? ? ? |
+  | d e f |        | j k l |   =    | ? ? ? |
+  +-------+        | m n o |        +-------+
+                   +-------+
+
+  C[0][0] = a*g + b*j + c*m
+  C[0][1] = a*h + b*k + c*n
+  C[1][0] = d*g + e*j + f*m
+  ...
+      </pre>
+    </div>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n^3)</span>
+    </div>
+
+    <h3>单位矩阵</h3>
+    <p>单位矩阵 I 是主对角线为 1，其余为 0 的方阵。对于任意 n x n 矩阵 A，有 <code>A * I = I * A = A</code>。</p>
+
+    <div class="diagram">
+      <pre>
+  I (3x3)      性质:
+  1 0 0        A * I = A
+  0 1 0        I * A = A
+  0 0 1        I^k = I
+      </pre>
+    </div>
+
+    <h3>矩阵乘法的性质</h3>
+    <ul>
+      <li><strong>结合律</strong>：<code>(A * B) * C = A * (B * C)</code></li>
+      <li><strong>分配律</strong>：<code>A * (B + C) = A * B + A * C</code></li>
+      <li><strong>无交换律</strong>：一般 <code>A * B != B * A</code></li>
+    </ul>
+
+    <div class="box box-info">
+      <div class="box-title">快速幂的前提</div>
+      <p>矩阵乘法的结合律是矩阵快速幂的基础。正因为 (A * A) * A = A * (A * A)，我们才能将 A^k 拆分为更小的幂次来加速计算。</p>
+    </div>
+  </div>
+
+  <!-- ===== 矩阵快速幂 ===== -->
+  <div class="section" id="fast-pow">
+    <h2>矩阵快速幂</h2>
+
+    <h3>原理</h3>
+    <p>类似整数快速幂，将指数 k 按二进制拆分：</p>
+    <p><code>A^k = A^(b_0) * A^(2*b_1) * A^(4*b_2) * ...</code></p>
+    <p>其中 <code>b_i</code> 是 k 的二进制表示中第 i 位的值（0 或 1）。</p>
+
+    <div class="steps">
+      <div class="step">将指数 k 转为二进制，如 k = 13 = 1101(2)</div>
+      <div class="step">从低位到高位扫描：A^13 = A^1 * A^4 * A^8</div>
+      <div class="step">维护当前矩阵 cur = A，每次迭代 cur = cur * cur</div>
+      <div class="step">若当前位为 1，则将 cur 乘入结果矩阵</div>
+      <div class="step">共需 O(log k) 次矩阵乘法，每次 O(n^3)</div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+  计算 A^13 (13 = 1101):
+
+  步骤    当前位    cur         result
+  初始              A           I
+  1       1         A^2         I * A = A
+  2       0         A^4         A (不变)
+  3       1         A^8         A * A^4 = A^5
+  4       (结束)                 A^5 * A^8 = A^13
+      </pre>
+    </div>
+
+    <div class="complexity">
+      <span class="label">时间复杂度</span>
+      <span class="value">O(n^3 * log k)</span>
+    </div>
+
+    <div class="box box-warn">
+      <div class="box-title">取模注意</div>
+      <p>在竞赛中，矩阵元素通常需要对一个大质数取模。每次矩阵乘法的加法和乘法运算都需要取模，避免溢出。如果使用 <code>long long</code>，中间结果可能超过 64 位，需要使用 __int128 或快速乘。</p>
+    </div>
+  </div>
+
+  <!-- ===== 应用 ===== -->
+  <div class="section" id="applications">
+    <h2>应用</h2>
+
+    <h3>1. Fibonacci 数列 O(log n)</h3>
+    <p>Fibonacci 数列定义：F(0) = 0, F(1) = 1, F(n) = F(n-1) + F(n-2)。</p>
+    <p>构造转移矩阵：</p>
+
+    <div class="diagram">
+      <pre>
+  | F(n+1) |   | 1  1 | ^ n     | F(1) |     | 1 |
+  | F(n)   | = | 1  0 |     *   | F(0) |  =  | 0 |
+                                        (初始向量)
+
+  验证 n=3:
+  | 1 1 |^3     | 3 2 |     | 1 |   | 3 |   F(4)=3 ✓
+  | 1 0 |    =  | 2 1 |  *  | 0 | = | 2 |   F(3)=2 ✓
+      </pre>
+    </div>
+
+    <div class="complexity">
+      <span class="label">朴素递推</span>
+      <span class="value">O(n)</span>
+    </div>
+    <div class="complexity">
+      <span class="label">矩阵快速幂</span>
+      <span class="value">O(8 * log n)</span>
+    </div>
+
+    <h3>2. 线性递推加速</h3>
+    <p>对于 k 阶线性递推关系：</p>
+    <p><code>f(n) = a_1 * f(n-1) + a_2 * f(n-2) + ... + a_k * f(n-k)</code></p>
+    <p>可以构造 k x k 的转移矩阵，用矩阵快速幂在 O(k^3 * log n) 时间内求出 f(n)。</p>
+
+    <div class="diagram">
+      <pre>
+  一般 k 阶线性递推的转移矩阵:
+
+  | a1 a2 a3 ... ak-1 ak |
+  | 1  0  0  ... 0     0  |
+  | 0  1  0  ... 0     0  |
+  | .  .  .  ... .     .  |
+  | 0  0  0  ... 1     0  |
+
+  初始向量: [f(k-1), f(k-2), ..., f(1), f(0)]^T
+      </pre>
+    </div>
+
+    <h3>3. 图上路径计数</h3>
+    <p>邻接矩阵 A 的 n 次幂 A^n 中，<code>A^n[i][j]</code> 表示从节点 i 到节点 j 恰好经过 n 条边的路径数量。</p>
+
+    <h3>4. 带权路径问题</h3>
+    <p>可以将矩阵快速幂与 DP 结合，求解带约束的路径计数、状态转移等问题。关键是正确构造转移矩阵。</p>
+
+    <div class="box box-tip">
+      <div class="box-title">构造转移矩阵的技巧</div>
+      <p>将 DP 状态作为矩阵维度，状态转移方程的系数填入矩阵对应位置。如果转移涉及常数项（如 +1），可以增加一个恒为 1 的维度来处理。</p>
+    </div>
+  </div>
+
+  <!-- ===== C++ 完整模板 ===== -->
+  <div class="section" id="template">
+    <h2>C++ 完整模板</h2>
+
+    <h3>矩阵结构体</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+<span class="kw">typedef</span> <span class="ty">long long</span> ll;
+
+<span class="kw">const</span> <span class="ty">int</span> MOD = <span class="num">1e9</span> + <span class="num">7</span>;
+
+<span class="kw">struct</span> <span class="ty">Matrix</span> {
+    <span class="ty">int</span> n;
+    <span class="ty">vector</span>&lt;<span class="ty">vector</span>&lt;<span class="ty">ll</span>&gt;&gt; a;
+
+    <span class="fn">Matrix</span>(<span class="ty">int</span> _n) : <span class="fn">n</span>(_n), <span class="fn">a</span>(_n, <span class="ty">vector</span>&lt;<span class="ty">ll</span>&gt;(_n, <span class="num">0</span>)) {}
+
+    <span class="cm">// 单位矩阵</span>
+    <span class="kw">static</span> <span class="ty">Matrix</span> <span class="fn">identity</span>(<span class="ty">int</span> _n) {
+        <span class="ty">Matrix</span> res(_n);
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i < _n; i++) res.a[i][i] = <span class="num">1</span>;
+        <span class="kw">return</span> res;
+    }
+
+    <span class="cm">// 矩阵乘法</span>
+    <span class="ty">Matrix</span> <span class="kw">operator</span>*(<span class="kw">const</span> <span class="ty">Matrix</span>&amp; b) <span class="kw">const</span> {
+        <span class="ty">Matrix</span> res(n);
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i < n; i++)
+            <span class="kw">for</span> (<span class="ty">int</span> k = <span class="num">0</span>; k < n; k++) {
+                <span class="ty">ll</span> t = a[i][k];
+                <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j < n; j++)
+                    res.a[i][j] = (res.a[i][j] + t * b.a[k][j]) % MOD;
+            }
+        <span class="kw">return</span> res;
+    }
+};
+
+<span class="cm">// 矩阵快速幂</span>
+<span class="ty">Matrix</span> <span class="fn">mat_pow</span>(<span class="ty">Matrix</span> base, <span class="ty">ll</span> k) {
+    <span class="ty">Matrix</span> res = <span class="ty">Matrix</span>::<span class="fn">identity</span>(base.n);
+    <span class="kw">while</span> (k > <span class="num">0</span>) {
+        <span class="kw">if</span> (k &amp; <span class="num">1</span>) res = res * base;
+        base = base * base;
+        k >>= <span class="num">1</span>;
+    }
+    <span class="kw">return</span> res;
+}</code></pre>
+
+    <h3>Fibonacci 数列求第 n 项</h3>
+    <pre><code><span class="cm">// 求 F(n) % MOD, F(0)=0, F(1)=1</span>
+<span class="ty">ll</span> <span class="fn">fibonacci</span>(<span class="ty">ll</span> n) {
+    <span class="kw">if</span> (n == <span class="num">0</span>) <span class="kw">return</span> <span class="num">0</span>;
+    <span class="ty">Matrix</span> base(<span class="num">2</span>);
+    base.a[<span class="num">0</span>][<span class="num">0</span>] = <span class="num">1</span>; base.a[<span class="num">0</span>][<span class="num">1</span>] = <span class="num">1</span>;
+    base.a[<span class="num">1</span>][<span class="num">0</span>] = <span class="num">1</span>; base.a[<span class="num">1</span>][<span class="num">1</span>] = <span class="num">0</span>;
+    <span class="ty">Matrix</span> res = <span class="fn">mat_pow</span>(base, n - <span class="num">1</span>);
+    <span class="kw">return</span> res.a[<span class="num">0</span>][<span class="num">0</span>]; <span class="cm">// F(n)</span>
+}</code></pre>
+
+    <h3>k 阶线性递推通用模板</h3>
+    <pre><code><span class="cm">// f(n) = c[0]*f(n-1) + c[1]*f(n-2) + ... + c[k-1]*f(n-k)</span>
+<span class="cm">// 已知 f[0], f[1], ..., f[k-1]，求 f(n)</span>
+<span class="ty">ll</span> <span class="fn">linear_recurrence</span>(<span class="ty">vector</span>&lt;<span class="ty">ll</span>&gt; f, <span class="ty">vector</span>&lt;<span class="ty">ll</span>&gt; c, <span class="ty">ll</span> n) {
+    <span class="ty">int</span> k = f.<span class="fn">size</span>();
+    <span class="kw">if</span> (n < k) <span class="kw">return</span> f[n];
+
+    <span class="ty">Matrix</span> trans(k);
+    <span class="cm">// 第一行填系数</span>
+    <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j < k; j++) trans.a[<span class="num">0</span>][j] = c[j] % MOD;
+    <span class="cm">// 下方为单位偏移矩阵</span>
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i < k; i++) trans.a[i][i - <span class="num">1</span>] = <span class="num">1</span>;
+
+    <span class="ty">Matrix</span> res = <span class="fn">mat_pow</span>(trans, n - k + <span class="num">1</span>);
+    <span class="ty">ll</span> ans = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j < k; j++)
+        ans = (ans + res.a[<span class="num">0</span>][j] * f[k - <span class="num">1</span> - j]) % MOD;
+    <span class="kw">return</span> ans;
+}</code></pre>
+
+    <h3>矩阵快速幂（固定大小模板，常数更小）</h3>
+    <pre><code><span class="cm">// 固定 2x2 矩阵，常数优化版本</span>
+<span class="kw">struct</span> <span class="ty">Mat2</span> {
+    <span class="ty">ll</span> a[<span class="num">2</span>][<span class="num">2</span>];
+    <span class="fn">Mat2</span>() { <span class="fn">memset</span>(a, <span class="num">0</span>, <span class="kw">sizeof</span>(a)); }
+    <span class="ty">Mat2</span> <span class="kw">operator</span>*(<span class="kw">const</span> <span class="ty">Mat2</span>&amp; b) <span class="kw">const</span> {
+        <span class="ty">Mat2</span> c;
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i < <span class="num">2</span>; i++)
+            <span class="kw">for</span> (<span class="ty">int</span> k = <span class="num">0</span>; k < <span class="num">2</span>; k++)
+                <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j < <span class="num">2</span>; j++)
+                    c.a[i][j] = (c.a[i][j] + a[i][k] * b.a[k][j]) % MOD;
+        <span class="kw">return</span> c;
+    }
+};
+
+<span class="ty">Mat2</span> <span class="fn">mat_pow2</span>(<span class="ty">Mat2</span> base, <span class="ty">ll</span> k) {
+    <span class="ty">Mat2</span> res;
+    res.a[<span class="num">0</span>][<span class="num">0</span>] = res.a[<span class="num">1</span>][<span class="num">1</span>] = <span class="num">1</span>; <span class="cm">// 单位矩阵</span>
+    <span class="kw">while</span> (k > <span class="num">0</span>) {
+        <span class="kw">if</span> (k &amp; <span class="num">1</span>) res = res * base;
+        base = base * base;
+        k >>= <span class="num">1</span>;
+    }
+    <span class="kw">return</span> res;
+}</code></pre>
+  </div>
+
+  <!-- ===== 经典问题 ===== -->
+  <div class="section" id="problems">
+    <h2>经典问题</h2>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P1939 - 矩阵加速（数列）</div>
+      <p>已知 a[1]=a[2]=a[3]=1, a[n]=a[n-1]+a[n-3]，求 a[n] % MOD。n 可达 2*10^9。</p>
+      <p><strong>思路</strong>：构造 3x3 转移矩阵，用矩阵快速幂加速。时间复杂度 O(27 * log n)。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P1962 - Fibonacci 数列</div>
+      <p>求 F(n) % (10^9+7)，n 可达 2*10^9。</p>
+      <p><strong>思路</strong>：经典 2x2 矩阵快速幂，O(8 * log n)。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">洛谷 P1349 - 广义 Fibonacci 数列</div>
+      <p>给定 f(1)=f(2)=1, f(n)=p*f(n-1)+q*f(n-2)，求 f(n) % MOD。</p>
+      <p><strong>思路</strong>：转移矩阵第一行为 [p, q]，第二行为 [1, 0]。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">HDU 1757 - A Simple Math Problem</div>
+      <p>给定 k 和 m，f(x) = a_0*f(x-1) + a_1*f(x-2) + ... + a_9*f(x-10)，其中 a_i 给定。f(0)~f(9) = 0~9。当 x < k 时 f(x)=x，否则 f(x) = sum(a_i * f(x-i-1))，求 f(m) % mod。</p>
+      <p><strong>思路</strong>：10x10 矩阵快速幂。</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-title">Codeforces 166E - Tetrahedron</div>
+      <p>蚂蚁在正四面体的四个顶点上，每秒等概率走到相邻顶点。求 n 秒后回到起点的概率。</p>
+      <p><strong>思路</strong>：4x4 转移矩阵，矩阵快速幂求方案数，再除以 3^n。</p>
+    </div>
+
+    <div class="box box-tip">
+      <div class="box-title">解题技巧总结</div>
+      <ul>
+        <li>看到线性递推 + 大 n，立刻想到矩阵快速幂</li>
+        <li>转移矩阵的构造是核心：将状态间的转移关系填入矩阵</li>
+        <li>如果递推有常数项（如 f(n) = 2*f(n-1) + 1），增加一个恒为 1 的维度</li>
+        <li>矩阵大小决定了每次乘法的常数，尽量缩小矩阵维度</li>
+      </ul>
+    </div>
+
+    <div class="box box-info">
+      <div class="box-title">常见转移矩阵模板</div>
+      <ul>
+        <li><strong>Fibonacci</strong>：2x2 矩阵 [[1,1],[1,0]]</li>
+        <li><strong>等比数列求和</strong>：2x2 矩阵 [[r,0],[1,1]]，状态为 (S_n, 1)</li>
+        <li><strong>带常数项递推</strong>：增加一列 [1]，矩阵维度 +1</li>
+        <li><strong>路径计数</strong>：邻接矩阵的幂</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

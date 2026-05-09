@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>素数 - ACM 算法笔记</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="../index.html">首页</a> &gt; 数学篇 &gt; 素数
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>素数</h1>
+    <p class="subtitle">Prime Numbers &mdash; 素数判定、筛法与素性测试</p>
+    <div class="tags">
+      <span class="tag tag-math">数学</span>
+      <span class="tag tag-base">基础算法</span>
+      <span class="tag tag-mid">进阶</span>
+    </div>
+  </div>
+
+  <!-- Table of Contents -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#intro">素数的基本概念</a></li>
+      <li><a href="#trial">素数判定 &mdash; 试除法 O(&radic;n)</a></li>
+      <li><a href="#sieve-eratosthenes">埃氏筛 Sieve of Eratosthenes</a></li>
+      <li><a href="#sieve-linear">欧拉筛 (线性筛)</a></li>
+      <li><a href="#factorization">素数分解</a></li>
+      <li><a href="#miller-rabin">Miller-Rabin 素性测试</a></li>
+      <li><a href="#templates">完整 C++ 模板</a></li>
+      <li><a href="#problems">经典例题</a></li>
+    </ul>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 1: Introduction -->
+  <!-- ============================== -->
+  <div class="section" id="intro">
+    <h2>素数的基本概念</h2>
+    <p>素数（质数）是指大于 1 的正整数中，除了 1 和自身外没有其他因数的数。素数是数论的基石，在密码学、算法竞赛中有着广泛应用。</p>
+
+    <div class="box box-info">
+      <div class="box-title">核心性质</div>
+      <ul>
+        <li>2 是唯一的偶素数</li>
+        <li>任何一个合数 n 都有一个不超过 &radic;n 的素因子</li>
+        <li>算术基本定理：任何大于 1 的正整数都可以唯一分解为素数的乘积</li>
+        <li>素数有无穷多个（欧几里得证明）</li>
+      </ul>
+    </div>
+
+    <h3>常见问题类型</h3>
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>问题</th>
+          <th>适用场景</th>
+          <th>时间复杂度</th>
+        </tr>
+        <tr>
+          <td>单个数判定素数</td>
+          <td>判断一个数是否为素数</td>
+          <td>O(&radic;n)</td>
+        </tr>
+        <tr>
+          <td>筛法求素数表</td>
+          <td>求 [1, n] 内所有素数</td>
+          <td>O(n log log n) 或 O(n)</td>
+        </tr>
+        <tr>
+          <td>素数分解</td>
+          <td>将 n 分解为素因子乘积</td>
+          <td>O(&radic;n) 或借助筛法更快</td>
+        </tr>
+        <tr>
+          <td>大数素性测试</td>
+          <td>n 极大（如 10^18）</td>
+          <td>O(k log&sup3;n) 概率算法</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 2: Trial Division -->
+  <!-- ============================== -->
+  <div class="section" id="trial">
+    <h2>素数判定 &mdash; 试除法</h2>
+    <p>最朴素的方法：从 2 到 &radic;n 逐一尝试能否整除 n。若都不能整除，则 n 是素数。</p>
+
+    <div class="complexity">
+      <span class="label">时间复杂度:</span>
+      <span class="value">O(&radic;n)</span>
+    </div>
+
+    <h3>原理</h3>
+    <p>如果 n 是合数，则 n = a * b，其中 a 和 b 中至少有一个 &le; &radic;n。因此只需检查 2 到 &radic;n 之间的数即可。</p>
+
+    <div class="diagram">
+      <pre>
+  判断 n = 37 是否为素数:
+  &radic;37 &asymp; 6.08, 只需检查 2, 3, 4, 5, 6
+
+  37 % 2 = 1  (不整除)
+  37 % 3 = 1  (不整除)
+  37 % 4 = 1  (不整除)
+  37 % 5 = 2  (不整除)
+  37 % 6 = 1  (不整除)
+
+  所有因子都不整除 &rarr; 37 是素数
+      </pre>
+    </div>
+
+    <h3>代码模板</h3>
+    <pre><code><span class="cm">// 试除法判断素数</span>
+<span class="ty">bool</span> <span class="fn">is_prime</span>(<span class="ty">long long</span> n) {
+    <span class="kw">if</span> (n &lt; <span class="num">2</span>) <span class="kw">return false</span>;
+    <span class="kw">if</span> (n == <span class="num">2</span> || n == <span class="num">3</span>) <span class="kw">return true</span>;
+    <span class="kw">if</span> (n % <span class="num">2</span> == <span class="num">0</span> || n % <span class="num">3</span> == <span class="num">0</span>) <span class="kw">return false</span>;
+    <span class="cm">// 6k &plusmn; 1 优化: 素数 &gt; 3 一定形如 6k&plusmn;1</span>
+    <span class="kw">for</span> (<span class="ty">long long</span> i = <span class="num">5</span>; i * i &lt;= n; i += <span class="num">6</span>) {
+        <span class="kw">if</span> (n % i == <span class="num">0</span> || n % (i + <span class="num">2</span>) == <span class="num">0</span>)
+            <span class="kw">return false</span>;
+    }
+    <span class="kw">return true</span>;
+}</code><span class="lang-label">C++</span></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">6k &plusmn; 1 优化</div>
+      <p>除 2 和 3 外，所有素数都形如 6k&plusmn;1（即除以 6 余 1 或 5）。因此循环步长设为 6，每次只需检查 i 和 i+2 两个数，效率提升约 3 倍。</p>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 3: Sieve of Eratosthenes -->
+  <!-- ============================== -->
+  <div class="section" id="sieve-eratosthenes">
+    <h2>埃氏筛 Sieve of Eratosthenes</h2>
+    <p>埃氏筛是最经典的筛法，用于快速求出 [1, n] 内的所有素数。核心思想是：从最小的素数 2 开始，将其所有倍数标记为合数，然后找到下一个未被标记的数（即下一个素数），重复此过程。</p>
+
+    <div class="complexity">
+      <span class="label">时间复杂度:</span>
+      <span class="value">O(n log log n)</span>
+    </div>
+
+    <h3>算法流程</h3>
+    <div class="steps">
+      <div class="step">初始化：假设所有数都是素数（标记为 true）</div>
+      <div class="step">从 i = 2 开始遍历到 &radic;n</div>
+      <div class="step">如果 i 未被标记为合数（即 i 是素数），则将 i 的所有倍数（从 i*i 开始）标记为合数</div>
+      <div class="step">遍历结束后，所有未被标记的数即为素数</div>
+    </div>
+
+    <div class="diagram">
+      <pre>
+  筛 [1, 30] 的过程:
+
+  初始: 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
+
+  筛 2:  2 3 [4] 5 [6] 7 [8] 9 [10] 11 [12] 13 [14] 15 [16] 17 [18] 19 [20] 21 [22] 23 [24] 25 [26] 27 [28] 29 [30]
+
+  筛 3:  2 3  4  5  6  7  8 [9] 10  11  12  13  14 [15] 16  17  18  19  20 [21] 22  23  24  25  26 [27] 28  29  30
+
+  筛 5:  (5 的倍数 25 未被筛过) ... [25] ...
+
+  结果: 2 3 5 7 11 13 17 19 23 29
+      </pre>
+    </div>
+
+    <h3>代码模板</h3>
+    <pre><code><span class="cm">// 埃氏筛: 求 [1, n] 内所有素数</span>
+<span class="ty">const int</span> MAXN = <span class="num">10000005</span>;
+<span class="ty">bool</span> is_prime[MAXN];
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; primes;
+
+<span class="ty">void</span> <span class="fn">sieve_eratosthenes</span>(<span class="ty">int</span> n) {
+    <span class="fn">memset</span>(is_prime, <span class="kw">true</span>, <span class="kw">sizeof</span>(is_prime));
+    is_prime[<span class="num">0</span>] = is_prime[<span class="num">1</span>] = <span class="kw">false</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i * i &lt;= n; i++) {
+        <span class="kw">if</span> (is_prime[i]) {
+            <span class="cm">// 从 i*i 开始标记，因为 i*2, i*3, ..., i*(i-1)</span>
+            <span class="cm">// 已经被更小的素数标记过了</span>
+            <span class="kw">for</span> (<span class="ty">long long</span> j = (<span class="ty">long long</span>)i * i; j &lt;= n; j += i)
+                is_prime[j] = <span class="kw">false</span>;
+        }
+    }
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i &lt;= n; i++)
+        <span class="kw">if</span> (is_prime[i]) primes.<span class="fn">push_back</span>(i);
+}</code><span class="lang-label">C++</span></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">注意事项</div>
+      <ul>
+        <li><code>i * i</code> 可能溢出 <code>int</code>，建议用 <code>long long</code></li>
+        <li>从 <code>i*i</code> 开始标记而非 <code>2*i</code>，这是一个重要的优化</li>
+        <li>内层循环 <code>j += i</code> 的步长是 i</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 4: Linear Sieve -->
+  <!-- ============================== -->
+  <div class="section" id="sieve-linear">
+    <h2>欧拉筛 (线性筛)</h2>
+    <p>埃氏筛虽然高效，但同一个合数可能被多个素因子重复标记。欧拉筛的核心改进是：<strong>每个合数只被其最小素因子筛掉一次</strong>，从而实现真正的 O(n) 时间复杂度。</p>
+
+    <div class="complexity">
+      <span class="label">时间复杂度:</span>
+      <span class="value">O(n)</span>
+    </div>
+
+    <h3>关键思想</h3>
+    <div class="box box-info">
+      <div class="box-title">核心原理</div>
+      <p>对于每个合数 x，设其最小素因子为 p。当我们在枚举到 <code>i = x/p</code> 时，用素数 <code>primes[j] = p</code> 去筛掉 <code>x = i * p</code>。这样每个合数恰好被筛一次。</p>
+    </div>
+
+    <h3>算法流程</h3>
+    <div class="steps">
+      <div class="step">遍历 i = 2 到 n，如果 i 未被标记则加入素数表</div>
+      <div class="step">对素数表中的每个 primes[j]，标记 i * primes[j] 为合数</div>
+      <div class="step"><strong>关键</strong>：如果 i % primes[j] == 0，立即停止内层循环。这保证了每个合数只被其最小素因子筛掉</div>
+    </div>
+
+    <h3>为什么 i % primes[j] == 0 时要 break？</h3>
+    <div class="diagram">
+      <pre>
+  假设 i = 12, primes = [2, 3, 5, 7, ...]
+
+  j=0: 筛掉 12 * 2 = 24  (24 的最小素因子是 2)
+  j=1: 12 % 3 == 0, STOP!
+
+  为什么不再继续筛 12 * 3 = 36 ?
+  因为 36 = 4 * 9 = 4 * 3 * 3
+  当 i = 4, j = 0 (primes[0] = 2) 时:
+     36 = 4 * 9 ... 不对
+  实际上 36 = 12 * 3, 但 36 的最小素因子是 2
+  36 应该在 i = 18, j = 0 (primes[0] = 2) 时被筛: 18 * 2 = 36
+  或在 i = 9, j = 0 (primes[0] = 2) 时: 9 * 2 = 18... 不是 36
+
+  正确理解: 36 = 2 * 18 = 2 * 2 * 9
+  最小素因子 = 2, 应在 i = 18, 筛 18*2 = 36 时被标记
+  如果不 break, 继续筛 12*3=36, 就重复标记了
+      </pre>
+    </div>
+
+    <h3>代码模板</h3>
+    <pre><code><span class="cm">// 欧拉筛 (线性筛): O(n) 求素数表</span>
+<span class="ty">const int</span> MAXN = <span class="num">10000005</span>;
+<span class="ty">bool</span> is_prime[MAXN];
+<span class="ty">int</span> primes[MAXN], cnt; <span class="cm">// cnt 记录素数个数</span>
+
+<span class="ty">void</span> <span class="fn">sieve_euler</span>(<span class="ty">int</span> n) {
+    <span class="fn">memset</span>(is_prime, <span class="kw">true</span>, <span class="kw">sizeof</span>(is_prime));
+    is_prime[<span class="num">0</span>] = is_prime[<span class="num">1</span>] = <span class="kw">false</span>;
+    cnt = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i &lt;= n; i++) {
+        <span class="kw">if</span> (is_prime[i]) primes[cnt++] = i;
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; cnt &amp;&amp; (<span class="ty">long long</span>)i * primes[j] &lt;= n; j++) {
+            is_prime[i * primes[j]] = <span class="kw">false</span>;
+            <span class="kw">if</span> (i % primes[j] == <span class="num">0</span>) <span class="kw">break</span>; <span class="cm">// 关键!</span>
+        }
+    }
+}</code><span class="lang-label">C++</span></pre>
+
+    <div class="box box-tip">
+      <div class="box-title">埃氏筛 vs 欧拉筛</div>
+      <div class="table-wrap">
+        <table>
+          <tr>
+            <th>对比项</th>
+            <th>埃氏筛</th>
+            <th>欧拉筛</th>
+          </tr>
+          <tr>
+            <td>时间复杂度</td>
+            <td>O(n log log n)</td>
+            <td>O(n)</td>
+          </tr>
+          <tr>
+            <td>实现难度</td>
+            <td>简单</td>
+            <td>稍复杂</td>
+          </tr>
+          <tr>
+            <td>重复标记</td>
+            <td>有（合数可能被多次标记）</td>
+            <td>无（每个合数只标记一次）</td>
+          </tr>
+          <tr>
+            <td>扩展性</td>
+            <td>较弱</td>
+            <td>强（可同时求欧拉函数等）</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 5: Prime Factorization -->
+  <!-- ============================== -->
+  <div class="section" id="factorization">
+    <h2>素数分解</h2>
+    <p>素数分解（质因数分解）是将一个正整数表示为素数乘积的形式。根据算术基本定理，分解结果是唯一的。</p>
+
+    <h3>方法一：试除法分解</h3>
+    <p>直接从 2 开始尝试除，时间复杂度 O(&radic;n)。</p>
+
+    <pre><code><span class="cm">// 试除法素数分解</span>
+<span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">long long</span>, <span class="ty">int</span>&gt;&gt; <span class="fn">factorize</span>(<span class="ty">long long</span> n) {
+    <span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">long long</span>, <span class="ty">int</span>&gt;&gt; res;
+    <span class="kw">for</span> (<span class="ty">long long</span> i = <span class="num">2</span>; i * i &lt;= n; i++) {
+        <span class="kw">if</span> (n % i == <span class="num">0</span>) {
+            <span class="ty">int</span> cnt = <span class="num">0</span>;
+            <span class="kw">while</span> (n % i == <span class="num">0</span>) {
+                n /= i;
+                cnt++;
+            }
+            res.<span class="fn">push_back</span>({i, cnt});
+        }
+    }
+    <span class="kw">if</span> (n &gt; <span class="num">1</span>) res.<span class="fn">push_back</span>({n, <span class="num">1</span>}); <span class="cm">// n 本身是素数</span>
+    <span class="kw">return</span> res;
+}
+
+<span class="cm">// 使用示例: 360 = 2^3 * 3^2 * 5</span>
+<span class="cm">// 返回: [(2,3), (3,2), (5,1)]</span></code><span class="lang-label">C++</span></pre>
+
+    <h3>方法二：借助素数表分解</h3>
+    <p>先用筛法预处理出素数表，再用素数表中的素数去分解。适用于多次分解的场景。</p>
+
+    <pre><code><span class="cm">// 借助素数表分解 (适合多次分解)</span>
+<span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>, <span class="ty">int</span>&gt;&gt; <span class="fn">factorize_with_table</span>(<span class="ty">int</span> n) {
+    <span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>, <span class="ty">int</span>&gt;&gt; res;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">0</span>; i &lt; cnt &amp;&amp; primes[i] * primes[i] &lt;= n; i++) {
+        <span class="kw">if</span> (n % primes[i] == <span class="num">0</span>) {
+            <span class="ty">int</span> c = <span class="num">0</span>;
+            <span class="kw">while</span> (n % primes[i] == <span class="num">0</span>) {
+                n /= primes[i];
+                c++;
+            }
+            res.<span class="fn">push_back</span>({primes[i], c});
+        }
+    }
+    <span class="kw">if</span> (n &gt; <span class="num">1</span>) res.<span class="fn">push_back</span>({n, <span class="num">1</span>});
+    <span class="kw">return</span> res;
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>方法三：用筛法预处理最小素因子</h3>
+    <p>在线性筛的同时记录每个数的最小素因子（LPF），之后可以在 O(log n) 时间内完成分解。</p>
+
+    <pre><code><span class="cm">// 线性筛 + 最小素因子 (LPF)</span>
+<span class="ty">const int</span> MAXN = <span class="num">10000005</span>;
+<span class="ty">int</span> lpf[MAXN]; <span class="cm">// lpf[i] = i 的最小素因子</span>
+
+<span class="ty">void</span> <span class="fn">sieve_lpf</span>(<span class="ty">int</span> n) {
+    <span class="fn">memset</span>(lpf, <span class="num">0</span>, <span class="kw">sizeof</span>(lpf));
+    <span class="ty">int</span> cnt = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i &lt;= n; i++) {
+        <span class="kw">if</span> (lpf[i] == <span class="num">0</span>) {
+            lpf[i] = i; <span class="cm">// 素数的最小素因子是自身</span>
+            primes[cnt++] = i;
+        }
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; cnt &amp;&amp; primes[j] &lt;= lpf[i] &amp;&amp; (<span class="ty">long long</span>)i * primes[j] &lt;= n; j++) {
+            lpf[i * primes[j]] = primes[j];
+        }
+    }
+}
+
+<span class="cm">// 利用 lpf 数组 O(log n) 分解</span>
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">get_factors</span>(<span class="ty">int</span> n) {
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; res;
+    <span class="kw">while</span> (n &gt; <span class="num">1</span>) {
+        res.<span class="fn">push_back</span>(lpf[n]);
+        n /= lpf[n];
+    }
+    <span class="kw">return</span> res; <span class="cm">// 返回所有素因子（含重复）</span>
+}</code><span class="lang-label">C++</span></pre>
+
+    <div class="box box-info">
+      <div class="box-title">复杂度对比</div>
+      <p>试除法分解单个数：O(&radic;n)。预处理 LPF 后分解单个数：O(log n)。如果需要对 [1, n] 内所有数做分解，总复杂度为 O(n log n)（调和级数）。</p>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 6: Miller-Rabin -->
+  <!-- ============================== -->
+  <div class="section" id="miller-rabin">
+    <h2>Miller-Rabin 素性测试</h2>
+    <p>当 n 极大（如 n ~ 10^18）时，试除法 O(&radic;n) 不可行。Miller-Rabin 是一种<strong>概率性</strong>素性测试算法，可以在 O(k log&sup3;n) 的时间内以极高的概率判断一个大数是否为素数。</p>
+
+    <div class="complexity">
+      <span class="label">时间复杂度:</span>
+      <span class="value">O(k log&sup3;n)</span>
+      <span class="label">k 为测试轮数</span>
+    </div>
+
+    <h3>数学基础</h3>
+    <div class="box box-info">
+      <div class="box-title">费马小定理</div>
+      <p>如果 p 是素数，a 是任意满足 1 &lt; a &lt; p 的整数，则 a<sup>p-1</sup> &equiv; 1 (mod p)。</p>
+    </div>
+    <div class="box box-info">
+      <div class="box-title">二次探测定理</div>
+      <p>如果 p 是素数，x&sup2; &equiv; 1 (mod p)，则 x &equiv; &plusmn;1 (mod p)。即：若 x&sup2; mod p = 1 且 x &ne; 1 且 x &ne; p-1，则 p 不是素数。</p>
+    </div>
+
+    <h3>算法流程</h3>
+    <div class="steps">
+      <div class="step">将 n-1 写成 d &times; 2<sup>s</sup> 的形式（d 为奇数）</div>
+      <div class="step">随机选取底数 a（通常取固定的几个小素数）</div>
+      <div class="step">计算 x = a<sup>d</sup> mod n（快速幂）</div>
+      <div class="step">如果 x == 1 或 x == n-1，则通过本轮测试</div>
+      <div class="step">否则进行 s-1 次平方：x = x&sup2; mod n，若某次 x == n-1 则通过</div>
+      <div class="step">若始终未出现 n-1，则 n 为合数</div>
+    </div>
+
+    <h3>代码模板</h3>
+    <pre><code><span class="cm">// Miller-Rabin 素性测试</span>
+<span class="ty">long long</span> <span class="fn">qpow</span>(<span class="ty">long long</span> a, <span class="ty">long long</span> b, <span class="ty">long long</span> mod) {
+    <span class="ty">long long</span> res = <span class="num">1</span>;
+    a %= mod;
+    <span class="kw">while</span> (b &gt; <span class="num">0</span>) {
+        <span class="kw">if</span> (b &amp; <span class="num">1</span>) res = (__int128)res * a % mod;
+        a = (__int128)a * a % mod;
+        b &gt;&gt;= <span class="num">1</span>;
+    }
+    <span class="kw">return</span> res;
+}
+
+<span class="ty">bool</span> <span class="fn">miller_rabin</span>(<span class="ty">long long</span> n) {
+    <span class="kw">if</span> (n &lt; <span class="num">2</span>) <span class="kw">return false</span>;
+    <span class="kw">if</span> (n == <span class="num">2</span> || n == <span class="num">3</span>) <span class="kw">return true</span>;
+    <span class="kw">if</span> (n % <span class="num">2</span> == <span class="num">0</span>) <span class="kw">return false</span>;
+
+    <span class="cm">// 将 n-1 写成 d * 2^s</span>
+    <span class="ty">long long</span> d = n - <span class="num">1</span>, s = <span class="num">0</span>;
+    <span class="kw">while</span> (d % <span class="num">2</span> == <span class="num">0</span>) {
+        d /= <span class="num">2</span>;
+        s++;
+    }
+
+    <span class="cm">// 测试用的底数 (对 long long 范围足够)</span>
+    <span class="ty">long long</span> bases[] = {<span class="num">2</span>, <span class="num">3</span>, <span class="num">5</span>, <span class="num">7</span>, <span class="num">11</span>, <span class="num">13</span>, <span class="num">17</span>, <span class="num">19</span>, <span class="num">23</span>, <span class="num">29</span>, <span class="num">31</span>, <span class="num">37</span>};
+
+    <span class="kw">for</span> (<span class="ty">long long</span> a : bases) {
+        <span class="kw">if</span> (a &gt;= n) <span class="kw">continue</span>;
+        <span class="ty">long long</span> x = <span class="fn">qpow</span>(a, d, n);
+        <span class="kw">if</span> (x == <span class="num">1</span> || x == n - <span class="num">1</span>) <span class="kw">continue</span>;
+
+        <span class="ty">bool</span> composite = <span class="kw">true</span>;
+        <span class="kw">for</span> (<span class="ty">long long</span> r = <span class="num">1</span>; r &lt; s; r++) {
+            x = (__int128)x * x % n;
+            <span class="kw">if</span> (x == n - <span class="num">1</span>) {
+                composite = <span class="kw">false</span>;
+                <span class="kw">break</span>;
+            }
+        }
+        <span class="kw">if</span> (composite) <span class="kw">return false</span>;
+    }
+    <span class="kw">return true</span>;
+}</code><span class="lang-label">C++</span></pre>
+
+    <div class="box box-warn">
+      <div class="box-title">关于 __int128</div>
+      <p>在计算 <code>a * a % mod</code> 时，如果 a 和 mod 都接近 10^18，乘积会溢出 <code>long long</code>。使用 <code>__int128</code>（GCC 扩展）可以避免溢出。也可以使用快速乘（俄罗斯农民乘法）作为替代。</p>
+    </div>
+
+    <h3>确定性版本（小范围）</h3>
+    <p>对于 n &lt; 2<sup>64</sup>，使用固定的 12 个底数 {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37} 可以做到<strong>确定性</strong>判定，不会出错。</p>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 7: Templates -->
+  <!-- ============================== -->
+  <div class="section" id="templates">
+    <h2>完整 C++ 模板</h2>
+
+    <h3>模板一：埃氏筛 + 素数表</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="ty">const int</span> MAXN = <span class="num">10000005</span>;
+<span class="ty">bool</span> is_prime[MAXN];
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; primes;
+
+<span class="ty">void</span> <span class="fn">sieve</span>(<span class="ty">int</span> n) {
+    <span class="fn">memset</span>(is_prime, <span class="kw">true</span>, <span class="kw">sizeof</span>(is_prime));
+    is_prime[<span class="num">0</span>] = is_prime[<span class="num">1</span>] = <span class="kw">false</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i * i &lt;= n; i++) {
+        <span class="kw">if</span> (is_prime[i]) {
+            <span class="kw">for</span> (<span class="ty">long long</span> j = (<span class="ty">long long</span>)i * i; j &lt;= n; j += i)
+                is_prime[j] = <span class="kw">false</span>;
+        }
+    }
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i &lt;= n; i++)
+        <span class="kw">if</span> (is_prime[i]) primes.<span class="fn">push_back</span>(i);
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>模板二：欧拉筛 + LPF + 素数分解</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="ty">const int</span> MAXN = <span class="num">10000005</span>;
+<span class="ty">int</span> lpf[MAXN], primes[MAXN], cnt;
+
+<span class="ty">void</span> <span class="fn">init</span>(<span class="ty">int</span> n) {
+    cnt = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i &lt;= n; i++) {
+        <span class="kw">if</span> (!lpf[i]) { lpf[i] = i; primes[cnt++] = i; }
+        <span class="kw">for</span> (<span class="ty">int</span> j = <span class="num">0</span>; j &lt; cnt &amp;&amp; primes[j] &lt;= lpf[i] &amp;&amp; (<span class="ty">long long</span>)i * primes[j] &lt;= n; j++)
+            lpf[i * primes[j]] = primes[j];
+    }
+}
+
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; <span class="fn">factorize</span>(<span class="ty">int</span> n) {
+    <span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; f;
+    <span class="kw">while</span> (n &gt; <span class="num">1</span>) { f.<span class="fn">push_back</span>(lpf[n]); n /= lpf[n]; }
+    <span class="kw">return</span> f;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="fn">init</span>(<span class="num">10000000</span>);
+    <span class="ty">int</span> n; cin &gt;&gt; n;
+    <span class="kw">auto</span> f = <span class="fn">factorize</span>(n);
+    <span class="kw">for</span> (<span class="ty">int</span> p : f) cout &lt;&lt; p &lt;&lt; <span class="str">" "</span>;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>模板三：Miller-Rabin + 快速幂</h3>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">typedef</span> <span class="ty">long long</span> ll;
+
+ll <span class="fn">mul</span>(ll a, ll b, ll mod) { <span class="cm">// 快速乘防溢出</span>
+    <span class="kw">return</span> (__int128)a * b % mod;
+}
+
+ll <span class="fn">qpow</span>(ll a, ll b, ll mod) {
+    ll res = <span class="num">1</span>;
+    a %= mod;
+    <span class="kw">while</span> (b) {
+        <span class="kw">if</span> (b &amp; <span class="num">1</span>) res = <span class="fn">mul</span>(res, a, mod);
+        a = <span class="fn">mul</span>(a, a, mod);
+        b &gt;&gt;= <span class="num">1</span>;
+    }
+    <span class="kw">return</span> res;
+}
+
+<span class="ty">bool</span> <span class="fn">is_prime</span>(ll n) {
+    <span class="kw">if</span> (n &lt; <span class="num">2</span>) <span class="kw">return false</span>;
+    <span class="kw">if</span> (n == <span class="num">2</span> || n == <span class="num">3</span>) <span class="kw">return true</span>;
+    <span class="kw">if</span> (n % <span class="num">2</span> == <span class="num">0</span>) <span class="kw">return false</span>;
+    ll d = n - <span class="num">1</span>, s = <span class="num">0</span>;
+    <span class="kw">while</span> (d % <span class="num">2</span> == <span class="num">0</span>) { d /= <span class="num">2</span>; s++; }
+    <span class="kw">for</span> (ll a : {<span class="num">2</span>, <span class="num">3</span>, <span class="num">5</span>, <span class="num">7</span>, <span class="num">11</span>, <span class="num">13</span>, <span class="num">17</span>, <span class="num">19</span>, <span class="num">23</span>, <span class="num">29</span>, <span class="num">31</span>, <span class="num">37</span>}) {
+        <span class="kw">if</span> (a &gt;= n) <span class="kw">continue</span>;
+        ll x = <span class="fn">qpow</span>(a, d, n);
+        <span class="kw">if</span> (x == <span class="num">1</span> || x == n - <span class="num">1</span>) <span class="kw">continue</span>;
+        <span class="ty">bool</span> ok = <span class="kw">false</span>;
+        <span class="kw">for</span> (ll r = <span class="num">1</span>; r &lt; s; r++) {
+            x = <span class="fn">mul</span>(x, x, n);
+            <span class="kw">if</span> (x == n - <span class="num">1</span>) { ok = <span class="kw">true</span>; <span class="kw">break</span>; }
+        }
+        <span class="kw">if</span> (!ok) <span class="kw">return false</span>;
+    }
+    <span class="kw">return true</span>;
+}</code><span class="lang-label">C++</span></pre>
+  </div>
+
+  <!-- ============================== -->
+  <!-- Section 8: Problems -->
+  <!-- ============================== -->
+  <div class="section" id="problems">
+    <h2>经典例题</h2>
+
+    <h3>例题 1: 素数计数</h3>
+    <div class="problem">
+      <div class="problem-title">求 [2, n] 内素数的个数</div>
+      <p>给定 n (n &le; 10^7)，求 [2, n] 内素数的个数。</p>
+    </div>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="ty">const int</span> MAXN = <span class="num">10000005</span>;
+<span class="ty">bool</span> is_prime[MAXN];
+<span class="ty">int</span> main() {
+    <span class="ty">int</span> n; cin &gt;&gt; n;
+    <span class="fn">memset</span>(is_prime, <span class="kw">true</span>, <span class="kw">sizeof</span>(is_prime));
+    is_prime[<span class="num">0</span>] = is_prime[<span class="num">1</span>] = <span class="kw">false</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i * i &lt;= n; i++)
+        <span class="kw">if</span> (is_prime[i])
+            <span class="kw">for</span> (<span class="ty">int</span> j = i * i; j &lt;= n; j += i)
+                is_prime[j] = <span class="kw">false</span>;
+    <span class="ty">int</span> cnt = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i &lt;= n; i++) <span class="kw">if</span> (is_prime[i]) cnt++;
+    cout &lt;&lt; cnt &lt;&lt; endl;
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>例题 2: Goldbach's Conjecture (POJ 2262)</h3>
+    <div class="problem">
+      <div class="problem-title">哥德巴赫猜想验证</div>
+      <p>给定一个大于 4 的偶数 n，将其表示为两个素数之和。数据范围: 6 &le; n &le; 10^6。</p>
+    </div>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="ty">const int</span> MAXN = <span class="num">1000005</span>;
+<span class="ty">bool</span> is_prime[MAXN];
+<span class="ty">vector</span>&lt;<span class="ty">int</span>&gt; primes;
+<span class="ty">int</span> main() {
+    <span class="fn">memset</span>(is_prime, <span class="kw">true</span>, <span class="kw">sizeof</span>(is_prime));
+    is_prime[<span class="num">0</span>] = is_prime[<span class="num">1</span>] = <span class="kw">false</span>;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i &lt; MAXN; i++) {
+        <span class="kw">if</span> (is_prime[i]) {
+            primes.<span class="fn">push_back</span>(i);
+            <span class="kw">for</span> (<span class="ty">long long</span> j = (<span class="ty">long long</span>)i * i; j &lt; MAXN; j += i)
+                is_prime[j] = <span class="kw">false</span>;
+        }
+    }
+    <span class="ty">int</span> n;
+    <span class="kw">while</span> (cin &gt;&gt; n &amp;&amp; n) {
+        <span class="kw">for</span> (<span class="ty">int</span> p : primes) {
+            <span class="kw">if</span> (p &gt; n / <span class="num">2</span>) <span class="kw">break</span>;
+            <span class="kw">if</span> (is_prime[n - p]) {
+                printf(<span class="str">"%d = %d + %d\n"</span>, n, p, n - p);
+                <span class="kw">break</span>;
+            }
+        }
+    }
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>例题 3: 素因子分解 (POJ 1365)</h3>
+    <div class="problem">
+      <div class="problem-title">Prime Land</div>
+      <p>给定一个数的素因子分解形式，求该数减 1 后的素因子分解形式。</p>
+    </div>
+    <pre><code><span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; <span class="fn">factorize</span>(<span class="ty">int</span> n) {
+    <span class="ty">vector</span>&lt;<span class="ty">pair</span>&lt;<span class="ty">int</span>,<span class="ty">int</span>&gt;&gt; res;
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">2</span>; i * i &lt;= n; i++) {
+        <span class="kw">if</span> (n % i == <span class="num">0</span>) {
+            <span class="ty">int</span> cnt = <span class="num">0</span>;
+            <span class="kw">while</span> (n % i == <span class="num">0</span>) { n /= i; cnt++; }
+            res.<span class="fn">push_back</span>({i, cnt});
+        }
+    }
+    <span class="kw">if</span> (n &gt; <span class="num">1</span>) res.<span class="fn">push_back</span>({n, <span class="num">1</span>});
+    <span class="kw">return</span> res;
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    <span class="ty">char</span> line[<span class="num">256</span>];
+    <span class="kw">while</span> (<span class="fn">fgets</span>(line, <span class="kw">sizeof</span>(line), stdin) &amp;&amp; line[<span class="num">0</span>] != <span class="str">'0'</span>) {
+        <span class="ty">int</span> val = <span class="num">1</span>;
+        <span class="ty">int</span> p, e;
+        <span class="ty">char</span>* ptr = line;
+        <span class="kw">while</span> (<span class="fn">sscanf</span>(ptr, <span class="str">"%d %d"</span>, &amp;p, &amp;e) == <span class="num">2</span>) {
+            <span class="kw">while</span> (e--) val *= p;
+            ptr = <span class="fn">strchr</span>(ptr, <span class="str">' '</span>) + <span class="num">1</span>;
+            ptr = <span class="fn">strchr</span>(ptr, <span class="str">' '</span>) + <span class="num">1</span>;
+        }
+        val--;
+        <span class="kw">auto</span> f = <span class="fn">factorize</span>(val);
+        <span class="kw">for</span> (<span class="ty">int</span> i = f.<span class="fn">size</span>() - <span class="num">1</span>; i &gt;= <span class="num">0</span>; i--) {
+            <span class="kw">if</span> (i &lt; (<span class="ty">int</span>)f.<span class="fn">size</span>() - <span class="num">1</span>) <span class="fn">putchar</span>(<span class="str">' '</span>);
+            printf(<span class="str">"%d %d"</span>, f[i].first, f[i].second);
+        }
+        <span class="fn">puts</span>(<span class="str">""</span>);
+    }
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>例题 4: 反素数 (ZOJ 2562)</h3>
+    <div class="problem">
+      <div class="problem-title">求不超过 n 的反素数</div>
+      <p>反素数：设 g(x) 为 x 的因子个数，若对于任意 0 &lt; i &lt; x，都有 g(i) &lt; g(x)，则 x 为反素数。求不超过 n (n &le; 10^16) 的最大反素数。</p>
+    </div>
+    <pre><code><span class="cm">// 反素数搜索: 利用反素数的素因子一定是前缀连续素数</span>
+<span class="pp">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> std;
+<span class="kw">typedef</span> <span class="ty">long long</span> ll;
+
+ll n, ans, max_cnt;
+<span class="ty">int</span> primes[] = {<span class="num">2</span>,<span class="num">3</span>,<span class="num">5</span>,<span class="num">7</span>,<span class="num">11</span>,<span class="num">13</span>,<span class="num">17</span>,<span class="num">19</span>,<span class="num">23</span>,<span class="num">29</span>,<span class="num">31</span>,<span class="num">37</span>,<span class="num">41</span>,<span class="num">43</span>,<span class="num">47</span>};
+
+<span class="ty">void</span> <span class="fn">dfs</span>(<span class="ty">int</span> idx, ll val, ll div_cnt, <span class="ty">int</span> last_exp) {
+    <span class="kw">if</span> (div_cnt &gt; max_cnt || (div_cnt == max_cnt &amp;&amp; val &lt; ans)) {
+        max_cnt = div_cnt;
+        ans = val;
+    }
+    <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i &lt;= last_exp; i++) {
+        <span class="kw">if</span> (val &gt; n / primes[idx]) <span class="kw">break</span>;
+        val *= primes[idx];
+        <span class="fn">dfs</span>(idx + <span class="num">1</span>, val, div_cnt * (i + <span class="num">1</span>), i);
+    }
+}
+
+<span class="ty">int</span> <span class="fn">main</span>() {
+    cin &gt;&gt; n;
+    ans = <span class="num">1</span>; max_cnt = <span class="num">1</span>;
+    <span class="fn">dfs</span>(<span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">60</span>);
+    cout &lt;&lt; ans &lt;&lt; endl;
+}</code><span class="lang-label">C++</span></pre>
+
+    <h3>常见题目链接</h3>
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>题目</th>
+          <th>知识点</th>
+          <th>难度</th>
+        </tr>
+        <tr>
+          <td>POJ 2262 Goldbach's Conjecture</td>
+          <td>埃氏筛</td>
+          <td><span class="tag tag-easy">简单</span></td>
+        </tr>
+        <tr>
+          <td>SPOJ PRIME1 (Prime Generator)</td>
+          <td>区间筛</td>
+          <td><span class="tag tag-mid">中等</span></td>
+        </tr>
+        <tr>
+          <td>POJ 1365 Prime Land</td>
+          <td>素数分解</td>
+          <td><span class="tag tag-mid">中等</span></td>
+        </tr>
+        <tr>
+          <td>UVA 543 Goldbach's Conjecture</td>
+          <td>埃氏筛</td>
+          <td><span class="tag tag-easy">简单</span></td>
+        </tr>
+        <tr>
+          <td>ZOJ 2562 More Divisors (反素数)</td>
+          <td>素数 + DFS</td>
+          <td><span class="tag tag-hard">困难</span></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="section" style="text-align:center; padding:20px; border:none; background:transparent; box-shadow:none;">
+    <p style="color:var(--text-dim); font-size:0.9em;">
+      <a href="../index.html" style="color:var(--accent); text-decoration:none;">返回首页</a>
+      &nbsp;&middot;&nbsp;
+      <a href="gcd.html" style="color:var(--accent); text-decoration:none;">下一篇: GCD与扩展欧几里得</a>
+    </p>
+  </div>
+
+</div>
+
+<script src="../search-index.js"></script>
+<script src="../nav.js"></script>
+</body>
+</html>

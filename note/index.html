@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACM 算法笔记</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .hero { text-align: center; padding: 60px 20px 40px; }
+  .hero h1 { font-size: 3em; color: var(--text-bright); letter-spacing: 4px; }
+  .hero .sub { color: var(--text-dim); font-size: 1.1em; margin-top: 10px; }
+  .hero .stats { display: flex; justify-content: center; gap: 40px; margin-top: 30px; flex-wrap: wrap; }
+  .hero .stat-num { font-size: 2em; color: var(--accent); font-weight: 700; }
+  .hero .stat-label { color: var(--text-dim); font-size: 0.85em; }
+  .section-title { font-size: 1.4em; color: var(--text-bright); margin: 36px 0 18px; padding-left: 14px; border-left: 4px solid var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>ACM 算法笔记</h1>
+  <p class="sub">系统化竞赛编程知识库 &mdash; 原理图解 + C++ 代码模板 + 经典例题</p>
+  <div class="stats">
+    <div><div class="stat-num">9</div><div class="stat-label">专题分类</div></div>
+    <div><div class="stat-num">60+</div><div class="stat-label">算法笔记</div></div>
+    <div><div class="stat-num">200+</div><div class="stat-label">代码模板</div></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- 01 基础篇 -->
+  <div class="section-title">01 - 基础篇</div>
+  <div class="card-grid">
+    <a class="card" href="01-basic/binary-search.html">
+      <div class="card-icon">&#128270;</div>
+      <h3>二分查找</h3>
+      <div class="card-desc">整数二分、浮点二分、二分答案，以及各种边界处理技巧</div>
+    </a>
+    <a class="card" href="01-basic/prefix-sum.html">
+      <div class="card-icon">&#128202;</div>
+      <h3>前缀和 & 差分</h3>
+      <div class="card-desc">一维/二维前缀和、差分数组，快速区间操作</div>
+    </a>
+    <a class="card" href="01-basic/greedy.html">
+      <div class="card-icon">&#128176;</div>
+      <h3>贪心</h3>
+      <div class="card-desc">贪心策略证明、区间调度、经典贪心模型</div>
+    </a>
+    <a class="card" href="01-basic/divide-conquer.html">
+      <div class="card-icon">&#127793;</div>
+      <h3>分治</h3>
+      <div class="card-desc">归并排序、逆序对、分治思想与应用</div>
+    </a>
+    <a class="card" href="01-basic/bit.html">
+      <div class="card-icon">&#9881;</div>
+      <h3>位运算</h3>
+      <div class="card-desc">位运算技巧、枚举子集、状态压缩基础</div>
+    </a>
+    <a class="card" href="01-basic/stl.html">
+      <div class="card-icon">&#128230;</div>
+      <h3>STL 速查</h3>
+      <div class="card-desc">常用容器、算法、数据结构使用手册</div>
+    </a>
+  </div>
+
+  <!-- 02 搜索篇 -->
+  <div class="section-title">02 - 搜索篇</div>
+  <div class="card-grid">
+    <a class="card" href="02-search/dfs.html">
+      <div class="card-icon">&#127795;</div>
+      <h3>DFS</h3>
+      <div class="card-desc">深度优先搜索、剪枝策略、连通块</div>
+    </a>
+    <a class="card" href="02-search/bfs.html">
+      <div class="card-icon">&#128161;</div>
+      <h3>BFS</h3>
+      <div class="card-desc">广度优先搜索、最短路模型、多源BFS</div>
+    </a>
+    <a class="card" href="02-search/idastar.html">
+      <div class="card-icon">&#128640;</div>
+      <h3>迭代加深 & IDA*</h3>
+      <div class="card-desc">迭代加深搜索、IDA* 搜索策略</div>
+    </a>
+    <a class="card" href="02-search/backtracking.html">
+      <div class="card-icon">&#128260;</div>
+      <h3>回溯法</h3>
+      <div class="card-desc">全排列、N皇后、子集枚举</div>
+    </a>
+  </div>
+
+  <!-- 03 动态规划 -->
+  <div class="section-title">03 - 动态规划篇</div>
+  <div class="card-grid">
+    <a class="card" href="03-dp/linear-dp.html">
+      <div class="card-icon">&#128256;</div>
+      <h3>线性 DP</h3>
+      <div class="card-desc">LIS、LCS 及其优化，线性DP基本模型</div>
+    </a>
+    <a class="card" href="03-dp/knapsack.html">
+      <div class="card-icon">&#127890;</div>
+      <h3>背包问题</h3>
+      <div class="card-desc">01背包、完全背包、多重背包、分组背包</div>
+    </a>
+    <a class="card" href="03-dp/interval-dp.html">
+      <div class="card-icon">&#128258;</div>
+      <h3>区间 DP</h3>
+      <div class="card-desc">石子合并、矩阵链乘、区间DP模型</div>
+    </a>
+    <a class="card" href="03-dp/tree-dp.html">
+      <div class="card-icon">&#127794;</div>
+      <h3>树形 DP</h3>
+      <div class="card-desc">树的直径、树的重心、树上背包</div>
+    </a>
+    <a class="card" href="03-dp/digit-dp.html">
+      <div class="card-icon">&#128290;</div>
+      <h3>数位 DP</h3>
+      <div class="card-desc">数字计数类问题的通用框架</div>
+    </a>
+    <a class="card" href="03-dp/bitmask-dp.html">
+      <div class="card-icon">&#9881;</div>
+      <h3>状态压缩 DP</h3>
+      <div class="card-desc">旅行商问题、棋盘覆盖、状压DP</div>
+    </a>
+    <a class="card" href="03-dp/dp-opt.html">
+      <div class="card-icon">&#9889;</div>
+      <h3>DP 优化</h3>
+      <div class="card-desc">单调队列优化、斜率优化、四边形不等式</div>
+    </a>
+  </div>
+
+  <!-- 04 图论 -->
+  <div class="section-title">04 - 图论篇</div>
+  <div class="card-grid">
+    <a class="card" href="04-graph/graph-rep.html">
+      <div class="card-icon">&#128204;</div>
+      <h3>图的存储</h3>
+      <div class="card-desc">邻接矩阵、邻接表、链式前向星</div>
+    </a>
+    <a class="card" href="04-graph/shortest-path.html">
+      <div class="card-icon">&#128739;</div>
+      <h3>最短路</h3>
+      <div class="card-desc">Dijkstra、SPFA、Floyd、Johnson</div>
+    </a>
+    <a class="card" href="04-graph/mst.html">
+      <div class="card-icon">&#127796;</div>
+      <h3>最小生成树</h3>
+      <div class="card-desc">Kruskal、Prim、Borůvka 算法</div>
+    </a>
+    <a class="card" href="04-graph/topo-sort.html">
+      <div class="card-icon">&#128257;</div>
+      <h3>拓扑排序</h3>
+      <div class="card-desc">Kahn算法、DAG最长路、判环</div>
+    </a>
+    <a class="card" href="04-graph/scc.html">
+      <div class="card-icon">&#128279;</div>
+      <h3>强连通分量</h3>
+      <div class="card-desc">Tarjan算法、缩点、DAG上的DP</div>
+    </a>
+    <a class="card" href="04-graph/bipartite.html">
+      <div class="card-icon">&#127912;</div>
+      <h3>二分图</h3>
+      <div class="card-desc">二分图判定、匈牙利算法、KM算法</div>
+    </a>
+    <a class="card" href="04-graph/network-flow.html">
+      <div class="card-icon">&#128168;</div>
+      <h3>网络流</h3>
+      <div class="card-desc">最大流 Dinic、最小费用最大流</div>
+    </a>
+    <a class="card" href="04-graph/lca.html">
+      <div class="card-icon">&#128270;</div>
+      <h3>最近公共祖先</h3>
+      <div class="card-desc">倍增法、Tarjan离线算法</div>
+    </a>
+    <a class="card" href="04-graph/euler.html">
+      <div class="card-icon">&#128506;</div>
+      <h3>欧拉路径</h3>
+      <div class="card-desc">欧拉路径与欧回路判定和构造</div>
+    </a>
+  </div>
+
+  <!-- 05 字符串 -->
+  <div class="section-title">05 - 字符串篇</div>
+  <div class="card-grid">
+    <a class="card" href="05-string/kmp.html">
+      <div class="card-icon">&#128270;</div>
+      <h3>KMP</h3>
+      <div class="card-desc">KMP算法、next数组原理与应用</div>
+    </a>
+    <a class="card" href="05-string/hash.html">
+      <div class="card-icon">&#128273;</div>
+      <h3>字符串哈希</h3>
+      <div class="card-desc">哈希原理、冲突处理、应用技巧</div>
+    </a>
+    <a class="card" href="05-string/trie.html">
+      <div class="card-icon">&#127793;</div>
+      <h3>Trie 树</h3>
+      <div class="card-desc">字典树、01-Trie、最大异或对</div>
+    </a>
+    <a class="card" href="05-string/ac-automaton.html">
+      <div class="card-icon">&#9881;</div>
+      <h3>AC 自动机</h3>
+      <div class="card-desc">多模式匹配、fail树、AC自动机上DP</div>
+    </a>
+    <a class="card" href="05-string/suffix-array.html">
+      <div class="card-icon">&#128203;</div>
+      <h3>后缀数组</h3>
+      <div class="card-desc">SA构建、LCP数组、应用</div>
+    </a>
+    <a class="card" href="05-string/manacher.html">
+      <div class="card-icon">&#128260;</div>
+      <h3>Manacher</h3>
+      <div class="card-desc">最长回文子串 O(n) 算法</div>
+    </a>
+  </div>
+
+  <!-- 06 数据结构 -->
+  <div class="section-title">06 - 数据结构篇</div>
+  <div class="card-grid">
+    <a class="card" href="06-ds/union-find.html">
+      <div class="card-icon">&#128279;</div>
+      <h3>并查集</h3>
+      <div class="card-desc">路径压缩、按秩合并、带权并查集</div>
+    </a>
+    <a class="card" href="06-ds/segment-tree.html">
+      <div class="card-icon">&#127795;</div>
+      <h3>线段树</h3>
+      <div class="card-desc">点修区查、懒标记、动态开点、可持久化</div>
+    </a>
+    <a class="card" href="06-ds/bit-fenwick.html">
+      <div class="card-icon">&#128200;</div>
+      <h3>树状数组</h3>
+      <div class="card-desc">单点修改、区间查询、逆序对</div>
+    </a>
+    <a class="card" href="06-ds/st-table.html">
+      <div class="card-icon">&#128202;</div>
+      <h3>ST 表</h3>
+      <div class="card-desc">稀疏表、O(1)区间最值查询</div>
+    </a>
+    <a class="card" href="06-ds/monotone-stack.html">
+      <div class="card-icon">&#128221;</div>
+      <h3>单调栈</h3>
+      <div class="card-desc">下一个更大/小元素、柱状图最大矩形</div>
+    </a>
+    <a class="card" href="06-ds/monotone-queue.html">
+      <div class="card-icon">&#128220;</div>
+      <h3>单调队列</h3>
+      <div class="card-desc">滑动窗口最值、DP优化</div>
+    </a>
+    <a class="card" href="06-ds/persistent.html">
+      <div class="card-icon">&#128190;</div>
+      <h3>可持久化</h3>
+      <div class="card-desc">主席树、可持久化数组</div>
+    </a>
+  </div>
+
+  <!-- 07 数学 -->
+  <div class="section-title">07 - 数学篇</div>
+  <div class="card-grid">
+    <a class="card" href="07-math/prime.html">
+      <div class="card-icon">&#128290;</div>
+      <h3>素数</h3>
+      <div class="card-desc">埃氏筛、欧拉筛、Miller-Rabin</div>
+    </a>
+    <a class="card" href="07-math/gcd.html">
+      <div class="card-icon">&#128207;</div>
+      <h3>GCD & 扩展欧几里得</h3>
+      <div class="card-desc">GCD、exGCD、裴蜀定理、模逆元</div>
+    </a>
+    <a class="card" href="07-math/combinatorics.html">
+      <div class="card-icon">&#127922;</div>
+      <h3>组合数学</h3>
+      <div class="card-desc">组合数、Lucas定理、卡特兰数</div>
+    </a>
+    <a class="card" href="07-math/matrix.html">
+      <div class="card-icon">&#9638;</div>
+      <h3>矩阵快速幂</h3>
+      <div class="card-desc">矩阵乘法、快速幂、递推加速</div>
+    </a>
+    <a class="card" href="07-math/sg.html">
+      <div class="card-icon">&#127920;</div>
+      <h3>博弈论</h3>
+      <div class="card-desc">Nim游戏、SG函数、巴什博弈</div>
+    </a>
+    <a class="card" href="07-math/gauss.html">
+      <div class="card-icon">&#128202;</div>
+      <h3>高斯消元</h3>
+      <div class="card-desc">线性方程组、异或方程组</div>
+    </a>
+    <a class="card" href="07-math/fft.html">
+      <div class="card-icon">&#127925;</div>
+      <h3>FFT / NTT</h3>
+      <div class="card-desc">多项式乘法、快速傅里叶变换</div>
+    </a>
+  </div>
+
+  <!-- 08 计算几何 -->
+  <div class="section-title">08 - 计算几何篇</div>
+  <div class="card-grid">
+    <a class="card" href="08-geometry/basic-geo.html">
+      <div class="card-icon">&#9650;</div>
+      <h3>基础几何</h3>
+      <div class="card-desc">向量运算、点积叉积、直线与圆</div>
+    </a>
+    <a class="card" href="08-geometry/convex-hull.html">
+      <div class="card-icon">&#11044;</div>
+      <h3>凸包</h3>
+      <div class="card-desc">Andrew算法、Graham扫描、旋转卡壳</div>
+    </a>
+  </div>
+
+  <!-- 09 杂项 -->
+  <div class="section-title">09 - 杂项技巧篇</div>
+  <div class="card-grid">
+    <a class="card" href="09-misc/two-pointer.html">
+      <div class="card-icon">&#128260;</div>
+      <h3>双指针</h3>
+      <div class="card-desc">对撞指针、滑动窗口、快慢指针</div>
+    </a>
+    <a class="card" href="09-misc/mo.html">
+      <div class="card-icon">&#128196;</div>
+      <h3>莫队算法</h3>
+      <div class="card-desc">普通莫队、带修莫队、回滚莫队</div>
+    </a>
+    <a class="card" href="09-misc/tricks.html">
+      <div class="card-icon">&#128161;</div>
+      <h3>常用技巧</h3>
+      <div class="card-desc">离散化、读入优化、对拍、随机化</div>
+    </a>
+  </div>
+
+</div>
+
+<script src="search-index.js"></script>
+<script src="nav.js"></script>
+</body>
+</html>
