@@ -43,7 +43,7 @@
     const toggle = document.createElement('button');
     toggle.className = 'sidebar-toggle';
     toggle.title = '收起/展开目录';
-    toggle.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+    toggle.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
     document.body.appendChild(toggle);
 
     const sidebarStateKey = 'algo-notes-sidebar-collapsed';
@@ -145,20 +145,12 @@
 
   const searchInput = searchWrap.querySelector('.search-input');
   const searchResults = searchWrap.querySelector('.search-results');
-  let searchIndex = null;
-  let searchLoaded = false;
+  // search-index.js is already loaded via <script> tag in HTML
+  const searchIndex = typeof SEARCH_INDEX !== 'undefined' ? SEARCH_INDEX : null;
 
-  // Load search index lazily
   function loadSearchIndex() {
-    if (searchLoaded) return;
-    searchLoaded = true;
-    const script = document.createElement('script');
-    script.src = BASE + 'search-index.js';
-    script.onload = () => { searchIndex = typeof SEARCH_INDEX !== 'undefined' ? SEARCH_INDEX : []; };
-    document.head.appendChild(script);
+    // no-op, index is already available
   }
-
-  searchInput.addEventListener('focus', loadSearchIndex);
 
   function doSearch(query) {
     if (!searchIndex || !query.trim()) { searchResults.innerHTML = ''; searchResults.classList.remove('show'); return; }
@@ -283,17 +275,11 @@
 
   const currentFile = window.location.pathname.split('/').pop();
   const related = RELATIONS[currentFile];
-  if (related && searchIndex === null) {
-    // Load search index for cross-links
-    const script = document.createElement('script');
-    script.src = BASE + 'search-index.js';
-    script.onload = () => {
-      if (typeof SEARCH_INDEX === 'undefined') return;
-      const crossLinks = related
-        .map(f => SEARCH_INDEX.find(item => item.url.endsWith(f)))
-        .filter(Boolean);
-      if (!crossLinks.length) return;
-
+  if (related && searchIndex) {
+    const crossLinks = related
+      .map(f => searchIndex.find(item => item.url.endsWith(f)))
+      .filter(Boolean);
+    if (crossLinks.length) {
       const section = document.createElement('div');
       section.className = 'section cross-links-section';
       section.innerHTML = `
@@ -309,9 +295,147 @@
       `;
       const container = document.querySelector('.container');
       if (container) container.appendChild(section);
-    };
-    document.head.appendChild(script);
+    }
   }
+
+  // ===== 8. Learning Progress Tracker =====
+  const PROGRESS_KEY = 'algo-notes-progress';
+  const STATES = ['', 'learning', 'mastered'];
+  const STATE_LABELS = ['未学', '学习中', '已掌握'];
+
+  function getProgress() {
+    try { return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {}; } catch { return {}; }
+  }
+  function saveProgress(p) { localStorage.setItem(PROGRESS_KEY, JSON.stringify(p)); }
+  function getProgressHTML(url, compact) {
+    const p = getProgress();
+    const state = p[url] || 0;
+    const cls = STATES[state];
+    const label = STATE_LABELS[state];
+    if (compact) {
+      return `<button class="progress-dot ${cls}" data-url="${url}" title="点击切换: ${label}"></button>`;
+    }
+    return `<button class="progress-badge ${cls}" data-url="${url}" title="点击切换状态">${label}</button>`;
+  }
+
+  // Progress dots on index page cards
+  document.querySelectorAll('.card[href]').forEach(card => {
+    const href = card.getAttribute('href');
+    if (!href) return;
+    const dot = document.createElement('span');
+    dot.innerHTML = getProgressHTML(href, true);
+    card.style.position = 'relative';
+    card.appendChild(dot.firstElementChild);
+  });
+
+  // Progress badge on detail page header
+  const pageHeader = document.querySelector('.page-header');
+  if (pageHeader && currentFile && currentFile !== 'index.html') {
+    const url = window.location.pathname.split('/').slice(-2).join('/');
+    const badge = document.createElement('span');
+    badge.innerHTML = getProgressHTML(url, false);
+    pageHeader.appendChild(badge.firstElementChild);
+  }
+
+  // Progress summary bar on index page
+  if (currentFile === 'index.html' && searchIndex) {
+    const total = searchIndex.length;
+    const p = getProgress();
+    const mastered = Object.values(p).filter(v => v === 2).length;
+    const learning = Object.values(p).filter(v => v === 1).length;
+    const pct = Math.round((mastered / total) * 100);
+
+    const bar = document.createElement('div');
+    bar.className = 'progress-summary';
+    bar.innerHTML = `
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" style="width:${pct}%"></div>
+      </div>
+      <div class="progress-stats">
+        <span class="progress-stat mastered">已掌握 ${mastered}</span>
+        <span class="progress-stat learning">学习中 ${learning}</span>
+        <span class="progress-stat">未学 ${total - mastered - learning}</span>
+        <span class="progress-pct">${pct}%</span>
+      </div>
+      <div class="progress-actions">
+        <button class="progress-action-btn" id="progress-export" title="导出进度文件">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          导出进度
+        </button>
+        <label class="progress-action-btn" title="导入进度文件">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          导入进度
+          <input type="file" id="progress-import" accept=".json" style="display:none">
+        </label>
+      </div>
+    `;
+    const hero = document.querySelector('.hero');
+    if (hero) hero.after(bar);
+
+    // Export
+    bar.querySelector('#progress-export').addEventListener('click', () => {
+      const data = JSON.stringify(getProgress(), null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'algo-progress-' + new Date().toISOString().slice(0,10) + '.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    // Import
+    bar.querySelector('#progress-import').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const imported = JSON.parse(reader.result);
+          if (typeof imported !== 'object') throw new Error();
+          saveProgress(imported);
+          location.reload();
+        } catch {
+          alert('文件格式错误，请选择有效的进度文件');
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  // Click handler: cycle progress state
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.progress-dot, .progress-badge');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const url = btn.dataset.url;
+    const p = getProgress();
+    const cur = p[url] || 0;
+    const next = (cur + 1) % 3;
+    if (next === 0) delete p[url]; else p[url] = next;
+    saveProgress(p);
+
+    // Update button
+    btn.classList.remove('learning', 'mastered');
+    if (STATES[next]) btn.classList.add(STATES[next]);
+    if (btn.classList.contains('progress-badge')) btn.textContent = STATE_LABELS[next];
+    btn.title = '点击切换: ' + STATE_LABELS[next];
+
+    // Update summary bar if on index
+    const summary = document.querySelector('.progress-summary');
+    if (summary) {
+      const total = searchIndex ? searchIndex.length : 51;
+      const np = getProgress();
+      const m = Object.values(np).filter(v => v === 2).length;
+      const l = Object.values(np).filter(v => v === 1).length;
+      const pct = Math.round((m / total) * 100);
+      summary.querySelector('.progress-bar-fill').style.width = pct + '%';
+      summary.querySelector('.progress-stat.mastered').textContent = '已掌握 ' + m;
+      summary.querySelector('.progress-stat.learning').textContent = '学习中 ' + l;
+      summary.querySelector('.progress-stat:last-of-type').textContent = '未学 ' + (total - m - l);
+      summary.querySelector('.progress-pct').textContent = pct + '%';
+    }
+  });
 
   // ===== SVG helpers =====
   function copyIcon() {
