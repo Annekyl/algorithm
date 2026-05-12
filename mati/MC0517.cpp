@@ -21,23 +21,24 @@ int n, m;
 void solve() {
     cin >> n >> m;
     pii a[n];
+    int cnt[n] = {0};
     for (int i = 0; i < n; i++) {
         cin >> a[i].first >> a[i].second;
     }
     while (m--) {
         int x, y, r;
         cin >> x >> y >> r;
-        int ans = 0;
-
         for (int i = 0; i < n; i++ ) {
             auto [x1, y1] = a[i];
             int d = (x1 - x) * (x1 - x) + (y1 - y) * (y1 - y);
             if (d <= r * r) {
-                ans ++ ;
+                cnt[i] ++ ;
             }
         }
+    }
 
-        cout << ans << endl;
+    for (int i = 0; i < n; i++) {
+        cout << cnt[i] << endl;
     }
 }
 
