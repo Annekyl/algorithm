@@ -451,4 +451,126 @@
     if (/\/\d{2}-[^/]+\//.test(path)) return '../';
     return '';
   }
+
+  // ===== 9. Scroll Fade-in Animation =====
+  const fadeEls = document.querySelectorAll('.fade-in');
+  if (fadeEls.length && 'IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => entry.target.classList.add('visible'), i * 80);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    fadeEls.forEach(el => observer.observe(el));
+  } else {
+    fadeEls.forEach(el => el.classList.add('visible'));
+  }
+
+  // ===== 10. Canvas Starfield (all pages) =====
+  var canvas = document.createElement('canvas');
+  canvas.id = 'starfield';
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;';
+  document.body.prepend(canvas);
+  var ctx = canvas.getContext('2d');
+  var stars = [], shootingStars = [];
+  var sw, sh;
+
+  function starResize() {
+    sw = canvas.width = window.innerWidth;
+    sh = canvas.height = window.innerHeight;
+  }
+  starResize();
+  window.addEventListener('resize', starResize);
+
+  for (var si = 0; si < 100; si++) {
+    stars.push({
+      x: Math.random() * sw,
+      y: Math.random() * sh,
+      r: Math.random() * 1.4 + 0.3,
+      a: Math.random(),
+      speed: Math.random() * 0.005 + 0.002,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+
+  function spawnShootingStar() {
+    if (shootingStars.length < 2 && Math.random() < 0.006) {
+      shootingStars.push({
+        x: Math.random() * sw * 0.8 + sw * 0.1,
+        y: Math.random() * sh * 0.35,
+        len: 70 + Math.random() * 80,
+        speed: 3.5 + Math.random() * 3.5,
+        angle: -0.6 + Math.random() * 0.2,
+        life: 1,
+        decay: 0.014 + Math.random() * 0.01
+      });
+    }
+  }
+
+  function starDraw() {
+    ctx.clearRect(0, 0, sw, sh);
+    var t = Date.now() * 0.001;
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var alpha = (Math.sin(t * s.speed * 200 + s.phase) + 1) * 0.35 * s.a + 0.08;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(200, 210, 240, ' + alpha + ')';
+      ctx.fill();
+    }
+    spawnShootingStar();
+    for (var j = shootingStars.length - 1; j >= 0; j--) {
+      var ss = shootingStars[j];
+      ss.x += Math.cos(ss.angle) * ss.speed;
+      ss.y -= Math.sin(ss.angle) * ss.speed;
+      ss.life -= ss.decay;
+      if (ss.life <= 0 || ss.x > sw + 100 || ss.y > sh + 100 || ss.x < -100) {
+        shootingStars.splice(j, 1);
+        continue;
+      }
+      var tailX = ss.x - Math.cos(ss.angle) * ss.len * ss.life;
+      var tailY = ss.y + Math.sin(ss.angle) * ss.len * ss.life;
+      var grad = ctx.createLinearGradient(ss.x, ss.y, tailX, tailY);
+      grad.addColorStop(0, 'rgba(108, 158, 255, ' + (ss.life * 0.85) + ')');
+      grad.addColorStop(0.3, 'rgba(167, 139, 250, ' + (ss.life * 0.45) + ')');
+      grad.addColorStop(1, 'rgba(108, 158, 255, 0)');
+      ctx.beginPath();
+      ctx.moveTo(ss.x, ss.y);
+      ctx.lineTo(tailX, tailY);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(ss.x, ss.y, 1.8, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(200, 220, 255, ' + (ss.life * 0.7) + ')';
+      ctx.fill();
+    }
+    requestAnimationFrame(starDraw);
+  }
+  starDraw();
+
+  // ===== 11. Mouse-follow Glow (all pages) =====
+  var glow = document.createElement('div');
+  glow.style.cssText = 'position:fixed;width:450px;height:450px;border-radius:50%;pointer-events:none;z-index:0;' +
+    'background:radial-gradient(circle,rgba(108,158,255,0.05) 0%,rgba(167,139,250,0.025) 30%,transparent 65%);' +
+    'transform:translate(-50%,-50%);transition:opacity 0.4s;opacity:0;will-change:left,top;';
+  document.body.appendChild(glow);
+  var mx = -999, my = -999, gx = -999, gy = -999;
+  document.addEventListener('mousemove', function(e) {
+    mx = e.clientX; my = e.clientY;
+    glow.style.opacity = '1';
+  });
+  document.addEventListener('mouseleave', function() {
+    glow.style.opacity = '0';
+    mx = -999; my = -999;
+  });
+  (function glowLoop() {
+    gx += (mx - gx) * 0.1;
+    gy += (my - gy) * 0.1;
+    glow.style.left = gx + 'px';
+    glow.style.top = gy + 'px';
+    requestAnimationFrame(glowLoop);
+  })();
 })();

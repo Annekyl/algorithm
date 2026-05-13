@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir /s /b)"
+      "Bash(dir /s /b)",
+      "Bash(sed -i 's|<div class=\"section-title\">05 - 字符串篇</div>|<div class=\"section-title\"><span class=\"section-icon\">&#128296;</span> 05 - 字符串篇</div>\\\\n  <div class=\"card-grid fade-in\">|' index.html)",
+      "Bash(sed -i 's|<div class=\"section-title\">06 - 数据结构篇</div>|<div class=\"section-title\"><span class=\"section-icon\">&#128202;</span> 06 - 数据结构篇</div>\\\\n  <div class=\"card-grid fade-in\">|' index.html)",
+      "Bash(sed -i 's|<div class=\"section-title\">07 - 数学篇</div>|<div class=\"section-title\"><span class=\"section-icon\">&#128200;</span> 07 - 数学篇</div>\\\\n  <div class=\"card-grid fade-in\">|' index.html)",
+      "Bash(sed -i 's|<div class=\"section-title\">08 - 计算几何篇</div>|<div class=\"section-title\"><span class=\"section-icon\">&#9650;</span> 08 - 计算几何篇</div>\\\\n  <div class=\"card-grid fade-in\">|' index.html)",
+      "Bash(sed -i 's|<div class=\"section-title\">09 - 杂项技巧篇</div>|<div class=\"section-title\"><span class=\"section-icon\">&#128161;</span> 09 - 杂项技巧篇</div>\\\\n  <div class=\"card-grid fade-in\">|' index.html)"
     ]
   }
 }
