@@ -469,6 +469,7 @@
   }
 
   // ===== 10. Canvas Starfield (all pages) =====
+  try {
   var canvas = document.createElement('canvas');
   canvas.id = 'starfield';
   canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;';
@@ -550,6 +551,7 @@
     requestAnimationFrame(starDraw);
   }
   starDraw();
+  } catch(e) { /* file:// protocol or canvas not supported — skip starfield */ }
 
   // ===== 11. Mouse-follow Glow (all pages) =====
   var glow = document.createElement('div');
