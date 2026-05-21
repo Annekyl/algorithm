@@ -2,40 +2,34 @@
 
 #define int long long
 #define endl '\n'
-#define FOR(i, a, b) for (int i = (a); i <= (b); i++)
-#define REF(i, a, b) for (int i = (a); i >= (b); i--)
 
 using namespace std;
 
 typedef long long ll;
 typedef pair<int, int> pii;
 typedef vector<int> vi;
-typedef vector<bool> vb;
 
 constexpr int INF = 0x3f3f3f3f3f3f3f3f;
 constexpr int mod = 999991;
 constexpr int N = 1e5 + 10;
 
 void solve() {
-    int n, m;
-    cin >> n >> m;
-    string s[n];
+    int n;
+    cin >> n;
+    vector<pii> a(n);
     for (int i = 0; i < n; i++) {
-        cin >> s[i];
-        // cout << s[i] << ' ';
+        cin >> a[i].first >> a[i].second;
     }
-    // return;
-    int ans = 0;
-    int cnt[m][26] = {0};
+    sort(a.begin(), a.end());
+    int ans = INF;
     for (int i = 0; i < n; i++) {
-        // cout << s[i] << ' ';
-        for (int j = 0; j < m; j++) {
-            int pos = s[i][j] - 'a';
-            // cout << pos << endl;
-            ans += i - cnt[j][pos];
-            cnt[j][pos]++;
+        int mx = 0;
+        for (int j = 0; j < n; j++) {
+            int dx = abs(a[i].first - a[j].first);
+            int dy = abs(a[i].second - a[j].second);
+            mx = max(mx, dx + dy);
         }
-        // return;
+        ans = min(ans, mx);
     }
     cout << ans << endl;
 }
