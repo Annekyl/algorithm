@@ -3,6 +3,8 @@
 #define endl '\n'
 using namespace std;
 
+const int INF = 1e9 + 7;
+
 void solve() {
     int n, q;
     cin >> n >> q;
@@ -11,35 +13,24 @@ void solve() {
         cin >> a[i];
     }
 
-    int mp[n + 1];             // 存最近一次出现x的下标
-    set<int> st;               // 存当前有哪些数
-    vector<int> len(n + 1, 1); // 以i为结尾的子序列长度
-    for (int i = 1; i <= n; i++) {
-        int x = a[i];
-        auto it = st.lower_bound(x);
-        if (it == st.begin()) {
-            // 没有找到小于x的数
-
-        } else {
-            it--;
-            int pos = mp[*it];
-            len[i] = len[pos] + 1;
-        }
-        if (st.find(x) == st.end()) {
-            st.insert(x);
-            mp[x] = i;
-        } else {
-            mp[x] = i;
-        }
-    }
-
     while (q--) {
         int l, r;
         cin >> l >> r;
-        if (r - l + 1 < 3) {
-            cout << "No" << endl;
-            continue;
+        int mn1 = INF, mn2 = INF;
+        bool suc = false;
+        for (int i = l; i <= r; i++) {
+            if (a[i] <= mn1)
+                mn1 = a[i];
+            else if (a[i] <= mn2)
+                mn2 = a[i];
+            else {
+                suc = true;
+            }
         }
+        if (suc)
+            cout << "Yes" << endl;
+        else
+            cout << "No" << endl;
     }
 }
 
