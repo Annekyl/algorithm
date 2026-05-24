@@ -18,7 +18,6 @@ const int M = 2e5 + 10;
 
 int n, m;
 int fa[N];
-bool v[3];
 vector<pii> tre;
 
 struct Edge {
@@ -40,6 +39,8 @@ void init() {
 }
 
 void kruskal(int need, int limit) {
+    // debug(need);
+    // debug(limit);
     int cnt = 0;
     for (int i = 0; i < m; i++) {
         auto [x, y, z] = edge[i];
@@ -48,7 +49,6 @@ void kruskal(int need, int limit) {
         int fx = find(x), fy = find(y);
         if (fx != fy) {
             tre.push_back({x, y});
-            v[z] = true;
             fa[fx] = fy;
             cnt++;
             if (cnt == limit)
@@ -65,6 +65,7 @@ void solve() {
         cin >> u >> v >> w;
         edge[i] = {u, v, w};
     }
+    sort(edge, edge + m);
 
     int st[3][2] = {{0, 1}, {0, 2}, {1, 2}};
     for (int i = 0; i < 3; i++) {
@@ -79,11 +80,11 @@ void solve() {
         kruskal(st[i][0], len - 1);
         if (tre.size() == len)
             break;
-        init();
-        kruskal(st[i][0], 1);
-        kruskal(st[i][1], len - 1);
-        if (tre.size() == len)
-            break;
+        // init();
+        // kruskal(st[i][0], 1);
+        // kruskal(st[i][1], len - 1);
+        // if (tre.size() == len)
+        //     break;
     }
 
     if (tre.size() != len) {
