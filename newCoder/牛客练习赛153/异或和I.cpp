@@ -14,14 +14,21 @@ typedef vector<vector<int>> vii;
 constexpr int INF = 0x3f3f3f3f3f3f3f3f;
 const int N = 1e5 + 10;
 
+int max_v = 4096;
+
 void solve() {
     int n, mod;
     cin >> n >> mod;
-    int a[n + 1];
+    int a[n + 1], s[n + 1] = {0};
     for (int i = 1; i <= n; i++) {
         cin >> a[i];
+        s[i] = s[i - 1] ^ a[i];
     }
-	
+
+    int f[n + 1][max_v]; // 前i个数中最后一段异或和为v时的最大段数
+    int g[n + 1][max_v]; // 对应的方案数
+    int max_f[n + 1][max_v];
+    int max_g[n + 1][max_v];
 }
 
 signed main() {
