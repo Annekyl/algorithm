@@ -13,25 +13,40 @@ typedef vector<vector<int>> vii;
 
 constexpr int INF = 0x3f3f3f3f3f3f3f3f;
 constexpr int mod = 998244353;
-const int N = 1e5 + 10;
+const int N = 1010;
+
+int fa[N];
+
+void init() {
+    for (int i = 0; i < N; i++) {
+        fa[i] = i;
+    }
+}
+
+int find(int x) {
+    if (fa[x] == x)
+        return x;
+    return fa[x] = find(fa[x]);
+}
+
+void merge(int x, int y) {
+    x = find(x), y = find(y);
+    fa[x] = y;
+}
 
 void solve() {
-    int n;
-    cin >> n;
-    map<string, int> mp;
-    int ans = 0;
-    for (int i = 0; i < n; i++) {
-        string s1, s2;
-        cin >> s1 >> s2;
-        s1 = s1.substr(0, 2);
-        if (s1 != s2) {
-            string s = s2 + s1;
-            if (mp.count(s))
-                ans += mp[s];
-            mp[s1 + s2]++;
+    int n, m;
+    cin >> n >> m;
+    init();
+    for (int i = 0; i < m; i++) {
+        char c;
+        int x, y;
+        cin >> c >> x >> y;
+        if (c == 'F') {
+            merge(x, y);
+        } else {
         }
     }
-    cout << ans << endl;
 }
 
 signed main() {
