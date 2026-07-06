@@ -13,43 +13,55 @@ typedef vector<vector<int>> vii;
 
 constexpr int INF = 0x3f3f3f3f3f3f3f3f;
 constexpr int mod = 998244353;
-const int N = 2e5 + 10;
+const int N = 1e5 + 10;
 
-int n;
+int n, m;
 int tr[N];
 
-int lb(int x) { return x & -x; };
+int lowbit(int x) { return x & -x; }
 
 void add(int x, int v) {
-    for (int i = x; i <= n; i += lb(i)) {
+    for (int i = x; i <= n; i += lowbit(i)) {
         tr[i] += v;
     }
 }
 
 int quary(int x) {
     int res = 0;
-    for (int i = x; i; i -= lb(i)) {
+    for (int i = x; i; i -= lowbit(i)) {
         res += tr[i];
     }
     return res;
 }
 
 void solve() {
-    cin >> n;
-    int ans1 = 0, ans2 = 0;
+    cin >> n >> m;
+    int a[n + 1] = {0}, d[n + 1] = {0};
     for (int i = 1; i <= n; i++) {
-        int x;
-        cin >> x;
-        int left_small = quary(x - 1);
-        int right_small = x - 1 - left_small;
-        int left_big = i - 1 - left_small;
-        int right_big = n - x - left_big;
-        ans1 += left_small * right_small;
-        ans2 += left_big * right_big;
-
-        add(x, 1);
+        cin >> a[i];
+        d[i] = a[i] - a[i - 1];
+        add(i, d[i]);
     }
-    cout << ans2 << " " << ans1 << endl;
+
+    // for (int i = 1; i <= n; i++)
+    //     cout << tr[i] << ' ';
+    // cout << endl;
+
+    while (m--) {
+        char op;
+        cin >> op;
+        if (op == 'C') {
+            int l, r, d;
+            cin >> l >> r >> d;
+            add(l, d);
+            add(r + 1, -d);
+        } else {
+            int x;
+            cin >> x;
+            int ans = quary(x);
+            cout << ans << endl;
+        }
+    }
 }
 
 signed main() {
