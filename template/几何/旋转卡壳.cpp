@@ -1,5 +1,16 @@
 // 旋转卡壳 (Rotating Calipers)
 // AcWing 1402. 顶点对最大距离
+// 在凸包上寻找最远点对（凸包直径）
+// 时间复杂度：O(n)，先求凸包 O(n log n)，再旋转卡壳 O(n)
+// 核心思想：
+//   1. 凸包的最远点对一定在凸包上
+//   2. 对于凸包上的每条边，维护距离最远的点
+//   3. 当边旋转时，最远点也单调移动（卡壳）
+// 应用：
+//   - 凸包直径（最远点对距离）
+//   - 最小矩形覆盖
+//   - 最远点对
+
 #include <iostream>
 #include <cstring>
 #include <algorithm>
@@ -12,7 +23,7 @@ const int N = 100010;
 int n;
 struct Point {
     double x, y;
-} p[N], stk[N];
+} p[N], stk[N]; // stk: 凸包
 int top;
 
 bool operator<(const Point &a, const Point &b) {
@@ -33,7 +44,7 @@ double dist(const Point &a, const Point &b) {
     return dx * dx + dy * dy;
 }
 
-// Andrew算法求凸包
+// Andrew 算法求凸包（不包含重复的起点）
 void convex_hull() {
     sort(p, p + n);
 
@@ -51,7 +62,9 @@ void convex_hull() {
     }
 }
 
-// 旋转卡壳求凸包直径 (最远点对)
+// 旋转卡壳求凸包直径（最远点对）
+// 核心：对于每条边 (stk[i], stk[i+1])，找到距离最远的点 stk[k]
+// 当边旋转时，k 也单调旋转
 double rotating_calipers() {
     convex_hull();
 
@@ -59,13 +72,15 @@ double rotating_calipers() {
     if (top == 2) return dist(stk[0], stk[1]);
 
     double res = 0;
-    int k = 1;
+    int k = 1; // 当前最远点
 
     for (int i = 0; i < top - 1; i++) {
+        // 叉积：判断 stk[k+1] 是否比 stk[k] 更远
         while (cross(stk[i + 1] - stk[i], stk[k + 1] - stk[i]) >
                cross(stk[i + 1] - stk[i], stk[k] - stk[i]))
             k = (k + 1) % (top - 1);
 
+        // 更新最远距离
         res = max(res, max(dist(stk[i], stk[k]), dist(stk[i + 1], stk[k + 1])));
     }
 
@@ -73,6 +88,10 @@ double rotating_calipers() {
 }
 
 // 旋转卡壳求最小矩形覆盖
+// 对于凸包的每条边，维护三个卡壳点：
+//   k: 最远点（确定矩形的一边）
+//   r: 最左边的点（确定矩形的另一边）
+// 面积 = 底 * 高
 double min_rectangle_area() {
     convex_hull();
     if (top <= 2) return 0;
@@ -81,15 +100,16 @@ double min_rectangle_area() {
     int k = 1, r = 1;
 
     for (int i = 0; i < top - 1; i++) {
-        // 找最远点
+        // 找最远点（确定矩形的高）
         while (dist(stk[i], stk[k]) < dist(stk[i], stk[(k + 1) % (top - 1)]))
             k = (k + 1) % (top - 1);
 
-        // 找最左边的点
+        // 找最左边的点（确定矩形的底）
         while (cross(stk[i + 1] - stk[i], stk[r + 1] - stk[i]) >
                cross(stk[i + 1] - stk[i], stk[r] - stk[i]))
             r = (r + 1) % (top - 1);
 
+        // 计算矩形面积
         double w = fabs(cross(stk[i + 1] - stk[i], stk[k] - stk[i])) /
                    fabs(stk[i + 1] - stk[i]);
         double h = fabs(cross(stk[i + 1] - stk[i], stk[r] - stk[i])) /
