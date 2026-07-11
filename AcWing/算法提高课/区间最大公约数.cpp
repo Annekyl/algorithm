@@ -24,7 +24,7 @@ struct Node {
 
 void pushup(Node &u, Node &l, Node &r) {
     u.sum = l.sum + r.sum;
-    u.g = __gcd(l.g, r.g);
+    u.g = abs(__gcd(l.g, r.g));
 }
 
 void pushup(int u) { pushup(tr[u], tr[u << 1], tr[u << 1 | 1]); }
@@ -32,11 +32,48 @@ void pushup(int u) { pushup(tr[u], tr[u << 1], tr[u << 1 | 1]); }
 void build(int u, int l, int r) {
     if (l == r) {
         tr[u] = {l, r, d[l], abs(d[l])};
-		return;
+        return;
     }
-	int mid=l+r>>1;
-	build(u<<1,l,mid);
-	build(u<<1|1,mid+1,r);
+    tr[u] = {l, r};
+    int mid = l + r >> 1;
+    build(u << 1, l, mid);
+    build(u << 1 | 1, mid + 1, r);
+    pushup(u);
+}
+
+// d[x] += v
+void modify(int u, int x, int v) {
+    if (tr[u].l == tr[u].r && tr[u].l == x) {
+        tr[u].sum += v;
+        tr[u].g = abs(tr[u].sum);
+        return;
+    }
+    int mid = tr[u].l + tr[u].r >> 1;
+    if (x <= mid)
+        modify(u << 1, x, v);
+    else
+        modify(u << 1 | 1, x, v);
+    pushup(u);
+}
+
+Node quary(int u, int l, int r) {
+    if (l > r)
+        return {0, 0, 0, 0};
+    if (tr[u].l >= l && tr[u].r <= r) {
+        return tr[u];
+    }
+    int mid = tr[u].l + tr[u].r >> 1;
+    if (l > mid) {
+        return quary(u << 1 | 1, l, r);
+    } else if (r <= mid) {
+        return quary(u << 1, l, r);
+    } else {
+        Node left = quary(u << 1, l, r);
+        Node right = quary(u << 1 | 1, l, r);
+        Node res;
+        pushup(res, left, right);
+        return res;
+    }
 }
 
 void solve() {
@@ -55,9 +92,16 @@ void solve() {
         if (op == 'C') {
             int l, r, d;
             cin >> l >> r >> d;
+            modify(1, l, d);
+            if (r + 1 <= n)
+                modify(1, r + 1, -d);
         } else {
             int l, r;
             cin >> l >> r;
+            Node left = quary(1, 1, l);
+            Node right = quary(1, l + 1, r);
+            int ans = abs(__gcd(left.sum, right.g));
+            cout << ans << endl;
         }
     }
 }
