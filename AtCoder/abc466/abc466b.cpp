@@ -4,7 +4,7 @@
 #define FOR(i, a, b) for (int i = (a); i <= (b); i++)
 #define REF(i, a, b) for (int i = (a); i >= (b); i--)
 #define debug(x) cout << #x << " = " << x << '\n'
-	
+
 using namespace std;
 
 typedef pair<int, int> pii;
@@ -16,20 +16,28 @@ constexpr int mod = 998244353;
 const int N = 1e5 + 10;
 
 void solve() {
-	int n;
-	cin >> n;
+    int n, m;
+    cin >> n >> m;
+    vi a(m + 1, -1);
+    while (n--) {
+        int c, s;
+        cin >> c >> s;
+        a[c] = max(a[c], s);
+    }
+    for (int i = 1; i <= m; i++)
+        cout << a[i] << ' ';
 }
 
 signed main() {
-	ios::sync_with_stdio(false);
-	cin.tie(0);
-	cout.tie(0);
+    ios::sync_with_stdio(false);
+    cin.tie(0);
+    cout.tie(0);
 
-	int t = 1;
-	// cin >> t;
-	while (t--) {
-		solve();
-	}
+    int t = 1;
+    // cin >> t;
+    while (t--) {
+        solve();
+    }
 
-	return 0;
+    return 0;
 }
