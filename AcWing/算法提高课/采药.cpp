@@ -16,25 +16,20 @@ constexpr int mod = 998244353;
 const int N = 1e5 + 10;
 
 void solve() {
-    int n;
-    cin >> n;
-    int a[n + 1], b[n + 1];
-    for (int i = 1; i <= n; i++)
-        cin >> a[i];
-    for (int j = 1; j <= n; j++)
-        cin >> b[j];
-    int dp[n + 1] = {0};
-    for (int i = 1; i <= n; i++) {
-        int mx = 0;
-        for (int j = 1; j <= n; j++) {
-            if (a[i] == b[j])
-                dp[j] = max(dp[j], mx + 1);
-            else if (b[j] < a[i])
-                mx = max(mx, dp[j]);
+    int t, m;
+    cin >> t >> m;
+    int w[m + 1], v[m + 1];
+    for (int i = 1; i <= m; i++)
+        cin >> w[i] >> v[i];
+
+    int dp[t + 1] = {0};
+    for (int i = 1; i <=m; i++) {
+        for (int j = t; j >= w[i]; j--) {
+            dp[j] = max(dp[j], dp[j - w[i]] + v[i]);
         }
     }
     int ans = 0;
-    for (int i = 1; i <= n; i++)
+    for (int i = 1; i <= t; i++)
         ans = max(ans, dp[i]);
     cout << ans << endl;
 }
