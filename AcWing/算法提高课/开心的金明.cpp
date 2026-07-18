@@ -18,26 +18,18 @@ const int N = 1e5 + 10;
 void solve() {
     int n, m;
     cin >> n >> m;
-    vi dp(m + 1, 0), pre(m + 1, 0);
-    for (int i = 0; i < n; i++) {
-        int cnt, w, v;
-        cin >> w >> v >> cnt;
-        pre = dp;
-        for (int j = 0; j < w; j++) {
-            deque<int> q;
-            for (int k = j; k <= m; k += w) {
-                while (!q.empty() && q.front() < k - cnt * w)
-                    q.pop_front();
-
-                while (!q.empty() && pre[q.back()] - (q.back() - j) / w * v <=
-                                         pre[k] - (k - j) / w * v)
-                    q.pop_back();
-                q.push_back(k);
-                dp[k] = pre[q.front()] + (k - q.front()) / w * v;
-            }
+    vi dp(n + 1, 0);
+    for (int i = 0; i < m; i++) {
+        int v, p;
+        cin >> v >> p;
+        for (int i = n; i >= v; i--) {
+            dp[i] = max(dp[i], dp[i - v] + v * p);
         }
     }
-    cout << dp[m] << endl;
+    int ans = 0;
+    for (int i = 0; i <= n; i++)
+        ans = max(ans, dp[i]);
+    cout << ans << endl;
 }
 
 signed main() {

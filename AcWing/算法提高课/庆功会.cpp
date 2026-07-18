@@ -20,20 +20,19 @@ void solve() {
     cin >> n >> m;
     vi dp(m + 1, 0), pre(m + 1, 0);
     for (int i = 0; i < n; i++) {
-        int cnt, w, v;
-        cin >> w >> v >> cnt;
+        int v, w, s;
+        cin >> v >> w >> s;
         pre = dp;
-        for (int j = 0; j < w; j++) {
+        for (int j = 0; j < v; j++) {
             deque<int> q;
-            for (int k = j; k <= m; k += w) {
-                while (!q.empty() && q.front() < k - cnt * w)
+            for (int k = j; k <= m; k += v) {
+                while (q.size() && q.front() < k - v * s)
                     q.pop_front();
-
-                while (!q.empty() && pre[q.back()] - (q.back() - j) / w * v <=
-                                         pre[k] - (k - j) / w * v)
+                while (q.size() && pre[q.back()] - (q.back() - j) / v * w <=
+                                       pre[k] - (k - j) / v * w)
                     q.pop_back();
                 q.push_back(k);
-                dp[k] = pre[q.front()] + (k - q.front()) / w * v;
+                dp[k] = pre[q.front()] + (k - q.front()) / v * w;
             }
         }
     }
