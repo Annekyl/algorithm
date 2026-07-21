@@ -30,6 +30,8 @@ void solve() {
         for (int i = 1; i <= n; i++) {
             if (g[i][j] == g[1][j])
                 len++;
+            else
+                break;
         }
         cnt[g[1][j]] = max(cnt[g[1][j]], len);
     }
