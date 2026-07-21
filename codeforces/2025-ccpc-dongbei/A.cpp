@@ -19,59 +19,37 @@ void solve() {
     vi a(n);
     for (int i = 0; i < n; i++)
         cin >> a[i];
-    deque<pii> q;
+    vi L(n), R(n);
+
+    // 预处理左边界
+    for (int i = 0; i < n; i++) {
+        int l = i;
+        while (l - 1 >= 0 && a[l - 1] % a[i] == 0 && a[l - 1] > a[i]) {
+            l = L[l - 1];
+        }
+        L[i] = l;
+    }
+    // 预处理右边界
+    for (int i = n - 1; i >= 0; i--) {
+        int r = i;
+        while (r + 1 < n && a[r + 1] % a[i] == 0) {
+            r = R[r + 1];
+        }
+        R[i] = r;
+    }
+
+    // for (int i = 0; i < n; i++)
+    //     cout << L[i] << ' ';
+    // cout << endl;
+    // for (int i = 0; i < n; i++)
+    //     cout << R[i] << ' ';
+    // cout << endl;
+
     int ans = 0;
     for (int i = 0; i < n; i++) {
-        if (q.empty()) {
-            ans++;
-            q.push_back({i, a[i]});
-        } else {
-            while (q.size()) {
-                auto [l, g] = q.front();
-                if (a[i] % g == 0) {
-                    // 不需要更新队头
-                    ans += i - l + 1;
-                    // 需要更新队尾
-                    if (q.size() == 1) {
-                        q.push_back({i, a[i]});
-                    } else {
-                        while (q.size() > 1) {
-                            auto [l2, g2] = q.back();
-                            if (a[i] % g2 == 0) {
-                                // TODO: 插入
-                                q.push_back({i, a[i]});
-                            } else if (g2 % a[i] == 0) {
-                                q.pop_back();
-                                q.push_back({l2, a[i]});
-                                break;
-                            } else {
-                                q.pop_back();
-                                if (q.size() == 1) {
-                                    q.push_back({i, a[i]});
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    break;
-                } else if (g % a[i] == 0) {
-                    // 需要更新队头
-                    q.pop_front();
-                    q.push_front({l, a[i]});
-                    ans += i - l + 1;
-                    break;
-                } else {
-                    q.pop_front();
-                    if (q.empty()) {
-                        ans++;
-                        q.push_back({i, a[i]});
-                        break;
-                    }
-                }
-            }
-        }
-        // cout << i << ' ' << ans << " " << q.front().first << " "
-            //  << q.front().second << endl;
+        int len1 = i - L[i] + 1, len2 = R[i] - i + 1;
+        // cout << len1 << ' ' << len2 << endl;
+        ans += len1 * len2;
     }
     cout << ans << endl;
 }
