@@ -20,15 +20,18 @@ constexpr int N = 1e5 + 10;
 void solve() {
     int n, m;
     cin >> n >> m;
-    vii w(2 * m + 1, vi(n + 1, n)); // 每一个位置的权值
-    vector<vector<bool>> st(2 * m + 1,
-                            vector<bool>(n + 1, false)); // 每个位置是否被使用
+
     int q;
     cin >> q;
     vector<pii> ans(q + 1);
     int cnt = 0;
 
-    vi mx(2 * m + 1, n);    // 维护每一排最大的权值
+    vector<vector<bool>> st(2 * m + 1,
+                            vector<bool>(n + 1, false)); // 每个位置是否被使用
+    vi w(2 * m + 1, n);                                  // 维护每一排最大的权值
+    vi mx_good(2 * m + 1, -1);
+    vi mx_any(2 * m + 1, -1);
+    vi empty(2 * m + 1, n);
     int remain = 2 * m * n; // 剩余的位置
 
     auto good = [&](int x, int y) -> bool {
@@ -40,81 +43,105 @@ void solve() {
         }
     };
 
+    auto opp = [&](int x) -> int { return (x & 1) ? x + 1 : x - 1; };
+
+    auto update = [&](int line) {
+        if (empty[line] == 0) {
+            w[line] = -1;
+            mx_good[line] = -1;
+            mx_any[line] = -1;
+        } else if (empty[line] == n) {
+            w[line] = n;
+            mx_any[line] = 1;
+            mx_good[line] = -1;
+            for (int j = 1; j <= n; j++) {
+                // 当前位置有人则跳过
+                if (!st[line][j] && good(line, j)) {
+                    mx_good[line] = j;
+                    break;
+                }
+            }
+        } else {
+            // 更新当前最大权值等信息
+            vi L(n + 1, INF), R(n + 1, INF), line_w(n + 1, n);
+            int cur = -1;
+            for (int j = 1; j <= n; j++) {
+                if (st[line][j]) {
+                    cur = j;
+                } else {
+                    if (cur != -1)
+                        L[j] = j - cur;
+                }
+            }
+            cur = -1;
+            for (int j = n; j > 0; j--) {
+                if (st[line][j]) {
+                    cur = j;
+                } else {
+                    if (cur != -1)
+                        R[j] = cur - j;
+                }
+            }
+            w[line] = -1;
+            mx_any[line] = -1;
+            mx_good[line] = -1;
+            for (int j = 1; j <= n; j++) {
+                if (st[line][j])
+                    continue;
+                line_w[j] = min(L[j], R[j]);
+                w[line] = max(w[line], line_w[j]);
+            }
+            for (int j = 1; j <= n; j++) {
+                if (st[line][j])
+                    continue;
+                if (line_w[j] == w[line] && mx_any[line] == -1)
+                    mx_any[line] = j;
+                if (line_w[j] == w[line] && mx_good[line] == -1 &&
+                    good(line, j))
+                    mx_good[line] = j;
+            }
+        }
+    };
+
+    for (int i = 1; i <= 2 * m; i++)
+        update(i);
     while (q--) {
         int op, x;
         cin >> op >> x;
         if (op == 1) {
-            // 判断是否存在位置
+            cnt = x;
             if (remain == 0) {
-                ans[++cnt] = {-1, -1};
-            }
-            int line = 1; // 选出一个位置，line对应所在行
-            for (int i = 1; i <= 2 * m; i++) {
-                // 选权值最大的一个位置
-                if (mx[line] < mx[i])
-                    line = i;
-                else if (mx[line] == mx[i]) {
-                    // 权值相同时，选好位置或字典序小的位置
-                    int last_y = n + 1;
-                    bool last_is_good = false;
-                    for (int j = 1; j <= n; j++) {
-                        if (w[line][j] == mx[line] && good(line, j)) {
-                            last_y = j;
-                            last_is_good = true;
-                            break;
-                        } else if (w[line][j] == mx[line]) {
-                            last_y = min(last_y, j);
+                ans[x] = {-1, -1};
+            } else {
+                int select = -1;
+                for (int i = 1; i <= 2 * m; i++) {
+                    if (select == -1 || w[select] < w[i]) {
+                        select = i;
+                    } else if (w[select] == w[i]) {
+                        if (mx_good[select] == -1 && mx_good[i] != -1) {
+                            select = i;
                         }
                     }
-                    if (last_is_good)
-                        continue;
-                    int cur_y = n + 1;
-                    bool cur_is_good = false;
-                    for (int j = 1; j <= n; j++) {
-                        if (w[i][j] == mx[i] && good(i, j)) {
-                            cur_y = j;
-                            cur_is_good = true;
-                            break;
-                        } else if (w[i][j] == mx[i]) {
-                            cur_y = min(cur_y, j);
-                        }
-                    }
-                    if (cur_is_good)
-                        line = i;
                 }
-            }
-            // 分配这个位置给当前编号cnt
-            int col = n + 1;
-            for (int j = 1; j <= n; j++) {
-                if (w[line][j] == mx[line] && good(line, j)) {
-                    col = j;
-                    break;
-                } else if (w[line][j] == mx[line]) {
-                    col = min(col, j);
-                }
-            }
-            st[line][col] = true;
-            remain--;
-            ans[++cnt] = {line, col};
-
-            // 更新影响的一行权值
-            mx[line] = -1;
-            for (int j = 1; j <= n; j++) {
-                if (st[line][col])
-                    continue;
-                w[line][j] = min(w[line][j], abs(col - j));
-                mx[line] = max(mx[line], w[line][j]);
+                // 分配座位
+                int col =
+                    (mx_good[select] == -1 ? mx_any[select] : mx_good[select]);
+                st[select][col] = true;
+                empty[select]--;
+                remain--;
+                ans[x] = {select, col};
+                update(select);
+                update(opp(select));
             }
         } else {
-            // 释放该位置
             auto [line, col] = ans[x];
-            st[line][col] = false;
+            if (line == -1)
+                continue;
             remain++;
-            // 更新影响的一行权值
-            mx[line] = -1;
-            for (int j = 1; j <= n; j++) {
-                
-            }
+            st[line][col] = false;
+            empty[line]++;
+            update(line);
+            update(opp(line));
         }
     }
 
