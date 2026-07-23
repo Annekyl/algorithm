@@ -17,7 +17,7 @@ constexpr int mod = 999991;
 constexpr int N = 5e5 + 10;
 
 int prime[N], cnt;
-int spf[N];
+int spf[N]; // 每个数的最小质因子
 
 void euler() {
     for (int i = 2; i < N; i++) {
@@ -43,8 +43,8 @@ void solve() {
     for (int i = 1; i <= n; i++)
         cin >> C[i];
     vi dp(n + 1, 1);
-    vi mx1_val(10, 0), mx1_c(10);
-    vi mx2_val(10, 0), mx2_c(10);
+    vi mx1_val(N, 0), mx1_c(N);
+    vi mx2_val(N, 0), mx2_c(N);
     for (int i = 1; i <= n; i++) {
         int w = W[i], c = C[i];
         // 对亮度c进行质因子分解
@@ -59,11 +59,31 @@ void solve() {
         for (int p : primes) {
             if (mx1_c[p] != c) {
                 dp[i] = max(dp[i], mx1_val[p] + 1);
-            } else {
+            } else if (mx2_c[p] != c) {
                 dp[i] = max(dp[i], mx2_val[p] + 1);
             }
         }
+
+        for (int p : primes) {
+            // 更新mx值
+            if (dp[i] > mx1_val[p]) {
+                if (c != mx1_c[p]) {
+                    mx2_val[p] = mx1_val[p];
+                    mx2_c[p] = mx1_c[p];
+                }
+                mx1_val[p] = dp[i];
+                mx1_c[p] = c;
+            } else if (dp[i] > mx2_val[p] && c != mx1_c[p]) {
+                mx2_val[p] = dp[i];
+                mx2_c[p] = c;
+            }
+        }
     }
+    int ans = 0;
+    for (int i = 1; i <= n; i++) {
+        ans = max(ans, dp[i]);
+    }
+    cout << ans << endl;
 }
 
 signed main() {
