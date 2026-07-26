@@ -39,7 +39,7 @@ void solve() {
             return false;
         int r = qujian[0].second;
         for (int i = 1; i < qujian.size(); i++) {
-            if (qujian[i].first < r + 1) {
+            if (qujian[i].first <= r + 1) {
                 r = max(r, qujian[i].second);
             } else {
                 return false;
