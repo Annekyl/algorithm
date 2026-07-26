@@ -1,65 +1,55 @@
-#include <bits/stdc++.h>
-using namespace std;
+#include "bits/stdc++.h"
+
 #define int long long
 #define endl '\n'
+#define FOR(i, a, b) for (int i = (a); i <= (b); i++)
+#define REF(i, a, b) for (int i = (a); i >= (b); i--)
 
-void db(int x) {
-    int mn = x, i, j, k;
-    for (int a = 0; a <= x; a++) {
-        for (int b = 0; b <= x; b++) {
-            for (int c = 0; c <= x; c++) {
-                if (a * b + c == x) {
-                    int u = max(a, max(b, c)), d = min(a, min(b, c));
-                    if (u - d < mn) {
-                        mn = u - d;
-                        i = a, j = b, k = c;
-                    }
-                }
-            }
-        }
-    }
-    cout << mn << ' ';
-    // cout << x << ' ' << mn << endl;
-    // cout << x << endl << i << ' ' << j <<' ' << k << ' ' << mn << endl;
-}
+using namespace std;
+
+typedef long long ll;
+typedef pair<int, int> pii;
+typedef vector<int> vi;
+typedef vector<bool> vb;
+
+constexpr int INF = 0x3f3f3f3f3f3f3f3f;
+constexpr int mod = 999991;
+constexpr int N = 1e5 + 10;
 
 void solve() {
     int x;
     cin >> x;
-    x++;
-    int l = 0, r = 1e9;
-    while (l + 1 < r) {
-        // cout << l << ' ' << r << endl;
-        int mid = (l + r) >> 1;
-        if (mid * mid + mid >= x)
-            r = mid;
-        else
-            l = mid;
+    int ans = x;
+    int st = sqrt(x) + 1;
+    for (int i = st; i > 0; i--) {
+        int a = i;
+        if (x / (a + 1) - a >= ans) {
+            break;
+        }
+        int bb[4] = {x / (a + 1), x / (a + 1) + 1, x / a - 1, x / a};
+        for (int i = 0; i < 4; i++) {
+            int b = bb[i];
+            if (b < a)
+                continue;
+            int c = x - a * b;
+            if (c < 0)
+                continue;
+            int mx = max({a, b, c});
+            int mn = min({a, b, c});
+            ans = min(ans, mx - mn);
+        }
     }
-    int n = r;
-    x -= n * n - n;
-    // cout << n << ' ' << x << endl;
-    if (x == 1)
-        cout << 0 << endl;
-    // else if (x <= n)
-    //     cout << min(x - 1, n - x) + 1 << endl;
-    // else {
-    //     cout << min(x - n - 1, 2 * n - x) + 1 << endl;
-    // }
-    else if (x <= n) {
-        x -= 1;
-        cout << min(x, n - x + 1) << endl;
-    } else {
-        x -= n;
-        cout << min(x, n - x + 1) << endl;
-    }
+    cout << ans << endl;
 }
 
 signed main() {
-    cin.tie(0)->sync_with_stdio(0);
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
     int t = 1;
     cin >> t;
-    while (t--)
+    while (t--) {
         solve();
+    }
     return 0;
 }
