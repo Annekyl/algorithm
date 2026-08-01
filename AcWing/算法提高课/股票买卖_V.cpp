@@ -1,5 +1,5 @@
 #include "bits/stdc++.h"
-#define int long long
+// #define int long long
 #define endl '\n'
 #define FOR(i, a, b) for (int i = (a); i <= (b); i++)
 #define REF(i, a, b) for (int i = (a); i >= (b); i--)
@@ -16,24 +16,22 @@ constexpr int mod = 998244353;
 const int N = 1e5 + 10;
 
 void solve() {
-    int n, k;
-    cin >> n >> k;
-    int w[n + 1];
+    int n;
+    cin >> n;
+    vi w(n + 1, 0);
     for (int i = 1; i <= n; i++)
         cin >> w[i];
-    int dp[n + 1][k + 1][2];
+
+    int dp[n + 1][3];
     memset(dp, -0x3f, sizeof dp);
     for (int i = 0; i <= n; i++)
-        dp[i][0][0] = 0;
+        dp[i][0] = 0;
     for (int i = 1; i <= n; i++) {
-        for (int j = 1; j <= k; j++) {
-            dp[i][j][0] = max(dp[i - 1][j][0], dp[i - 1][j][1] + w[i]);
-            dp[i][j][1] = max(dp[i - 1][j][1], dp[i - 1][j - 1][0] - w[i]);
-        }
+        dp[i][0] = max(dp[i - 1][0], dp[i - 1][2]);
+        dp[i][1] = max(dp[i - 1][1], dp[i - 1][0] - w[i]);
+        dp[i][2] = dp[i - 1][1] + w[i];
     }
-    int ans = 0;
-    for (int i = 0; i <= k; i++)
-        ans = max(ans, dp[n][i][0]);
+    int ans = max({0, dp[n][0], dp[n][2]});
     cout << ans << endl;
 }
 
