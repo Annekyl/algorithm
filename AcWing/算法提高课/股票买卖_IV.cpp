@@ -18,7 +18,15 @@ const int N = 1e5 + 10;
 void solve() {
 	int n,k;
 	cin>>n>>k;
-	
+	int dp[n+1][k+1][2];
+	memset(dp,-0x3f,sizeof dp);
+	for(int i=0;i<n;i++)dp[i][0][0]=0;
+	for(int i=1;i<=n;i++){
+		for(int j=1;j<=k;j++){
+			dp[i][j][0]=max(dp[i-1][j][0],dp[i-1][j][1]+w[i]);
+			
+		}
+	}
 }
 
 signed main() {
