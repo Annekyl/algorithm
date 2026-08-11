@@ -5,7 +5,7 @@
 #define FOR(i, a, b) for (int i = (a); i <= (b); i++)
 #define REF(i, a, b) for (int i = (a); i >= (b); i--)
 #define debug(x) cout << #x << " = " << x << '\n'
-	
+
 using namespace std;
 // using namespace __gnu_pbds;
 
@@ -27,19 +27,27 @@ constexpr int mod = 998244353;
 const int N = 1e5 + 10;
 
 void solve() {
-
+    int n, m;
+    cin >> n >> m;
+    vi a(m), b(m);
+    for (int i = 0; i < m; i++)
+        cin >> a[i] >> b[i];
+    set<pii> ans;
+    int x = a[0];
+    for (int y = 0; y < n; y++) {
+    }
 }
 
 signed main() {
-	ios::sync_with_stdio(false);
-	cin.tie(0);
-	cout.tie(0);
+    ios::sync_with_stdio(false);
+    cin.tie(0);
+    cout.tie(0);
 
-	int t = 1;
-	// cin >> t;
-	while (t--) {
-		solve();
-	}
+    int t = 1;
+    // cin >> t;
+    while (t--) {
+        solve();
+    }
 
-	return 0;
+    return 0;
 }
