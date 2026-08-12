@@ -24,46 +24,59 @@ typedef vector<vector<int>> vii;
 
 constexpr int INF = 0x3f3f3f3f3f3f3f3f;
 constexpr int mod = 998244353;
-const int N = 1e5 + 10;
+const int N = 1e6 + 10;
+
+int pos[N];
+int fa[N];
+
+int find(int x) {
+    if (fa[x] == x)
+        return x;
+    return fa[x] = find(fa[x]);
+}
+
+bool merge(int x, int y) {
+    int fx = find(x);
+    int fy = find(y);
+    if (fx == fy)
+        return false;
+    fa[fx] = fy;
+    return true;
+}
 
 void solve() {
-    int n, m;
-    cin >> n >> m;
-    vector<pii> edges(m);
-    vi deg(n + 1, 0);
-    for (int i = 0; i < m; i++) {
-        int u, v;
-        cin >> u >> v;
-        if (u > v)
-            swap(u, v);
-        edges[i] = {u, v};
-        deg[u]++, deg[v]++;
+    int n;
+    cin >> n;
+    int mx = 0;
+    for (int i = 1; i <= n; i++) {
+        int x;
+        cin >> x;
+        pos[x] = i;
+        fa[i] = i;
+        mx = max(mx, x);
     }
 
-    vi sort_deg = deg;
-    sort(sort_deg.begin() + 1, sort_deg.end());
     int ans = 0;
-    int l = 1, r = n;
-    while (l < r) {
-        if (sort_deg[l] + sort_deg[r] >= m) {
-            ans += r - l;
-            r--;
-        } else
-            l++;
-    }
+    int cnt = 0; // 当前合并的边数
+    for (int g = mx; g >= 1; g--) {
+        int first = 0;
+        for (int j = g; j <= mx; j += g) {
+            if (pos[j]) {
+                if (!first) // 第一次遇到，记录下标
+                    first = pos[j];
+                else { // 并查集合并
+                    if (merge(first, pos[j])) {
+                        cnt++;
+                        ans += g;
+                    }
+                }
+            }
+        }
 
-    sort(edges.begin(), edges.end());
-    for (int i = 0; i < m;) {
-        int j = i;
-        while (j < m && edges[j] == edges[i])
-            j++;
-
-        int cnt = j - i;
-        int u = edges[i].first, v = edges[i].second;
-        if (deg[u] + deg[v] >= m && deg[u] + deg[v] - cnt < m)
-            ans--;
-        i = j;
+        if (cnt == n - 1)
+            break;
     }
+	
     cout << ans << endl;
 }
 
