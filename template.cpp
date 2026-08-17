@@ -4,6 +4,7 @@
 #define endl '\n'
 #define FOR(i, a, b) for (int i = (a); i <= (b); i++)
 #define REF(i, a, b) for (int i = (a); i >= (b); i--)
+#define rep(i, l, r) for (int i = (l); i < (r); i++)
 #define debug(x) cout << #x << " = " << x << '\n'
 	
 using namespace std;
