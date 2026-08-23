@@ -4,19 +4,13 @@
 #define endl '\n'
 #define rep(i, l, r) for (int i = (l); i <= (r); i++)
 #define per(i, r, l) for (int i = (r); i >= (l); --i)
-#define debug(x) cout << #x << " = " << x << '\n';
+#define debug(x) cout << #x << " = " << x << '\n'
 
 using namespace std;
 // using namespace __gnu_pbds;
 
-// typedef tree<int, null_type, less<int>,
-//             rb_tree_tag, tree_order_statistics_node_update> ordered_set;
-
-// typedef tree<int, int, less<int>,
-//             rb_tree_tag, tree_order_statistics_node_update> ordered_map;
-
-// typedef tree<pair<int,int>, null_type, less<pair<int,int>>,
-//             rb_tree_tag, tree_order_statistics_node_update> ordered_multiset;
+// typedef tree<int, null_type, less<int>, rb_tree_tag,
+// tree_order_statistics_node_update> tr;
 
 typedef pair<int, int> pii;
 typedef vector<int> vi;
@@ -27,13 +21,25 @@ constexpr int mod = 998244353;
 const int N = 1e5 + 10;
 
 void solve() {
-    int a, b;
-    cin >> a >> b;
-    if (a + b == 9 || a - b == 9 || a * b == 9 || a / b == 9 && a % b == 0) {
-        cout << "Nine" << endl;
-    } else {
-        cout << "Nein" << endl;
+    int n;
+    cin >> n;
+    map<string, int> mp;
+    for (int i = 0; i < n; i++) {
+        string s;
+        cin >> s;
+        for (char &c : s) {
+            if (c >= 'a' && c <= 'z')
+                c -= 32;
+        }
+        mp[s]++;
     }
+    int cnt = 0;
+    for (auto [s, c] : mp) {
+        if (c > cnt) {
+            cnt = c;
+        }
+    }
+    cout << cnt << endl;
 }
 
 signed main() {
