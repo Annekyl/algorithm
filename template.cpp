@@ -1,8 +1,8 @@
 #include "bits/stdc++.h"
 #define int long long
 #define endl '\n'
-#define FOR(i, a, b) for (int i = (a); i <= (b); i++)
-#define REF(i, a, b) for (int i = (a); i >= (b); i--)
+#define rep(i, a, b) for (int i = (a); i < (b); i++)
+#define per(i, a, b) for (int i = (a); i >= (b); i--)
 #define debug(x) cout << #x << " = " << x << '\n'
 	
 using namespace std;
